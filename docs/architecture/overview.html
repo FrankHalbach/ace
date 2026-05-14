@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ace · Architektur-Übersicht · TuS Neureut</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Source+Sans+3:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #faf7f0;
+    --bg-soft: #f3eee2;
+    --ink: #1c1c1c;
+    --ink-muted: #5a5a55;
+    --rule: #d8d2c0;
+    --primary: #2d5841;
+    --primary-soft: #e8efe8;
+    --accent: #b85c38;
+    --accent-soft: #f5e6dd;
+
+    --serif: "Fraunces", Georgia, serif;
+    --sans: "Source Sans 3", -apple-system, BlinkMacSystemFont, sans-serif;
+    --mono: "JetBrains Mono", "SF Mono", Consolas, monospace;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 17px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap { max-width: 880px; margin: 0 auto; padding: 0 32px; }
+
+  header.cover {
+    border-bottom: 1px solid var(--rule);
+    padding: 80px 0 56px;
+    margin-bottom: 56px;
+    background: linear-gradient(180deg, var(--bg) 0%, var(--bg-soft) 100%);
+  }
+
+  .cover-meta {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--primary);
+    margin-bottom: 24px;
+  }
+
+  h1.cover-title {
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: clamp(40px, 6vw, 64px);
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    margin: 0 0 16px;
+    font-variation-settings: "opsz" 144, "SOFT" 30;
+  }
+
+  h1.cover-title em {
+    font-style: italic;
+    color: var(--primary);
+    font-weight: 300;
+  }
+
+  .cover-sub {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 22px;
+    color: var(--ink-muted);
+    font-weight: 300;
+    margin: 0 0 48px;
+    max-width: 640px;
+  }
+
+  .status-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 1px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+  }
+
+  .status-cell {
+    background: var(--bg);
+    padding: 14px 18px;
+  }
+
+  .status-cell .label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    margin-bottom: 4px;
+  }
+
+  .status-cell .value {
+    font-family: var(--serif);
+    font-size: 16px;
+    font-weight: 500;
+  }
+
+  h2 {
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: 36px;
+    line-height: 1.15;
+    letter-spacing: -0.015em;
+    margin: 80px 0 8px;
+    padding-top: 32px;
+    border-top: 1px solid var(--rule);
+    font-variation-settings: "opsz" 144;
+  }
+
+  h2 .num {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--primary);
+    letter-spacing: 0.1em;
+    display: block;
+    margin-bottom: 8px;
+  }
+
+  h3 {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: 22px;
+    line-height: 1.3;
+    margin: 48px 0 16px;
+    color: var(--ink);
+  }
+
+  h4 {
+    font-family: var(--sans);
+    font-weight: 600;
+    font-size: 15px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin: 32px 0 12px;
+    color: var(--primary);
+  }
+
+  p { margin: 0 0 16px; }
+
+  p.lede {
+    font-family: var(--serif);
+    font-weight: 300;
+    font-size: 21px;
+    line-height: 1.5;
+    color: var(--ink-muted);
+    margin-bottom: 32px;
+  }
+
+  a { color: var(--primary); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  a:hover { color: var(--accent); }
+
+  strong { font-weight: 600; }
+
+  code {
+    font-family: var(--mono);
+    font-size: 0.88em;
+    background: var(--bg-soft);
+    padding: 1px 6px;
+    border-radius: 3px;
+    color: var(--primary);
+  }
+
+  ul, ol { padding-left: 22px; margin: 0 0 20px; }
+  li { margin-bottom: 6px; }
+  li::marker { color: var(--primary); }
+
+  /* TOC */
+  nav.toc {
+    background: var(--bg-soft);
+    border: 1px solid var(--rule);
+    padding: 32px 36px;
+    margin: 56px 0;
+  }
+
+  nav.toc h4 { margin: 0 0 18px; }
+
+  nav.toc ol {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    columns: 2;
+    column-gap: 40px;
+  }
+
+  nav.toc ol li {
+    break-inside: avoid;
+    margin-bottom: 10px;
+    padding-left: 0;
+  }
+
+  nav.toc a {
+    text-decoration: none;
+    font-family: var(--sans);
+    font-size: 15px;
+    color: var(--ink);
+    display: flex;
+    gap: 12px;
+  }
+
+  nav.toc .toc-num {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--primary);
+    min-width: 28px;
+  }
+
+  nav.toc a:hover { color: var(--accent); }
+
+  /* TABLES */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 24px 0 32px;
+    font-size: 15px;
+  }
+
+  th, td {
+    text-align: left;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+
+  th {
+    font-family: var(--sans);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--ink-muted);
+    border-bottom: 2px solid var(--ink);
+    font-weight: 600;
+  }
+
+  td code { font-size: 13px; }
+  tr:last-child td { border-bottom: 1px solid var(--ink); }
+
+  /* CALLOUTS */
+  .callout {
+    border-left: 3px solid var(--primary);
+    padding: 18px 24px;
+    margin: 32px 0;
+    background: var(--primary-soft);
+    font-size: 15px;
+  }
+
+  .callout-title {
+    font-family: var(--sans);
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 8px;
+    color: var(--primary);
+  }
+
+  .callout p:last-child { margin-bottom: 0; }
+
+  /* CODE BLOCKS */
+  pre {
+    background: var(--bg-soft);
+    border: 1px solid var(--rule);
+    padding: 18px 22px;
+    margin: 24px 0;
+    overflow-x: auto;
+    font-family: var(--mono);
+    font-size: 13.5px;
+    line-height: 1.55;
+    color: var(--ink);
+  }
+
+  pre code {
+    background: transparent;
+    padding: 0;
+    color: inherit;
+    font-size: inherit;
+  }
+
+  /* MERMAID */
+  .mermaid-wrap {
+    background: var(--bg);
+    border: 1px solid var(--rule);
+    padding: 28px 24px;
+    margin: 32px 0;
+    overflow-x: auto;
+    text-align: center;
+  }
+
+  pre.mermaid {
+    background: transparent;
+    border: none;
+    padding: 0;
+    margin: 0;
+    text-align: center;
+    font-family: var(--mono);
+    font-size: 13px;
+  }
+
+  /* FOOTER */
+  footer {
+    margin-top: 96px;
+    padding: 48px 0;
+    border-top: 1px solid var(--rule);
+    text-align: center;
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+  }
+
+  footer .ornament {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 24px;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--primary);
+    margin-bottom: 12px;
+  }
+
+  /* RESPONSIVE */
+  @media (max-width: 720px) {
+    body { font-size: 16px; }
+    .wrap { padding: 0 20px; }
+    h1.cover-title { font-size: 36px; }
+    .cover-sub { font-size: 18px; }
+    h2 { font-size: 28px; }
+    h3 { font-size: 19px; }
+    nav.toc ol { columns: 1; }
+    nav.toc { padding: 24px 20px; }
+    pre { font-size: 12.5px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="cover">
+  <div class="wrap">
+    <div class="cover-meta">ace · TuS Neureut · Tennisabteilung</div>
+    <h1 class="cover-title">Architektur‑<em>Übersicht.</em></h1>
+    <p class="cover-sub">Modul‑Schnitt, Datenmodell, API‑Bereiche, Hintergrund‑Jobs und Auth‑Flow der Tennis‑Vereinsplattform.</p>
+
+    <div class="status-grid">
+      <div class="status-cell">
+        <div class="label">Begleitet</div>
+        <div class="value">Spec v1.0</div>
+      </div>
+      <div class="status-cell">
+        <div class="label">Datum</div>
+        <div class="value">Mai 2026</div>
+      </div>
+      <div class="status-cell">
+        <div class="label">Status</div>
+        <div class="value">Aktiv</div>
+      </div>
+      <div class="status-cell">
+        <div class="label">Module</div>
+        <div class="value">12</div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+<p class="lede">Dieses Dokument beschreibt den Modul‑Schnitt, das Datenmodell, die API‑Struktur, Hintergrund‑Jobs und den Auth‑Flow der Plattform. Source of Truth für die fachlichen Anforderungen bleibt <a href="../spec/spec-v1.0.html">spec‑v1.0.html</a>. Querverweise erfolgen über FR‑IDs.</p>
+
+<nav class="toc" id="toc">
+  <h4>Inhaltsverzeichnis</h4>
+  <ol>
+    <li><a href="#module"><span class="toc-num">1</span> Modul‑Schnitt</a></li>
+    <li><a href="#datenmodell"><span class="toc-num">2</span> Datenmodell‑Übersicht</a></li>
+    <li><a href="#api"><span class="toc-num">3</span> API‑Bereiche</a></li>
+    <li><a href="#cross-modul"><span class="toc-num">4</span> Cross‑Modul‑Schnittstellen</a></li>
+    <li><a href="#jobs"><span class="toc-num">5</span> Hintergrund‑Jobs</a></li>
+    <li><a href="#auth"><span class="toc-num">6</span> Auth‑Flow</a></li>
+    <li><a href="#offene-adrs"><span class="toc-num">7</span> Offene Punkte für ADRs</a></li>
+    <li><a href="#auslassungen"><span class="toc-num">8</span> Bewusste Auslassungen</a></li>
+  </ol>
+</nav>
+
+<!-- 1. MODUL-SCHNITT -->
+<section>
+<h2 id="module"><span class="num">§ 01</span>Modul‑Schnitt</h2>
+
+<p>Die Anwendung ist als <strong>modularer Monolith</strong> organisiert. Jedes fachliche Modul hat einen abgegrenzten Verantwortungsbereich. Cross‑Modul‑Aufrufe laufen ausschließlich über öffentliche Service‑Funktionen — direkter Repository‑Zugriff auf fremde Module ist nicht erlaubt.</p>
+
+<table>
+  <thead>
+    <tr><th>Modul</th><th>FR‑Bereich</th><th>Verantwortung</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>auth</code></td><td>NFR‑2, FR‑114</td><td>Magic‑Link‑Tokens, Session‑Lifecycle, Eltern‑Bestätigungs‑Links</td></tr>
+    <tr><td><code>members</code></td><td>4.1, 4.2, 4.8</td><td>Mitglieder‑Profile, Sichtbarkeits‑Stufen, Eltern‑Kind‑Beziehungen, Blocks</td></tr>
+    <tr><td><code>seasons</code></td><td>4.3, 4.4</td><td>Saison‑Lifecycle, Altersgruppen‑Definition, Saison‑Übergangs‑Strategien</td></tr>
+    <tr><td><code>rankings</code></td><td>4.4</td><td>Ranglisten pro Saison × Altersgruppe × Variante, Positions‑Mutationen</td></tr>
+    <tr><td><code>challenges</code></td><td>4.5</td><td>Challenge‑Lifecycle, Cooldown, Challenge‑Modell (Pyramide / ELO / Hybrid / Punkte‑Tabelle)</td></tr>
+    <tr><td><code>friendlies</code></td><td>4.6</td><td>Freundschaftsspiele (Einzel / Doppel), offene Spiel‑Suchen</td></tr>
+    <tr><td><code>results</code></td><td>4.7</td><td>Ergebnis‑Erfassung, Bestätigung, Streit‑Lösung, Match‑Modi‑Validierung</td></tr>
+    <tr><td><code>suggestions</code></td><td>4.10</td><td>Wöchentliche Match‑Vorschläge, Vorschlags‑Algorithmus</td></tr>
+    <tr><td><code>notifications</code></td><td>4.12, 4.14</td><td>Email‑Versand, Digest‑Logik, Notification‑Preferences</td></tr>
+    <tr><td><code>trainer</code></td><td>4.9</td><td>Trainings‑Gruppen, Trainer‑Zuordnungen, Aktivitäts‑Übersicht</td></tr>
+    <tr><td><code>admin</code></td><td>4.11, NFR‑6</td><td>CSV‑Import, Rollen, Konfiguration, Audit‑Log</td></tr>
+    <tr><td><code>stats</code></td><td>4.13</td><td>KPI‑Berechnung, Badges (rein lesend gegenüber anderen Modulen)</td></tr>
+  </tbody>
+</table>
+
+<h4>Modul‑Abhängigkeiten (gerichtet, niemals zyklisch)</h4>
+
+<pre><code>auth          ←  (alle UI/API-Routen via Middleware)
+members       ←  fast alle Module (Mitglieder-Lookup, Sichtbarkeits-Prüfung)
+seasons       ←  rankings, challenges, results
+rankings      ←  challenges, results, suggestions
+challenges    ←  results, suggestions
+friendlies    ←  results
+trainer       →  members, results (lesend), suggestions
+admin         →  alle (lesend/konfigurierend)
+stats         →  members, rankings, challenges, results, friendlies (alles lesend)
+notifications ←  alle Module (Event-Sender, kein Rück-Aufruf)</code></pre>
+
+<p>Genaue Modul‑Regeln und Begründung folgen in <a href="../decisions/005-modul-schnitt.md">ADR‑005 Modul‑Schnitt</a>.</p>
+</section>
+
+<!-- 2. DATENMODELL -->
+<section>
+<h2 id="datenmodell"><span class="num">§ 02</span>Datenmodell‑Übersicht</h2>
+
+<p>Etwa 15 Haupt‑Entities (siehe Spec § 6). Die folgende Übersicht zeigt nur die wichtigsten Beziehungen — Detail‑Modellierung erfolgt im jeweiligen Feature‑Doc.</p>
+
+<div class="mermaid-wrap">
+<pre class="mermaid">
+erDiagram
+    Member ||--o{ ParentChildLink : "ist Elternteil"
+    Member ||--o{ ParentChildLink : "ist Kind"
+    Member ||--o{ RankingEntry : "steht in"
+    Member ||--o{ NotificationPreference : "hat"
+    Member ||--o{ Block : "blockiert"
+
+    Season ||--o{ AgeGroup : "definiert"
+    Season ||--o{ Ranking : "enthält"
+    AgeGroup ||--o{ Ranking : "wird zu"
+    Ranking ||--o{ RankingEntry : "hat Plätze"
+
+    Challenge }o--|| Member : "challenger"
+    Challenge }o--|| Member : "challenged"
+    Challenge }o--|| Ranking : "in"
+    Challenge ||--o| MatchResult : "endet in"
+
+    FriendlyMatch }o--|| Member : "initiator"
+    FriendlyMatch }o--o{ Member : "eingeladene"
+    FriendlyMatch ||--o| MatchResult : "endet in (optional)"
+
+    TrainingGroup }o--|| Member : "trainer"
+    TrainingGroup }o--o{ Member : "members"
+    TrainerAssignment }o--|| Member : "trainer"
+    TrainerAssignment }o--|| Member : "focus_member"
+
+    MatchSuggestion }o--|| Member : "für"
+    MatchSuggestion }o--|| Member : "gegen"
+
+    AuditEntry }o--|| Member : "actor"
+</pre>
+</div>
+
+<h3>Entity‑Zuständigkeit pro Modul</h3>
+
+<table>
+  <thead><tr><th>Modul</th><th>Owns</th></tr></thead>
+  <tbody>
+    <tr><td><code>auth</code></td><td>Session, MagicLinkToken</td></tr>
+    <tr><td><code>members</code></td><td>Member, ParentChildLink, Block, NotificationPreference</td></tr>
+    <tr><td><code>seasons</code></td><td>Season, AgeGroup</td></tr>
+    <tr><td><code>rankings</code></td><td>Ranking, RankingEntry</td></tr>
+    <tr><td><code>challenges</code></td><td>Challenge</td></tr>
+    <tr><td><code>friendlies</code></td><td>FriendlyMatch</td></tr>
+    <tr><td><code>results</code></td><td>MatchResult</td></tr>
+    <tr><td><code>suggestions</code></td><td>MatchSuggestion</td></tr>
+    <tr><td><code>trainer</code></td><td>TrainingGroup, TrainerAssignment</td></tr>
+    <tr><td><code>admin</code></td><td>AuditEntry</td></tr>
+  </tbody>
+</table>
+
+<h3>Branded‑Type‑Konvention</h3>
+<p>Alle Entity‑IDs werden als TypeScript‑Branded‑Types geführt — <code>MemberId</code>, <code>SeasonId</code>, <code>RankingId</code> usw. — um Verwechslungen zur Compile‑Zeit auszuschließen.</p>
+</section>
+
+<!-- 3. API-BEREICHE -->
+<section>
+<h2 id="api"><span class="num">§ 03</span>API‑Bereiche</h2>
+
+<p>Jedes Modul exponiert eine Endpoint‑Gruppe unter <code>/api/&lt;modul&gt;/</code>. RESTful für Standard‑CRUD, RPC‑style für Aktionen (<code>/accept</code>, <code>/decline</code>, <code>/confirm</code>).</p>
+
+<h3>Auth · <code>/api/auth</code></h3>
+<ul>
+  <li><code>POST /request-link</code> — Magic‑Link anfordern (FR‑114: 3/Stunde/Email)</li>
+  <li><code>GET  /confirm/:token</code> — Token einlösen, Session erzeugen</li>
+  <li><code>POST /logout</code></li>
+  <li><code>GET  /session</code> — aktuelle Session abfragen</li>
+</ul>
+
+<h3>Members · <code>/api/members</code></h3>
+<ul>
+  <li><code>GET    /</code> — Liste, mit Filtern (Altersgruppe, aktiv, Suche)</li>
+  <li><code>GET    /:id</code> — Profil (Sichtbarkeits‑Stufen werden serverseitig gefiltert)</li>
+  <li><code>PATCH  /:id</code> — Profil ändern (eigenes oder Kind‑Profil)</li>
+  <li><code>POST   /:id/pause</code> — selbst pausieren (FR‑4)</li>
+  <li><code>POST   /:id/resume</code></li>
+  <li><code>POST   /:id/block/:targetId</code> — Blockierung (FR‑116)</li>
+  <li><code>DELETE /:id/block/:targetId</code></li>
+  <li><code>GET    /:id/notification-preferences</code></li>
+  <li><code>PATCH  /:id/notification-preferences</code></li>
+</ul>
+
+<h3>Seasons · <code>/api/seasons</code></h3>
+<ul>
+  <li><code>GET   /</code> — Saisons‑Liste mit Status</li>
+  <li><code>GET   /:id</code> — Saison‑Details inkl. Altersgruppen und Regelwerk</li>
+  <li><code>POST  /</code> <em>(admin)</em> — Saison anlegen</li>
+  <li><code>PATCH /:id</code> <em>(admin, nur im Status PLANNED)</em></li>
+  <li><code>POST  /:id/start</code> <em>(admin)</em> — Lifecycle PLANNED → ACTIVE, friert Regeln ein (FR‑15c)</li>
+  <li><code>POST  /:id/close</code> <em>(admin)</em></li>
+  <li><code>POST  /:id/archive</code> <em>(admin)</em></li>
+</ul>
+
+<h3>Rankings · <code>/api/rankings</code></h3>
+<ul>
+  <li><code>GET /</code> — Ranglisten‑Liste, gefiltert nach Saison/Altersgruppe/Variante</li>
+  <li><code>GET /:id</code> — Eine Rangliste mit Einträgen</li>
+</ul>
+
+<h3>Challenges · <code>/api/challenges</code></h3>
+<ul>
+  <li><code>POST /</code> — Challenge erstellen (Ziel‑Spieler + Rangliste)</li>
+  <li><code>GET  /</code> — eigene Challenges (in‑ und outgoing)</li>
+  <li><code>GET  /:id</code></li>
+  <li><code>POST /:id/accept</code></li>
+  <li><code>POST /:id/decline</code> — mit Grund (FR‑23)</li>
+  <li><code>POST /:id/propose-ranking</code> — Gegen‑Vorschlag andere Rangliste (FR‑20a‑i)</li>
+</ul>
+
+<h3>Friendlies · <code>/api/friendlies</code></h3>
+<ul>
+  <li><code>POST /</code> — Einladung an 1 (Einzel) oder 3 (Doppel) Spieler</li>
+  <li><code>POST /open-search</code> — offene Suche posten (FR‑95)</li>
+  <li><code>GET  /open-searches</code> — Liste offener Suchen mit Filter</li>
+  <li><code>POST /:id/accept</code></li>
+  <li><code>POST /:id/decline</code></li>
+  <li><code>DELETE /:id</code> — Initiator widerruft</li>
+</ul>
+
+<h3>Results · <code>/api/results</code></h3>
+<ul>
+  <li><code>POST /:matchId/report</code> — Sieger meldet (FR‑30)</li>
+  <li><code>POST /:matchId/confirm</code> — Verlierer bestätigt (FR‑31)</li>
+  <li><code>POST /:matchId/dispute</code> — Widerspruch (FR‑32) — geht an Trainer/Admin</li>
+  <li><code>POST /:matchId/walkover</code> — Nicht‑Erscheinen (FR‑34)</li>
+  <li><code>POST /:matchId/resolve</code> <em>(trainer/admin)</em> — Streitfall‑Entscheidung (FR‑32, FR‑54)</li>
+  <li><code>PATCH /:matchId</code> <em>(admin)</em> — Korrektur, erzeugt AuditEntry (FR‑35)</li>
+</ul>
+
+<h3>Suggestions · <code>/api/suggestions</code></h3>
+<ul>
+  <li><code>GET  /</code> — eigene Vorschläge der Woche</li>
+  <li><code>POST /:id/dismiss</code></li>
+  <li><code>POST /:id/convert-to-challenge</code> — One‑Click zur Challenge (FR‑104)</li>
+  <li><code>POST /:id/convert-to-friendly</code></li>
+</ul>
+
+<h3>Trainer · <code>/api/trainer</code></h3>
+<ul>
+  <li><code>GET  /groups</code> — eigene Trainings‑Gruppen</li>
+  <li><code>POST /focus/:memberId</code> — Fokus‑Spieler markieren (FR‑50a)</li>
+  <li><code>GET  /dashboard</code> — Aktivitäts‑Übersicht aller Spieler (FR‑50c)</li>
+  <li><code>POST /recommend</code> — Match‑Empfehlung versenden (FR‑53)</li>
+</ul>
+
+<h3>Admin · <code>/api/admin</code></h3>
+<ul>
+  <li><code>POST /members/import-csv</code> — Initial‑Import (FR‑60)</li>
+  <li><code>POST /members/:id/role</code> — Rolle zuweisen (FR‑62)</li>
+  <li><code>POST /members/:id/lk-correct</code> — LK korrigieren (FR‑2c)</li>
+  <li><code>GET  /audit</code> — Audit‑Log</li>
+  <li><code>GET  /config</code> · <code>PATCH /config</code> — Saison‑übergreifende Defaults</li>
+</ul>
+
+<h3>Stats · <code>/api/stats</code></h3>
+<ul>
+  <li><code>GET /members/:id/kpis</code> — KPIs für ein Profil (FR‑120)</li>
+  <li><code>GET /members/:id/badges</code> (FR‑122)</li>
+</ul>
+</section>
+
+<!-- 4. CROSS-MODUL -->
+<section>
+<h2 id="cross-modul"><span class="num">§ 04</span>Cross‑Modul‑Schnittstellen</h2>
+
+<p>Die folgenden Service‑Aufrufe sind die <em>einzig</em> zulässigen Wege über Modul‑Grenzen. Alle Cross‑Modul‑Aufrufe sind synchron — kein Event‑Bus in v1.</p>
+
+<table>
+  <thead><tr><th>Aufrufer</th><th>Aufgerufen</th><th>Zweck</th></tr></thead>
+  <tbody>
+    <tr><td><code>challenges</code></td><td><code>members</code></td><td>Active‑Status, Block‑Prüfung, Match‑Präferenzen</td></tr>
+    <tr><td><code>challenges</code></td><td><code>rankings</code></td><td>Gemeinsame Ranglisten ermitteln, Sprung‑Regel validieren</td></tr>
+    <tr><td><code>challenges</code></td><td><code>seasons</code></td><td>Aktuelle Saison‑Regeln (Cooldown, Annahmefrist, Modell)</td></tr>
+    <tr><td><code>friendlies</code></td><td><code>members</code></td><td>Active‑Status, Block‑Prüfung, Spielarten‑Präferenz</td></tr>
+    <tr><td><code>results</code></td><td><code>challenges</code></td><td>Challenge‑Status auf COMPLETED setzen</td></tr>
+    <tr><td><code>results</code></td><td><code>rankings</code></td><td>Positions‑Mutation nach Bestätigung (FR‑33)</td></tr>
+    <tr><td><code>results</code></td><td><code>notifications</code></td><td>Ergebnis‑Bestätigung an Loser, Trainer bei Streit</td></tr>
+    <tr><td><code>suggestions</code></td><td><code>members</code></td><td>Aktive Spieler in passender LK‑Range, Präferenzen</td></tr>
+    <tr><td><code>suggestions</code></td><td><code>rankings</code></td><td>Plätze für „neue Paarungen bevorzugt"</td></tr>
+    <tr><td><code>suggestions</code></td><td><code>challenges</code></td><td>Cooldown‑Prüfung</td></tr>
+    <tr><td><code>trainer</code></td><td><code>members</code></td><td>Gruppen‑Mitglieder, Fokus‑Spieler</td></tr>
+    <tr><td><code>trainer</code></td><td><code>results</code></td><td>Streitfälle anzeigen, lösen</td></tr>
+    <tr><td><code>admin</code></td><td>alle</td><td>Konfiguration und Korrekturen mit Audit‑Eintrag</td></tr>
+    <tr><td><code>notifications</code></td><td><code>members</code></td><td>Notification‑Preferences, Email‑Adresse, Eltern‑Routing für &lt;14</td></tr>
+    <tr><td>alle Module</td><td><code>auth</code></td><td>Session‑Subject (Middleware liefert <code>useUserSession()</code>)</td></tr>
+  </tbody>
+</table>
+
+<p>Cross‑Modul‑DB‑Joins sind erlaubt, wenn fachlich sinnvoll (z. B. <code>rankings × members</code> für eine Listen‑Ansicht). Schreibende Operationen gehen immer nur über den Service des besitzenden Moduls.</p>
+</section>
+
+<!-- 5. JOBS -->
+<section>
+<h2 id="jobs"><span class="num">§ 05</span>Hintergrund‑Jobs</h2>
+
+<p>Cron‑Jobs laufen serverseitig im Nuxt‑Prozess via <code>nitro-cron</code> oder einer einfachen <code>setInterval</code>‑basierten Scheduler‑Lösung (Entscheidung in der Implementierung). Jeder Job ist idempotent — Wiederholungen sind unschädlich.</p>
+
+<table>
+  <thead>
+    <tr><th>Job</th><th>Frequenz</th><th>Modul</th><th>FR‑IDs</th><th>Zweck</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>expire-challenges</code></td>
+      <td>stündlich</td>
+      <td><code>challenges</code></td>
+      <td>FR‑24, FR‑25</td>
+      <td>PROPOSED → EXPIRED nach 7 Tagen ohne Reaktion, ACCEPTED → analog</td>
+    </tr>
+    <tr>
+      <td><code>auto-pause-members</code></td>
+      <td>täglich</td>
+      <td><code>members</code></td>
+      <td>FR‑25b, FR‑25d</td>
+      <td>Spieler ohne Match in N Wochen pausieren, später ans Ende sortieren</td>
+    </tr>
+    <tr>
+      <td><code>pause-reminder</code></td>
+      <td>täglich</td>
+      <td><code>notifications</code></td>
+      <td>FR‑25f</td>
+      <td>Reminder 2 Wochen vor Auto‑Pause</td>
+    </tr>
+    <tr>
+      <td><code>weekly-suggestions</code></td>
+      <td>wöchentlich</td>
+      <td><code>suggestions</code></td>
+      <td>FR‑100, FR‑101</td>
+      <td>Match‑Vorschläge berechnen und im Dashboard hinterlegen</td>
+    </tr>
+    <tr>
+      <td><code>digest-flush</code></td>
+      <td>stündlich</td>
+      <td><code>notifications</code></td>
+      <td>FR‑115</td>
+      <td>Aufgestaute Digest‑Mails versenden</td>
+    </tr>
+    <tr>
+      <td><code>season-transition-prepare</code></td>
+      <td>manuell</td>
+      <td><code>seasons</code></td>
+      <td>FR‑15, FR‑15a</td>
+      <td>Folge‑Saison aus Endplatzierung der Vorgänger‑Saison anlegen</td>
+    </tr>
+  </tbody>
+</table>
+
+<p><code>season-transition-prepare</code> ist kein Cron, sondern ein admin‑getriggerter Job — hier aufgeführt, weil er das gleiche Job‑Pattern verwendet.</p>
+</section>
+
+<!-- 6. AUTH -->
+<section>
+<h2 id="auth"><span class="num">§ 06</span>Auth‑Flow</h2>
+
+<h3>6.1 Magic‑Link‑Login</h3>
+
+<div class="mermaid-wrap">
+<pre class="mermaid">
+sequenceDiagram
+    actor U as User
+    participant FE as Frontend
+    participant API as /api/auth
+    participant DB as DB
+    participant EMail as Brevo
+
+    U->>FE: gibt Email ein
+    FE->>API: POST /request-link {email}
+    API->>API: Rate-Limit-Check (FR-114)
+    API->>DB: insert MagicLinkToken (32 Byte, 15 min TTL)
+    API->>EMail: send (Link mit Token)
+    EMail->>U: Email mit Magic-Link
+    U->>FE: klickt Link
+    FE->>API: GET /confirm/:token
+    API->>DB: lookup + validate Token (nicht abgelaufen, nicht eingelöst)
+    API->>DB: mark token consumed, create Session
+    API->>FE: Set-Cookie (HTTP-only, SameSite=Lax)
+    FE->>U: Redirect zur Zielseite
+</pre>
+</div>
+
+<div class="callout">
+  <div class="callout-title">Wichtig</div>
+  <ul>
+    <li>Token ist Single‑Use und kurzlebig (Default 15 min)</li>
+    <li>Token wird mit 32+ Byte Entropie generiert (<code>crypto.randomBytes</code>)</li>
+    <li>Bei unbekannter Email‑Adresse trotzdem 200‑Response zurückgeben (kein User‑Enumeration) — Email wird einfach nicht versendet</li>
+    <li>Session‑Cookie ist HTTP‑only, sodass JavaScript ihn nicht lesen kann (XSS‑Schutz)</li>
+  </ul>
+</div>
+
+<h3>6.2 Session</h3>
+<p><code>nuxt-auth-utils</code> verwaltet das Session‑Cookie. Eine zentrale Server‑Middleware prüft bei jedem <code>/api/*</code>‑Request, ob eine gültige Session vorliegt — Ausnahme sind die <code>/api/auth/*</code>‑Routen.</p>
+
+<p>Session‑Inhalt: <code>{ memberId, roles: [Role], parentOf: MemberId[] }</code> — wobei <code>parentOf</code> die <code>ParentChildLink</code>‑Einträge des Mitglieds sind, damit Zugriffs‑Prüfungen auf Kinder‑Daten ohne zusätzlichen DB‑Hit funktionieren.</p>
+
+<h3>6.3 Eltern‑Kind‑Zugriff</h3>
+<p>Spieler unter 14 haben keinen eigenen Account (FR‑40). Stattdessen verwaltet ein Eltern‑Account das Kind‑Profil:</p>
+<ul>
+  <li>Eltern‑Login per normalem Magic‑Link</li>
+  <li>Im Frontend wählt der Eltern‑User aus, welches Kind er gerade verwaltet (Account‑Switcher), das Kind‑Profil wird im Session‑Cookie als „aktiver Kontext" vermerkt</li>
+  <li>Server‑seitig prüft die Middleware, ob <code>session.parentOf</code> den Kind‑<code>memberId</code> enthält — sonst 403</li>
+  <li>Trainer können Match‑Ergebnisse stellvertretend melden (FR‑40c) — die Bestätigung geht dann per separatem Magic‑Link an die Eltern (One‑Click‑Confirm)</li>
+</ul>
+
+<h3>6.4 Rollen</h3>
+<p>Rollen sind nicht exklusiv (Spec § 2). Ein Mitglied kann gleichzeitig Spieler, Trainer und Admin sein. Speicherung als String‑Array auf dem <code>Member</code>‑Eintrag. Prüfung über Helper‑Funktionen <code>requireRole('admin')</code>, <code>requireRole('trainer')</code>.</p>
+</section>
+
+<!-- 7. OFFENE ADRs -->
+<section>
+<h2 id="offene-adrs"><span class="num">§ 07</span>Offene Punkte für die folgenden ADRs</h2>
+
+<p>Aus dieser Übersicht ergeben sich konkrete Entscheidungen, die in eigenen ADRs festgehalten werden müssen:</p>
+
+<ul>
+  <li><strong>ADR‑005 Modul‑Schnitt</strong> — formale Festlegung, ob <code>stats</code> ein eigenes Modul ist oder als „Read‑Model" in <code>members</code> aufgeht; Konvention für Service‑Funktions‑Signaturen</li>
+  <li><strong>ADR‑006 Wertungssystem‑Strategie</strong> — wie die Pyramide / ELO / Hybrid / Punkte‑Tabelle‑Abstraktion konkret aussieht (Interface, austauschbare Implementierungen); welche Defaults v1 mitliefert</li>
+  <li><strong>ADR‑007 Job‑Scheduler</strong> — <code>nitro-cron</code> vs. einfacher <code>setInterval</code>‑Scheduler vs. externer Trigger (Hetzner Cron + HTTP‑Call); Lock‑Konzept gegen Doppel‑Ausführung</li>
+  <li><strong>ADR‑008 Email‑Versand‑Abstraktion</strong> — direkter Brevo‑Aufruf vs. Abstraktion für späteren Anbieter‑Wechsel; Behandlung von Bounces und Beschwerden</li>
+</ul>
+</section>
+
+<!-- 8. AUSLASSUNGEN -->
+<section>
+<h2 id="auslassungen"><span class="num">§ 08</span>Bewusste Auslassungen</h2>
+
+<p>Was diese Übersicht <strong>nicht</strong> klärt und auch nicht klären soll:</p>
+
+<ul>
+  <li>Konkrete Drizzle‑Schemata (entstehen in den Feature‑Docs)</li>
+  <li>UI‑Komponenten‑Hierarchie (entsteht beim Bauen)</li>
+  <li>Detaillierte Validierungs‑Regeln (Zod‑Schemas pro Feature)</li>
+  <li>Performance‑Optimierungen (kommen, wenn messbar nötig — siehe CLAUDE.md)</li>
+</ul>
+</section>
+
+</div>
+
+<footer>
+  <div class="ornament">— Ende der Architektur‑Übersicht —</div>
+  ace · TuS Neureut · Tennisabteilung
+</footer>
+
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'base',
+    themeVariables: {
+      primaryColor: '#e8efe8',
+      primaryTextColor: '#1c1c1c',
+      primaryBorderColor: '#2d5841',
+      lineColor: '#5a5a55',
+      secondaryColor: '#f5e6dd',
+      tertiaryColor: '#f3eee2',
+      fontFamily: 'Source Sans 3, sans-serif'
+    }
+  });
+</script>
+
+</body>
+</html>

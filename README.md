@@ -45,6 +45,7 @@ ace/
 - [`docs/spec/spec-v1.0.html`](docs/spec/spec-v1.0.html) — fachliche Spezifikation
 - [`docs/spec/nachtraege.md`](docs/spec/nachtraege.md) — Spec-Erweiterungen seit v1.0
 - [`docs/architecture/overview.md`](docs/architecture/overview.md) — Modul-Schnitt, Datenmodell, API-Bereiche, Auth-Flow
+  ([HTML-gerenderte Fassung](docs/architecture/overview.html) mit Mermaid-Diagrammen)
 - [`docs/decisions/`](docs/decisions/) — Architectural Decision Records
 - [`docs/features/`](docs/features/) — Feature-Design-Docs (entstehen vor jeder Implementierung)
 - [`CLAUDE.md`](CLAUDE.md) — Code-Konventionen und Workflow
