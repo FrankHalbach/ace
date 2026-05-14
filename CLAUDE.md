@@ -43,22 +43,37 @@ Begründungen siehe `docs/decisions/`.
 ### Datei-Struktur
 
 ```
-app/
-├── server/
-│   ├── modules/           # Fachliche Module (members, seasons, challenges, ...)
+.
+├── app/                       # Nuxt-4 Client-Code (Konvention)
+│   ├── app.vue
+│   ├── pages/                 # Vue-Seiten (Routing per Datei-Konvention)
+│   ├── components/            # Wiederverwendbare Vue-Komponenten
+│   ├── composables/           # Composition-API-Hooks
+│   └── app.config.ts          # Nuxt-UI-Theme-Tokens
+├── server/                    # Backend (Nitro)
+│   ├── modules/               # Fachliche Module (members, seasons, challenges, ...)
 │   │   └── <module>/
-│   │       ├── api/       # HTTP-Endpoints (Nitro Routes)
-│   │       ├── service/   # Geschäftslogik
-│   │       ├── repository/# DB-Zugriff via Drizzle
-│   │       └── types.ts   # Modul-spezifische Types
+│   │       ├── index.ts       # Public API: re-exports der Service-Funktionen
+│   │       ├── api/           # HTTP-Endpoints (Nitro Routes)
+│   │       ├── service/       # Geschäftslogik
+│   │       ├── repository/    # DB-Zugriff via Drizzle
+│   │       └── types.ts       # Modul-spezifische Types
 │   ├── db/
-│   │   ├── schema/        # Drizzle-Schema (eine Datei pro Tabelle)
-│   │   └── migrations/    # Drizzle Kit Migrations
-│   └── shared/            # Modul-übergreifende Utilities
-├── pages/                 # Vue-Seiten (Routing per Datei-Konvention)
-├── components/            # Wiederverwendbare Vue-Komponenten
-├── composables/           # Composition-API-Hooks
-└── types/                 # Frontend-Types
+│   │   ├── schema/            # Drizzle-Schema (eine Datei pro Tabelle)
+│   │   └── migrations/        # Drizzle Kit Migrations
+│   ├── shared/                # Modul-übergreifende Utilities
+│   └── tasks/                 # Cron-Jobs (Nitro experimental tasks)
+├── public/                    # Statische Assets
+├── data/                      # Lokale SQLite-Datei (nicht im Repo)
+├── tests/                     # Vitest-Suiten
+├── docs/                      # Spec, Architektur, ADRs, Feature-Docs
+├── nuxt.config.ts
+├── drizzle.config.ts
+├── eslint.config.mjs
+├── vitest.config.ts
+├── tsconfig.json
+├── package.json
+└── pnpm-workspace.yaml        # pnpm-Build-Approval-Liste
 ```
 
 ### Modul-Schnitt

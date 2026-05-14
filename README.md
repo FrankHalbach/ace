@@ -30,12 +30,17 @@ Details und Begründungen in [`docs/decisions/`](docs/decisions/).
 
 ```
 ace/
+├── app/                   # Nuxt-Client-Code (Vue-Komponenten, Pages)
+├── server/                # Backend (Nitro Server Routes, Module, DB)
+├── public/                # Statische Assets
 ├── docs/
 │   ├── spec/              # Funktionale Spezifikation (Source of Truth)
 │   ├── architecture/      # Architektur-Übersicht, Modulschnitt
 │   ├── decisions/         # Architectural Decision Records (ADRs)
 │   └── features/          # Design Docs pro Feature (vor Implementation)
-├── app/                   # (kommt: Nuxt-Anwendung)
+├── nuxt.config.ts
+├── drizzle.config.ts
+├── package.json
 ├── CLAUDE.md              # Konventionen für Claude Code
 └── README.md
 ```
@@ -46,6 +51,7 @@ ace/
 - [`docs/spec/nachtraege.md`](docs/spec/nachtraege.md) — Spec-Erweiterungen seit v1.0
 - [`docs/architecture/overview.md`](docs/architecture/overview.md) — Modul-Schnitt, Datenmodell, API-Bereiche, Auth-Flow
   ([HTML-gerenderte Fassung](docs/architecture/overview.html) mit Mermaid-Diagrammen)
+- [`docs/design-system.md`](docs/design-system.md) — Visuelle Sprache, Farben, Typografie, Status-Mapping
 - [`docs/decisions/`](docs/decisions/) — Architectural Decision Records
 - [`docs/features/`](docs/features/) — Feature-Design-Docs (entstehen vor jeder Implementierung)
 - [`CLAUDE.md`](CLAUDE.md) — Code-Konventionen und Workflow
