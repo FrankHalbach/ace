@@ -6,6 +6,12 @@ import * as schema from './schema'
 
 let dbInstance: ReturnType<typeof drizzle<typeof schema>> | undefined
 
+/** Test-Helper: setzt die DB-Instanz zurück, damit der nächste useDb()-Aufruf
+ *  eine frische Verbindung öffnet. Im Produktivcode nicht benutzen. */
+export function _resetDbForTests() {
+  dbInstance = undefined
+}
+
 /**
  * Lazy-initialized Drizzle-Client gegen SQLite.
  *
