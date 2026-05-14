@@ -6,7 +6,7 @@
 
 ## Kontext
 
-Für die Tennis-Vereinsplattform "ass" muss ein Tech-Stack gewählt werden.
+Für die Tennis-Vereinsplattform "ace" muss ein Tech-Stack gewählt werden.
 Constraints:
 
 - Etwa 15 Entities, überwiegend CRUD mit moderater Geschäftslogik

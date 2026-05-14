@@ -1,4 +1,4 @@
-# ass
+# ace
 
 Interne Web-Plattform für den TuS Neureut, Tennisabteilung.
 Rangliste, Challenges und Vernetzung – mit Fokus auf Jugendaktivierung.
@@ -29,7 +29,7 @@ Details und Begründungen in [`docs/decisions/`](docs/decisions/).
 ## Repository-Struktur
 
 ```
-ass/
+ace/
 ├── docs/
 │   ├── spec/              # Funktionale Spezifikation (Source of Truth)
 │   ├── architecture/      # Architektur-Übersicht, Modulschnitt

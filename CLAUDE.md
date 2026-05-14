@@ -5,7 +5,7 @@ Lies es zu Beginn jeder Session.
 
 ## Projekt-Kontext
 
-**ass** ist eine interne Tennis-Vereinsplattform für den TuS Neureut.
+**ace** ist eine interne Tennis-Vereinsplattform für den TuS Neureut.
 Hauptzwecke: Rangliste mit Challenges, Vernetzung der Mitglieder über Freundschaftsspiele,
 besondere Aktivierung der Jugendspieler. Etwa 500 Mitglieder, davon unter 100 gleichzeitig aktiv.
 
