@@ -1,0 +1,1530 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tennis-Vereinsplattform · Spezifikation v1.0 · TuS Neureut</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Source+Sans+3:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #faf7f0;
+    --bg-soft: #f3eee2;
+    --ink: #1c1c1c;
+    --ink-muted: #5a5a55;
+    --rule: #d8d2c0;
+    --primary: #2d5841;
+    --primary-soft: #e8efe8;
+    --accent: #b85c38;
+    --accent-soft: #f5e6dd;
+    --warning: #8a6d2c;
+    --warning-soft: #f3ecd5;
+
+    --serif: "Fraunces", Georgia, serif;
+    --sans: "Source Sans 3", -apple-system, BlinkMacSystemFont, sans-serif;
+    --mono: "JetBrains Mono", "SF Mono", Consolas, monospace;
+  }
+
+  * { box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 17px;
+    line-height: 1.6;
+    font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 0 32px;
+  }
+
+  /* HEADER */
+  header.cover {
+    border-bottom: 1px solid var(--rule);
+    padding: 80px 0 56px;
+    margin-bottom: 56px;
+    background: linear-gradient(180deg, var(--bg) 0%, var(--bg-soft) 100%);
+  }
+
+  .cover-meta {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--primary);
+    margin-bottom: 24px;
+  }
+
+  h1.cover-title {
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: clamp(40px, 6vw, 64px);
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    margin: 0 0 16px;
+    font-variation-settings: "opsz" 144, "SOFT" 30;
+  }
+
+  h1.cover-title em {
+    font-style: italic;
+    color: var(--primary);
+    font-weight: 300;
+  }
+
+  .cover-sub {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 22px;
+    color: var(--ink-muted);
+    font-weight: 300;
+    margin: 0 0 48px;
+    max-width: 640px;
+  }
+
+  .status-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 1px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+  }
+
+  .status-cell {
+    background: var(--bg);
+    padding: 14px 18px;
+  }
+
+  .status-cell .label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    margin-bottom: 4px;
+  }
+
+  .status-cell .value {
+    font-family: var(--serif);
+    font-size: 16px;
+    font-weight: 500;
+  }
+
+  .status-cell .value.draft {
+    color: var(--accent);
+  }
+
+  /* TYPOGRAPHY */
+  h2 {
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: 36px;
+    line-height: 1.15;
+    letter-spacing: -0.015em;
+    margin: 80px 0 8px;
+    padding-top: 32px;
+    border-top: 1px solid var(--rule);
+    font-variation-settings: "opsz" 144;
+  }
+
+  h2 .num {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--primary);
+    letter-spacing: 0.1em;
+    display: block;
+    margin-bottom: 8px;
+  }
+
+  h3 {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: 22px;
+    line-height: 1.3;
+    margin: 48px 0 16px;
+    color: var(--ink);
+  }
+
+  h3 .num {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--ink-muted);
+    margin-right: 12px;
+    font-weight: 400;
+  }
+
+  h4 {
+    font-family: var(--sans);
+    font-weight: 600;
+    font-size: 15px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin: 32px 0 12px;
+    color: var(--primary);
+  }
+
+  p { margin: 0 0 16px; }
+
+  p.lede {
+    font-family: var(--serif);
+    font-weight: 300;
+    font-size: 21px;
+    line-height: 1.5;
+    color: var(--ink-muted);
+    margin-bottom: 32px;
+  }
+
+  a { color: var(--primary); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  a:hover { color: var(--accent); }
+
+  strong { font-weight: 600; }
+
+  code {
+    font-family: var(--mono);
+    font-size: 0.88em;
+    background: var(--bg-soft);
+    padding: 1px 6px;
+    border-radius: 3px;
+    color: var(--primary);
+  }
+
+  ul, ol { padding-left: 22px; margin: 0 0 20px; }
+  li { margin-bottom: 6px; }
+  li::marker { color: var(--primary); }
+
+  /* TOC */
+  nav.toc {
+    background: var(--bg-soft);
+    border: 1px solid var(--rule);
+    padding: 32px 36px;
+    margin: 56px 0;
+  }
+
+  nav.toc h4 {
+    margin: 0 0 18px;
+  }
+
+  nav.toc ol {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    columns: 2;
+    column-gap: 40px;
+  }
+
+  nav.toc ol li {
+    break-inside: avoid;
+    margin-bottom: 10px;
+    padding-left: 0;
+  }
+
+  nav.toc a {
+    text-decoration: none;
+    font-family: var(--sans);
+    font-size: 15px;
+    color: var(--ink);
+    display: flex;
+    gap: 12px;
+  }
+
+  nav.toc .toc-num {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--primary);
+    min-width: 28px;
+  }
+
+  nav.toc a:hover { color: var(--accent); }
+
+  /* REQUIREMENT BLOCKS */
+  .req {
+    display: grid;
+    grid-template-columns: 80px 1fr;
+    gap: 20px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--rule);
+    align-items: baseline;
+  }
+
+  .req:last-child { border-bottom: none; }
+
+  .req .id {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--primary);
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    padding-top: 4px;
+  }
+
+  .req .body {
+    font-size: 16px;
+    line-height: 1.55;
+  }
+
+  .req .body p { margin-bottom: 8px; }
+  .req .body p:last-child { margin-bottom: 0; }
+
+  .req .body ul {
+    margin: 8px 0;
+    padding-left: 18px;
+  }
+  .req .body li { margin-bottom: 2px; font-size: 15px; }
+
+  /* CALLOUTS */
+  .callout {
+    border-left: 3px solid var(--primary);
+    padding: 18px 24px;
+    margin: 32px 0;
+    background: var(--primary-soft);
+    font-size: 15px;
+  }
+
+  .callout.accent {
+    border-left-color: var(--accent);
+    background: var(--accent-soft);
+  }
+
+  .callout.warning {
+    border-left-color: var(--warning);
+    background: var(--warning-soft);
+  }
+
+  .callout-title {
+    font-family: var(--sans);
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 8px;
+    color: var(--primary);
+  }
+
+  .callout.accent .callout-title { color: var(--accent); }
+  .callout.warning .callout-title { color: var(--warning); }
+
+  .callout p:last-child { margin-bottom: 0; }
+
+  /* TABLES */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 24px 0 32px;
+    font-size: 15px;
+  }
+
+  th, td {
+    text-align: left;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+
+  th {
+    font-family: var(--sans);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--ink-muted);
+    border-bottom: 2px solid var(--ink);
+    font-weight: 600;
+  }
+
+  td code { font-size: 13px; }
+
+  tr:last-child td { border-bottom: 1px solid var(--ink); }
+
+  /* PILL */
+  .pill {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 99px;
+    background: var(--bg-soft);
+    color: var(--ink-muted);
+    letter-spacing: 0.04em;
+  }
+
+  .pill.green { background: var(--primary-soft); color: var(--primary); }
+  .pill.orange { background: var(--accent-soft); color: var(--accent); }
+
+  /* LIFECYCLE DIAGRAM */
+  .lifecycle {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin: 32px 0;
+  }
+
+  .lifecycle-step {
+    border: 1px solid var(--rule);
+    padding: 16px;
+    text-align: center;
+    background: var(--bg);
+    position: relative;
+  }
+
+  .lifecycle-step .state {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    color: var(--primary);
+    font-weight: 500;
+    margin-bottom: 6px;
+  }
+
+  .lifecycle-step .desc {
+    font-size: 13px;
+    line-height: 1.4;
+    color: var(--ink-muted);
+  }
+
+  /* FOOTER */
+  footer {
+    margin-top: 96px;
+    padding: 48px 0;
+    border-top: 1px solid var(--rule);
+    text-align: center;
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+  }
+
+  footer .ornament {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 24px;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--primary);
+    margin-bottom: 12px;
+  }
+
+  /* RESPONSIVE */
+  @media (max-width: 720px) {
+    body { font-size: 16px; }
+    .wrap { padding: 0 20px; }
+    h1.cover-title { font-size: 36px; }
+    .cover-sub { font-size: 18px; }
+    h2 { font-size: 28px; }
+    h3 { font-size: 19px; }
+    nav.toc ol { columns: 1; }
+    .req { grid-template-columns: 1fr; gap: 4px; }
+    .req .id { font-size: 11px; }
+    .lifecycle { grid-template-columns: 1fr 1fr; }
+    nav.toc { padding: 24px 20px; }
+  }
+
+  /* PRINT */
+  @media print {
+    body { font-size: 11pt; background: white; color: black; }
+    .wrap { max-width: none; padding: 0; }
+    header.cover { padding: 24pt 0; margin-bottom: 24pt; background: white; }
+    h2 { page-break-before: auto; page-break-after: avoid; }
+    h3, h4 { page-break-after: avoid; }
+    .req, .callout { page-break-inside: avoid; }
+    nav.toc { page-break-after: always; }
+    a { color: black; text-decoration: none; }
+  }
+</style>
+</head>
+<body>
+
+<header class="cover">
+  <div class="wrap">
+    <div class="cover-meta">TuS Neureut · Tennisabteilung</div>
+    <h1 class="cover-title">Tennis‑Vereins­plattform <em>für aktive Mitglieder.</em></h1>
+    <p class="cover-sub">Funktionale Spezifikation einer internen Web‑Anwendung für Rangliste, Challenges und Vernetzung — mit besonderem Fokus auf die Aktivierung der Jugend.</p>
+
+    <div class="status-grid">
+      <div class="status-cell">
+        <div class="label">Version</div>
+        <div class="value">1.0</div>
+      </div>
+      <div class="status-cell">
+        <div class="label">Datum</div>
+        <div class="value">Mai 2026</div>
+      </div>
+      <div class="status-cell">
+        <div class="label">Status</div>
+        <div class="value draft">Entwurf</div>
+      </div>
+      <div class="status-cell">
+        <div class="label">Sprache</div>
+        <div class="value">Deutsch</div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+<nav class="toc" id="toc">
+  <h4>Inhaltsverzeichnis</h4>
+  <ol>
+    <li><a href="#einleitung"><span class="toc-num">1</span> Einleitung &amp; Ziele</a></li>
+    <li><a href="#stakeholder"><span class="toc-num">2</span> Stakeholder &amp; Rollen</a></li>
+    <li><a href="#glossar"><span class="toc-num">3</span> Glossar</a></li>
+    <li><a href="#funktional"><span class="toc-num">4</span> Funktionale Anforderungen</a></li>
+    <li><a href="#mitglieder"><span class="toc-num">4.1</span> Mitglieder &amp; Profile</a></li>
+    <li><a href="#sichtbarkeit"><span class="toc-num">4.2</span> Profil‑Sichtbarkeit</a></li>
+    <li><a href="#saisons"><span class="toc-num">4.3</span> Saisons &amp; Lifecycle</a></li>
+    <li><a href="#ranglisten"><span class="toc-num">4.4</span> Altersgruppen &amp; Ranglisten</a></li>
+    <li><a href="#challenges"><span class="toc-num">4.5</span> Challenges</a></li>
+    <li><a href="#freundschaft"><span class="toc-num">4.6</span> Freundschaftsspiele</a></li>
+    <li><a href="#ergebnisse"><span class="toc-num">4.7</span> Ergebnisse &amp; Match‑Modus</a></li>
+    <li><a href="#jugend"><span class="toc-num">4.8</span> Jugend &amp; Eltern</a></li>
+    <li><a href="#trainer"><span class="toc-num">4.9</span> Trainer­funktionen</a></li>
+    <li><a href="#vorschlaege"><span class="toc-num">4.10</span> Match‑Vorschläge</a></li>
+    <li><a href="#admin"><span class="toc-num">4.11</span> Admin</a></li>
+    <li><a href="#notifikation"><span class="toc-num">4.12</span> Benachrichtigungen</a></li>
+    <li><a href="#kpis"><span class="toc-num">4.13</span> Aktivitäts‑KPIs &amp; Badges</a></li>
+    <li><a href="#misuse"><span class="toc-num">4.14</span> Missbrauchs‑Prävention</a></li>
+    <li><a href="#nfr"><span class="toc-num">5</span> Nicht‑funktionale Anforderungen</a></li>
+    <li><a href="#datenmodell"><span class="toc-num">6</span> Datenmodell‑Skizze</a></li>
+    <li><a href="#scope"><span class="toc-num">7</span> Out of Scope (v1)</a></li>
+    <li><a href="#offen"><span class="toc-num">8</span> Offene Punkte &amp; Roadmap</a></li>
+    <li><a href="#anhang"><span class="toc-num">A</span> Anhang: Konfigurations­parameter</a></li>
+  </ol>
+</nav>
+
+<!-- 1. EINLEITUNG -->
+<section>
+<h2 id="einleitung"><span class="num">§ 01</span>Einleitung &amp; Ziele</h2>
+
+<p class="lede">Die Plattform soll Mitgliedern der Tennisabteilung des TuS Neureut einen einfachen Weg geben, sich gegenseitig zu Matches zu verabreden, ihre sportliche Entwicklung sichtbar zu machen — und vor allem die Jugend stärker zum Spielen untereinander motivieren.</p>
+
+<h4>Primäre Ziele</h4>
+<ul>
+  <li><strong>Mehr Spielaktivität</strong> unter den Mitgliedern, besonders in der Jugend</li>
+  <li><strong>Vernetzung</strong> über Altersgruppen und Geschlechter hinweg</li>
+  <li><strong>Sichtbare Leistungs­entwicklung</strong> durch Ranglisten und Statistiken</li>
+  <li><strong>Entlastung der Trainer und Sportwarte</strong> bei der Organisation</li>
+</ul>
+
+<h4>Nicht-Ziele</h4>
+<ul>
+  <li>Ersatz für die Platzbuchung — diese läuft weiterhin im bestehenden System</li>
+  <li>Mannschafts­verwaltung für Medenrunden</li>
+  <li>Turnier­organisation</li>
+  <li>Kommerzielle Funktionen (Trainings­buchung, Bezahlung)</li>
+</ul>
+
+<div class="callout">
+  <div class="callout-title">Leitprinzip</div>
+  <p>Die Plattform soll niedrigschwellig sein. Wer am Platz steht und ein Match abgeschlossen hat, soll das Ergebnis in unter einer Minute auf dem Handy eintragen können.</p>
+</div>
+</section>
+
+<!-- 2. STAKEHOLDER -->
+<section>
+<h2 id="stakeholder"><span class="num">§ 02</span>Stakeholder &amp; Rollen</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Rolle</th>
+      <th>Beschreibung</th>
+      <th>Kern­interesse</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Spieler</strong></td>
+      <td>Mitglied ab 14 Jahren mit eigenem Account</td>
+      <td>Spielpartner finden, Position sehen, Matches eintragen</td>
+    </tr>
+    <tr>
+      <td><strong>Eltern</strong></td>
+      <td>Verwaltet ein oder mehrere Kinder unter 14</td>
+      <td>Match‑Anfragen prüfen, Ergebnisse bestätigen</td>
+    </tr>
+    <tr>
+      <td><strong>Trainer</strong></td>
+      <td>Mehrere Trainer im Verein, oft selbst Spieler</td>
+      <td>Aktivität der eigenen Gruppen beobachten, Paarungen anregen</td>
+    </tr>
+    <tr>
+      <td><strong>Admin</strong></td>
+      <td>Sportwart oder Vorstand</td>
+      <td>Mitglieder pflegen, Saisons aufsetzen, Konflikte klären</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Rollen sind nicht exklusiv. Eine Person kann gleichzeitig Spieler, Trainer und Admin sein.</p>
+</section>
+
+<!-- 3. GLOSSAR -->
+<section>
+<h2 id="glossar"><span class="num">§ 03</span>Glossar</h2>
+
+<table>
+  <tbody>
+    <tr>
+      <td><strong>DTB‑LK</strong></td>
+      <td>Deutsche Tennis‑Leistungsklasse, von 1 (sehr stark) bis 25 (Anfänger). Wird vom Verband geführt.</td>
+    </tr>
+    <tr>
+      <td><strong>Rangliste</strong></td>
+      <td>Geordnete Liste von Spielern innerhalb einer Altersgruppe und Geschlechtsvariante. Reihenfolge ergibt sich aus Challenge‑Ergebnissen.</td>
+    </tr>
+    <tr>
+      <td><strong>Challenge</strong></td>
+      <td>Verbindliche Herausforderung eines anderen Spielers in einer bestimmten Rangliste. Sieg führt zu Positionsänderung.</td>
+    </tr>
+    <tr>
+      <td><strong>Freundschaftsspiel</strong></td>
+      <td>Unverbindliches Match ohne Rangliste­auswirkung — dient der reinen Vernetzung.</td>
+    </tr>
+    <tr>
+      <td><strong>Saison</strong></td>
+      <td>Sommer‑ oder Winter­halbjahr mit eigener Rangliste, eigenem Regelwerk und definiertem Lebenszyklus.</td>
+    </tr>
+    <tr>
+      <td><strong>Offene Rangliste</strong></td>
+      <td>Geschlechtsübergreifende Rangliste pro Altersgruppe — dort spielen Damen und Herren gegeneinander.</td>
+    </tr>
+  </tbody>
+</table>
+</section>
+
+<!-- 4. FUNKTIONALE ANFORDERUNGEN -->
+<section>
+<h2 id="funktional"><span class="num">§ 04</span>Funktionale Anforderungen</h2>
+
+<p class="lede">Jede Anforderung trägt eine eindeutige Kennung der Form <code>FR‑NN</code>. Die Nummerierung folgt fachlichen Bereichen, nicht Priorität.</p>
+
+<!-- 4.1 -->
+<h3 id="mitglieder"><span class="num">4.1</span>Mitglieder &amp; Profile</h3>
+
+<div class="req">
+  <div class="id">FR‑1</div>
+  <div class="body">Jedes Vereinsmitglied kann ein persönliches Profil mit Name, Geburtsjahr, Geschlecht, DTB‑LK und optional einem Foto anlegen.</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑1a</div>
+  <div class="body">Im Profil lassen sich Präferenzen für gewünschte Spielarten setzen: Einzel‑Challenges, Einzel‑Freundschaftsspiele, Doppel‑Freundschaftsspiele, Mixed‑Freundschaftsspiele, Senioren‑Freundschaftsspiele.</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑1b</div>
+  <div class="body">Default für neue Profile: <em>Einzel‑Challenges</em> und <em>Einzel‑Freundschaftsspiele</em> aktiv, restliche Optionen deaktiviert.</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑1c</div>
+  <div class="body">Suche und Match‑Vorschläge berücksichtigen die Spielarten‑Präferenzen.</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑2</div>
+  <div class="body">Spieler werden automatisch anhand ihres Geburtsjahrs den passenden Altersgruppen zugeordnet. Mehrfach­zuordnung ist möglich (z. B. ein U16‑Spieler kann gleichzeitig U18 spielen).</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑2a</div>
+  <div class="body">Spieler ohne hinterlegte LK erhalten initial <code>LK 25</code>.</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑2b</div>
+  <div class="body">Spieler aktualisieren ihre LK selbst (Selbstauskunft, kein automatischer Sync mit Verbands­systemen in v1).</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑2c</div>
+  <div class="body">Trainer und Admin können LK korrigieren — die Änderung erzeugt einen Audit‑Eintrag.</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑2d</div>
+  <div class="body">Senioren‑Klassen (H40, H50, H60 sowie D40, D50) sind unterstützt.</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑2e</div>
+  <div class="body">Ein Spieler ab Mindestalter steht automatisch in seiner Senioren‑Klasse, in den nächst‑jüngeren Senioren‑Klassen sowie bei den Aktiven (DTB‑Logik).</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑2f</div>
+  <div class="body">Die automatische Aufnahme in Senioren‑/Aktiven‑Klassen ist konfigurierbar (Auto vs. Opt‑in).</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑2g</div>
+  <div class="body">Spieler können mit Mannschafts‑Tags markiert werden (z. B. <em>1. Herren</em>, <em>2. Herren</em>, <em>Damen 30</em>).</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑2h</div>
+  <div class="body">Mannschafts‑Tags sind reine Anzeige‑Information ohne logische Konsequenz.</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑2i</div>
+  <div class="body">Pflege der Mannschafts‑Tags durch Admin oder Trainer.</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑2j</div>
+  <div class="body">Admin definiert Altersgruppen pro Saison frei mit: Name, Alters‑Untergrenze, Alters‑Obergrenze, Geschlechts­regel (mixed / getrennt / beides), Aktiv‑Flag. Damit können kleine Klassen wie U15/U18 zusammengelegt werden, falls Spielerzahlen es erfordern.</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑3</div>
+  <div class="body">Ein Spieler kann gleichzeitig Mitglied mehrerer Ranglisten sein (z. B. U18 plus Aktive plus offene Rangliste).</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑4</div>
+  <div class="body">Spieler markieren ihren Status als <em>aktiv</em> oder <em>pausiert</em>. Pausierte Spieler erscheinen nicht als challengebar.</div>
+</div>
+
+<!-- 4.2 SICHTBARKEIT -->
+<h3 id="sichtbarkeit"><span class="num">4.2</span>Profil‑Sichtbarkeit</h3>
+
+<div class="req">
+  <div class="id">FR‑6</div>
+  <div class="body">
+    <p>Spieler stellen für jedes Profilfeld die Sichtbarkeit ein. Drei Sichtbarkeits­stufen:</p>
+    <ul>
+      <li><strong>Öffentlich</strong> — alle eingeloggten Mitglieder</li>
+      <li><strong>Match‑bezogen</strong> — nur nach Match‑Vereinbarung sichtbar</li>
+      <li><strong>Privat</strong> — nur Spieler selbst, Trainer und Admin</li>
+    </ul>
+  </div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑6a</div>
+  <div class="body">Immer öffentlich (nicht abschaltbar): Vor‑ und Nachname, aktuelle Rangliste­positionen, LK, Aktivitäts‑Status.</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑6b</div>
+  <div class="body">Default <em>Match‑bezogen</em>: Telefonnummer, E‑Mail‑Adresse — diese werden erst nach Annahme einer Challenge oder eines Freundschaftsspiels für den Spielpartner sichtbar.</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑6c</div>
+  <div class="body">Default einstellbar (öffentlich oder privat): Geburtsjahr, Foto, Mannschafts‑Tags, Trainings­gruppen.</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑6d</div>
+  <div class="body">Bei Spielerprofilen unter 18 Jahren sind die Defaults restriktiver: Geburtsjahr und Foto sind standardmäßig privat, Kontaktdaten gehen an den Eltern‑Account, nicht an Mitspieler.</div>
+</div>
+
+<!-- 4.3 SAISONS -->
+<h3 id="saisons"><span class="num">4.3</span>Saisons &amp; Lifecycle</h3>
+
+<p>Eine Saison ist die organisatorische Klammer um Ranglisten, Regelwerk und Match‑Modi. Pro Jahr existieren typisch zwei Saisons (Sommer und Winter).</p>
+
+<div class="lifecycle">
+  <div class="lifecycle-step">
+    <div class="state">PLANNED</div>
+    <div class="desc">Admin konfiguriert Regeln, initiale Rangliste, Stichtag</div>
+  </div>
+  <div class="lifecycle-step">
+    <div class="state">ACTIVE</div>
+    <div class="desc">Challenges laufen, Ergebnisse fließen ein</div>
+  </div>
+  <div class="lifecycle-step">
+    <div class="state">CLOSED</div>
+    <div class="desc">Keine neuen Challenges, laufende werden noch beendet</div>
+  </div>
+  <div class="lifecycle-step">
+    <div class="state">ARCHIVED</div>
+    <div class="desc">Read‑only, Quelle für die Folge­saison</div>
+  </div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑15</div>
+  <div class="body">Initiale Reihenfolge einer neuen Saison wird aus der Vorgänger‑Saison abgeleitet. Drei konfigurierbare Strategien:</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑15a</div>
+  <div class="body">
+    <ul>
+      <li><strong>1:1‑Übernahme</strong> der Endplatzierung</li>
+      <li><strong>Reset</strong> auf DTB‑LK‑Reihenfolge</li>
+      <li><strong>Abgemilderte Übernahme</strong> (Default): Top 5 bleiben fix, Rest sortiert sich nach LK — verhindert Sandbagging und gibt Kontinuität</li>
+    </ul>
+  </div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑15b</div>
+  <div class="body">Historie aller abgeschlossenen Saisons bleibt einsehbar (Endrangliste, Match‑Liste).</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑15c</div>
+  <div class="body">Nach dem Start einer Saison sind deren Regeln eingefroren. Änderungen wirken erst auf die nächste Saison — schafft Vorhersagbarkeit und Fairness.</div>
+</div>
+
+<!-- 4.4 RANGLISTEN -->
+<h3 id="ranglisten"><span class="num">4.4</span>Altersgruppen &amp; Ranglisten</h3>
+
+<div class="callout accent">
+  <div class="callout-title">Konzept: drei Ranglisten pro Erwachsenen‑Altersgruppe</div>
+  <p>Pro Altersgruppe der Erwachsenen existieren drei Ranglisten: <strong>Herren</strong>, <strong>Damen</strong> und <strong>Offen</strong>. Damit können Damen und Herren auch gegeneinander spielen, ohne die getrennten Wertungen aufzugeben. Wer in mehreren Ranglisten steht, hat dort jeweils unabhängige Positionen.</p>
+</div>
+
+<div class="req">
+  <div class="id">FR‑10</div>
+  <div class="body">Pro Altersgruppe der Erwachsenen werden drei Ranglisten geführt: Herren, Damen, Offen.</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑10a</div>
+  <div class="body">Erwachsene werden automatisch in ihre Geschlechter­rangliste plus die Offene Rangliste eingetragen.</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑10b</div>
+  <div class="body">In Jugend­klassen entfällt die Offene Rangliste — Jugendliche spielen ohnehin altersgruppen­übergreifend (siehe Mehrfach­zugehörigkeit).</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑11</div>
+  <div class="body">Ranglisten sind für alle eingeloggten Mitglieder einsehbar.</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑12</div>
+  <div class="body">Sortierung primär nach interner Wertung (Challenge‑Ergebnisse), DTB‑LK als zusätzliche Anzeige­information.</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑13</div>
+  <div class="body">Filter: Altersgruppe, Geschlecht, „nur aktive Spieler".</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑14</div>
+  <div class="body">Im Spielerprofil sind alle Plätze in allen Ranglisten transparent dargestellt (z. B. <em>Herren #6 · Offen #12</em>).</div>
+</div>
+
+<!-- 4.5 CHALLENGES -->
+<h3 id="challenges"><span class="num">4.5</span>Challenges</h3>
+
+<div class="callout">
+  <div class="callout-title">Konfigurierbares Modell</div>
+  <p>Das konkrete Challenge‑Modell (Pyramide, ELO oder Hybrid) wird zu Saison­beginn vom Admin gewählt. Spec und Datenmodell sind so gestaltet, dass alle drei Modelle ohne Code­änderung möglich sind. Mit einer Pyramide zu starten und später bei Bedarf zu wechseln, ist explizit vorgesehen.</p>
+</div>
+
+<div class="req">
+  <div class="id">FR‑20</div>
+  <div class="body">Spieler können andere Spieler aus einer ihrer Ranglisten herausfordern.</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑20a</div>
+  <div class="body">Eine Challenge findet in genau einer Rangliste statt. Der Heraus­forderer wählt diese Rangliste.</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑20a‑i</div>
+  <div class="body">Der Herausgeforderte kann einmalig vorschlagen, in einer anderen gemeinsamen Rangliste zu spielen. Der Heraus­forderer stimmt zu oder zieht zurück.</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑20a‑ii</div>
+  <div class="body">Die UI zeigt beim Challenge die Plätze beider Spieler in beiden gemeinsamen Ranglisten transparent an, um Cherry‑Picking zu erschweren.</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑20b</div>
+  <div class="body">Das Match‑Ergebnis bewegt nur die Position in der gewählten Rangliste.</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑20c</div>
+  <div class="body">Für Aktivitäts‑Statistiken zählt jedes Match in allen Ranglisten, in denen beide Spieler stehen.</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑20d</div>
+  <div class="body">Cooldown gegen denselben Gegner ist <strong>spieler‑bezogen und rangliste­übergreifend</strong> — sonst wäre die Cooldown‑Regel umgehbar.</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑21</div>
+  <div class="body">Das aktive Challenge‑Modell schränkt zulässige Gegner ein (z. B. Pyramide: max. X Plätze nach oben). Konkret konfigurierbar.</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑22</div>
+  <div class="body">Der Herausgeforderte erhält eine Benachrichtigung und kann annehmen oder ablehnen.</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑23</div>
+  <div class="body">Eine Ablehnung verlangt die Auswahl eines Grundes (Verletzung, Urlaub, beruflich, sonstiges). Es findet keine Admin‑Prüfung statt — Selbst­auskunft.</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑24</div>
+  <div class="body">Annahme­frist: Default 7 Tage. Ohne Reaktion gilt die Challenge als automatisch abgelaufen.</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑25</div>
+  <div class="body">Spielfrist nach Annahme: Default 21 Tage.</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑25a</div>
+  <div class="body">Bei Annahme wird festgehalten, wer den Platz bucht (nur Information — die eigentliche Buchung läuft im bestehenden Vereins‑System). Standardregel: Heraus­forderer bucht.</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑25b</div>
+  <div class="body">Auto‑Pause: Spieler werden nach 12 Wochen ohne Match automatisch auf <em>pausiert</em> gesetzt (konfigurierbar).</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑25c</div>
+  <div class="body">Pausierte Spieler erscheinen nicht mehr als challengebar, halten ihren Platz aber zunächst.</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑25d</div>
+  <div class="body">Nach weiteren 12 Wochen pausiert wird der Spieler ans Ende der Rangliste sortiert — verhindert Blockaden.</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑25e</div>
+  <div class="body">Spieler können sich jederzeit selbst reaktivieren und behalten dann den aktuellen Platz.</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑25f</div>
+  <div class="body">Email‑Reminder vor automatischer Pausierung („Du wurdest 10 Wochen nicht gefordert oder hast nicht gespielt — in 2 Wochen wirst du pausiert.").</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑26</div>
+  <div class="body">Cooldown gegen denselben Gegner: Default 14 Tage. Nicht erneut challengebar in diesem Zeitraum.</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑27</div>
+  <div class="body">Limit aktive Challenges pro Spieler: 1 ausgehend, 1 eingehend (Default 2 gesamt).</div>
+</div>
+
+<!-- 4.6 FREUNDSCHAFT -->
+<h3 id="freundschaft"><span class="num">4.6</span>Freundschafts­spiele</h3>
+
+<div class="callout">
+  <div class="callout-title">Vernetzung statt Wettkampf</div>
+  <p>Freundschafts­spiele sind das Vernetzungs‑Werkzeug der Plattform. Sie haben keine Rangliste­auswirkung, keine Cooldowns, keine Sprungregeln. Wer einfach spielen will — Einzel oder Doppel — nutzt diesen Modus.</p>
+</div>
+
+<div class="req">
+  <div class="id">FR‑90</div>
+  <div class="body">Freundschafts­spiele können als Einzel oder Doppel organisiert werden.</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑91</div>
+  <div class="body">Ein Freundschafts­spiel hat: Initiator, Eingeladene (1 für Einzel, 3 für Doppel), Datum/Uhrzeit, Platz‑Information, optional eine Notiz.</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑92</div>
+  <div class="body">Eingeladene nehmen an oder lehnen ab. Bei Doppel müssen alle drei zustimmen.</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑93</div>
+  <div class="body">Ergebnis kann eingetragen werden, ist aber optional. Das Match zählt für Aktivitäts‑Statistiken auch ohne Ergebnis.</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑94</div>
+  <div class="body">Freundschafts­spiele haben keine Cooldowns, keine Sprung­regeln, keine ELO‑Auswirkung.</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑95</div>
+  <div class="body">Spieler können eine offene Freundschafts­spiel‑Suche posten („Suche Mittwoch 19 Uhr Einzel oder Doppel"). Solche Posts sind für alle eingeloggten Mitglieder sichtbar — andere können sich einfach melden. Filter im UI helfen beim Eingrenzen.</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑96</div>
+  <div class="body">Trainer können Freundschafts­spiele im Auftrag von Jugend­spielern initiieren.</div>
+</div>
+
+<!-- 4.7 ERGEBNISSE -->
+<h3 id="ergebnisse"><span class="num">4.7</span>Ergebnisse &amp; Match‑Modus</h3>
+
+<div class="req">
+  <div class="id">FR‑30</div>
+  <div class="body">Der Sieger meldet das Ergebnis: Sieger, Spielergebnis pro Satz (z. B. <code>6:4, 3:6, 10:7</code>).</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑30a</div>
+  <div class="body">Champions‑Tiebreak im 3. Satz wird unterstützt (Eingabe als <code>10:x</code>).</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑30b</div>
+  <div class="body">
+    <p>Match‑Modi sind pro Saison konfigurierbar. Verfügbare Modi:</p>
+    <ul>
+      <li><strong>2 Sätze + Match‑Tiebreak</strong> (typisch Jugend)</li>
+      <li><strong>Best‑of‑3 mit echtem 3. Satz</strong></li>
+      <li><strong>Best‑of‑3 mit Champions‑Tiebreak</strong> im 3. Satz</li>
+      <li><strong>Kurzsätze</strong> (4 Spiele) + Match‑Tiebreak</li>
+      <li><strong>Pro Set</strong></li>
+    </ul>
+  </div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑30c</div>
+  <div class="body">Pro Altersgruppe wird ein Default‑Modus konfiguriert (z. B. Jugend → <em>2 Sätze + Match‑Tiebreak</em>; Aktive → <em>Best‑of‑3 mit Champions‑Tiebreak</em>).</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑30d</div>
+  <div class="body">Spieler können bei Annahme einer Challenge oder Anlage eines Freundschafts­spiels einvernehmlich einen anderen erlaubten Modus wählen.</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑30e</div>
+  <div class="body">Die Eingabe­validierung passt sich dem gewählten Modus an (Tiebreak‑Format, Satzanzahl).</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑31</div>
+  <div class="body">Der Verlierer bestätigt das Ergebnis oder widerspricht.</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑32</div>
+  <div class="body">Bei Widerspruch oder fehlender Reaktion innerhalb von 3 Tagen entscheidet ein Trainer oder Admin.</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑33</div>
+  <div class="body">Bestätigte Ergebnisse aktualisieren die Rangliste sofort.</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑34</div>
+  <div class="body">Walk‑over: erscheint ein Spieler nicht zum Termin, kann der andere den Sieg melden.</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑35</div>
+  <div class="body">Bestätigte Ergebnisse sind unveränderlich. Korrekturen nur durch Admin mit Audit‑Eintrag.</div>
+</div>
+
+<!-- 4.8 JUGEND -->
+<h3 id="jugend"><span class="num">4.8</span>Jugend &amp; Eltern</h3>
+
+<div class="req">
+  <div class="id">FR‑40</div>
+  <div class="body">Eigener Account ab 14 Jahren. Unter 14 Jahren wird das Spielerprofil von einem Eltern‑Account verwaltet.</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑40a</div>
+  <div class="body">Ein Eltern‑Account kann mehrere Kinder verwalten.</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑40b</div>
+  <div class="body">Eltern erhalten alle Benachrichtigungen für ihr(e) Kind(er) und bestätigen Match‑Ergebnisse stellvertretend.</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑40c</div>
+  <div class="body">Trainer können Match‑Ergebnisse stellvertretend für Jugend­spieler unter 14 melden. Eltern bestätigen per Email‑Magic‑Link in einem Klick.</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑41</div>
+  <div class="body">Jugend‑Ranglisten sind getrennt sichtbar.</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑42</div>
+  <div class="body">Aktivitäts­anzeige im Profil: „X Matches in den letzten 4 Wochen", „Y Matches diese Saison".</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑43</div>
+  <div class="body">Trainer können Match‑Empfehlungen aussprechen — das System schlägt Paarungen vor, ohne Zwang.</div>
+</div>
+
+<!-- 4.9 TRAINER -->
+<h3 id="trainer"><span class="num">4.9</span>Trainer­funktionen</h3>
+
+<div class="req">
+  <div class="id">FR‑50</div>
+  <div class="body">Trainer haben Sicht auf alle Spieler ihrer zugeordneten Trainings­gruppen plus selbst markierte Fokus‑Spieler.</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑50a</div>
+  <div class="body">Fokus‑Spieler‑Markierung erlaubt einem Trainer, einzelne Spieler auch außerhalb seiner Gruppen zu beobachten (z. B. ein vielversprechender Jugendlicher aus einer fremden Gruppe).</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑50b</div>
+  <div class="body">Bei Konflikten und Streitfällen kann jeder Trainer entscheiden, nicht nur der formell zuständige.</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑50c</div>
+  <div class="body">Alle Trainer sehen die vereinsweite Aktivitäts‑Übersicht (wer spielt wenig).</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑51</div>
+  <div class="body">Aktivitäts­report pro Trainings­gruppe: wer hat wie oft gespielt, wer ist inaktiv.</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑52</div>
+  <div class="body">Trainer können Spieler kategorisieren (z. B. <em>Förderkader</em>, <em>Mannschaft 2</em>) — als reine Anzeige­markierung.</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑53</div>
+  <div class="body">Trainer können manuelle Match‑Empfehlungen versenden.</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑54</div>
+  <div class="body">Trainer entscheiden Ergebnisse im Streitfall (siehe FR‑32).</div>
+</div>
+
+<!-- 4.10 VORSCHLÄGE -->
+<h3 id="vorschlaege"><span class="num">4.10</span>Match‑Vorschläge</h3>
+
+<div class="req">
+  <div class="id">FR‑100</div>
+  <div class="body">Das System schlägt Spielern wöchentlich passende Gegner vor.</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑101</div>
+  <div class="body">
+    <p>Vorschlags­logik berücksichtigt:</p>
+    <ul>
+      <li>LK‑Nähe (Default ±2 LK)</li>
+      <li>Ähnliches Aktivitäts­muster</li>
+      <li>Inaktivität — Spieler, die seit X Wochen nicht gespielt haben, werden priorisiert</li>
+      <li>Bevorzugte Spielarten</li>
+      <li>Neue Paarungen werden gegenüber bereits gespielten bevorzugt</li>
+      <li>Cooldown‑Regeln werden eingehalten</li>
+    </ul>
+  </div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑102</div>
+  <div class="body">Vorschläge erscheinen im persönlichen Dashboard, zusätzlich optional als wöchentliche Email.</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑103</div>
+  <div class="body">Trainer‑Sicht: Vorschläge speziell für Jugend­spieler mit „Empfehlung versenden"‑Button.</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑104</div>
+  <div class="body">Vorschläge sind unverbindlich. Ein Klick erzeugt eine Challenge oder eine Freundschafts­spiel‑Einladung.</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑105</div>
+  <div class="body">Match‑Vorschläge sind pro Spieler ein‑ und ausschaltbar. Frequenz wählbar: aus, wöchentlich, täglich.</div>
+</div>
+
+<!-- 4.11 ADMIN -->
+<h3 id="admin"><span class="num">4.11</span>Admin</h3>
+
+<div class="req">
+  <div class="id">FR‑60</div>
+  <div class="body">Mitglieder­verwaltung mit CSV‑Initial­import (Spalten: Name, Geburtsjahr, Geschlecht, Email, DTB‑LK).</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑60a</div>
+  <div class="body">Nach dem Initial­import läuft die Mitglieder­pflege als Self‑Service: Admin schickt Einladungs­link, neue Mitglieder füllen ihr Profil selbst aus.</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑60b</div>
+  <div class="body">Austritt: Admin deaktiviert das Mitglied (Soft‑Delete). Endgültige Daten­löschung nach Ablauf gemäß DSGVO.</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑61</div>
+  <div class="body">Saison­verwaltung: Anlegen, Konfigurieren, Starten, Schließen, Archivieren.</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑62</div>
+  <div class="body">Rollen­zuweisung (Spieler, Trainer, Admin). Mehrere Personen können gleichzeitig Admin oder Trainer sein.</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑63</div>
+  <div class="body">Manuelle Korrektur von Rangliste oder Ergebnissen mit Audit‑Log.</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑64</div>
+  <div class="body">Konfiguration aller Challenge‑Regeln und Match‑Modi pro Saison (siehe Anhang A).</div>
+</div>
+
+<!-- 4.12 NOTIFIKATIONEN -->
+<h3 id="notifikation"><span class="num">4.12</span>Benachrichtigungen</h3>
+
+<div class="req">
+  <div class="id">FR‑70</div>
+  <div class="body">
+    <p>Email‑Benachrichtigungen sofort bei:</p>
+    <ul>
+      <li>Erhaltener Challenge</li>
+      <li>Annahme oder Ablehnung einer eigenen Challenge</li>
+      <li>Gemeldetem Ergebnis</li>
+      <li>Bestätigtem Ergebnis</li>
+      <li>Ablaufender Frist</li>
+      <li>Erhaltener Freundschafts­spiel‑Einladung</li>
+      <li>Match‑Empfehlung vom Trainer</li>
+    </ul>
+  </div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑71</div>
+  <div class="body">Web‑Push (PWA) als Zusatzkanal — geplant für v2.</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑72</div>
+  <div class="body">Spieler können Benachrichtigungen pro Typ ein‑ und ausschalten.</div>
+</div>
+
+<!-- 4.13 KPIS -->
+<h3 id="kpis"><span class="num">4.13</span>Aktivitäts‑KPIs &amp; Badges</h3>
+
+<div class="req">
+  <div class="id">FR‑120</div>
+  <div class="body">
+    <p>Mehrere Aktivitäts‑KPIs werden berechnet und im Profil angezeigt:</p>
+    <ul>
+      <li>Matches in den letzten 4, 8 und 12 Wochen (rollierend)</li>
+      <li>Gesamt‑Matches in der aktuellen Saison</li>
+      <li>Verhältnis initiierter zu erhaltenen Challenges</li>
+      <li>Annahmequote bei Challenges</li>
+      <li>Durchschnittliche Reaktionszeit auf Challenges</li>
+    </ul>
+  </div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑121</div>
+  <div class="body">Admin konfiguriert, welche KPIs prominent in Profil und Rangliste­übersicht angezeigt werden.</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑122</div>
+  <div class="body">
+    <p>Positive Badges (keine negativen):</p>
+    <ul>
+      <li><em>Aktiver Spieler</em> — mindestens 4 Matches in 4 Wochen</li>
+      <li><em>Faire Annahme</em> — alle Challenges der letzten 4 Wochen angenommen</li>
+      <li><em>Aufsteiger</em> — Y Plätze gut gemacht in dieser Saison</li>
+      <li><em>Vernetzer</em> — gegen mindestens 5 verschiedene Gegner gespielt</li>
+    </ul>
+  </div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑123</div>
+  <div class="body">Im Trainer‑Dashboard ist die Liste inaktiver Spieler (über die definierten KPIs) prominent sichtbar.</div>
+</div>
+
+<!-- 4.14 MISUSE -->
+<h3 id="misuse"><span class="num">4.14</span>Missbrauchs‑Prävention</h3>
+
+<p>Mit sofortiger Email‑Zustellung steigt die Möglichkeit von Belästigung und Spam. Folgende Limits greifen automatisch:</p>
+
+<div class="req">
+  <div class="id">FR‑110</div>
+  <div class="body">Maximal 3 neue Challenges pro Spieler pro Tag.</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑111</div>
+  <div class="body">Maximal 2 aktive Challenges gleichzeitig pro Spieler (siehe FR‑27).</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑112</div>
+  <div class="body">Maximal 5 offene Freundschafts­spiel‑Suchen pro Spieler gleichzeitig.</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑113</div>
+  <div class="body">Maximal 10 Freundschafts­spiel‑Einladungen pro Spieler pro Tag.</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑114</div>
+  <div class="body">Magic‑Link‑Anfragen: maximal 3 pro Stunde pro Email‑Adresse.</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑115</div>
+  <div class="body">Notifikationen werden grundsätzlich sofort versandt. Erhält ein Empfänger jedoch mehr als 5 Benachrichtigungen pro Stunde, wechselt das System automatisch auf einen stündlichen Digest.</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑116</div>
+  <div class="body">Spieler können andere Spieler blockieren — Blockierte sehen das Profil weiter (Rangliste ist öffentlich), können aber keine Challenges oder Freundschafts­spiele mehr senden. Trainer und Admin werden über Blockierungen informiert (Modera­tions­funktion).</div>
+</div>
+
+<div class="req">
+  <div class="id">FR‑117</div>
+  <div class="body">Alle Limits sind admin‑konfigurierbar.</div>
+</div>
+
+</section>
+
+<!-- 5. NFR -->
+<section>
+<h2 id="nfr"><span class="num">§ 05</span>Nicht‑funktionale Anforderungen</h2>
+
+<table>
+  <thead>
+    <tr><th>ID</th><th>Anforderung</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>NFR‑1</code></td>
+      <td><strong>Mobile‑first.</strong> Primäre Nutzung ist auf dem Smartphone am Platz. Ergebnis melden in unter einer Minute.</td>
+    </tr>
+    <tr>
+      <td><code>NFR‑2</code></td>
+      <td><strong>Authentifizierung per Email‑Magic‑Link.</strong> Kein Google‑/Apple‑OAuth (schließt Mitglieder ohne diese Konten aus). Optional zusätzlich Email + Passwort.</td>
+    </tr>
+    <tr>
+      <td><code>NFR‑3</code></td>
+      <td><strong>DSGVO‑konform.</strong> Einwilligung beim Onboarding, Datenexport, Löschrecht. Bei Minderjährigen unter 16 Jahren ist Eltern­einwilligung erforderlich.</td>
+    </tr>
+    <tr>
+      <td><code>NFR‑4</code></td>
+      <td><strong>Jugendschutz.</strong> Profile von Minderjährigen sind nicht öffentlich zugänglich, restriktivere Defaults für Sichtbarkeit.</td>
+    </tr>
+    <tr>
+      <td><code>NFR‑5</code></td>
+      <td><strong>Verfügbarkeit.</strong> Bei rund 500 Mitgliedern und geschätzt unter 100 gleichzeitig aktiven Nutzern reicht ein einzelner Server.</td>
+    </tr>
+    <tr>
+      <td><code>NFR‑6</code></td>
+      <td><strong>Audit‑Log</strong> für administrative Eingriffe (Ergebnis­änderungen, Rollen­änderungen, LK‑Korrekturen).</td>
+    </tr>
+    <tr>
+      <td><code>NFR‑7</code></td>
+      <td><strong>Backup.</strong> Tägliches Datenbank­backup, Aufbewahrung 30 Tage.</td>
+    </tr>
+    <tr>
+      <td><code>NFR‑8</code></td>
+      <td><strong>Sprache:</strong> Deutsch. Internationalisierung nicht erforderlich in v1.</td>
+    </tr>
+    <tr>
+      <td><code>NFR‑9</code></td>
+      <td><strong>Browser:</strong> aktuelle Versionen von Chrome, Safari, Firefox; mobile Browser. Kein IE.</td>
+    </tr>
+    <tr>
+      <td><code>NFR‑10</code></td>
+      <td><strong>Hosting in der EU.</strong> Aus Datenschutz­gründen kein US‑Anbieter ohne Daten­residenz.</td>
+    </tr>
+    <tr>
+      <td><code>NFR‑11</code></td>
+      <td><strong>Email‑Zustell­barkeit.</strong> SPF, DKIM und DMARC korrekt eingerichtet. Magic‑Link kommt in unter 30 Sekunden an.</td>
+    </tr>
+  </tbody>
+</table>
+</section>
+
+<!-- 6. DATENMODELL -->
+<section>
+<h2 id="datenmodell"><span class="num">§ 06</span>Datenmodell‑Skizze</h2>
+
+<p>Die folgende Übersicht ist informell und dient der Größen­einschätzung. Detaillierte Modellierung erfolgt im technischen Design.</p>
+
+<table>
+  <thead>
+    <tr><th>Entity</th><th>Bedeutung</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>Member</code></td><td>Mitglied, einmal pro Person — kann Spieler, Eltern, Trainer, Admin in beliebiger Kombination sein</td></tr>
+    <tr><td><code>ParentChildLink</code></td><td>Eltern‑Kind‑Beziehung für Verwaltung von Spielern unter 14</td></tr>
+    <tr><td><code>Season</code></td><td>Saison mit Lifecycle (PLANNED, ACTIVE, CLOSED, ARCHIVED), Regelwerk und Match‑Modi</td></tr>
+    <tr><td><code>AgeGroup</code></td><td>Pro Saison definiert (z. B. U10, U15, U18, Aktive, H40)</td></tr>
+    <tr><td><code>Ranking</code></td><td>Pro <em>Saison × AgeGroup × Geschlechtsvariante</em> (Herren, Damen, Offen)</td></tr>
+    <tr><td><code>RankingEntry</code></td><td>Mitgliedschaft eines Spielers in einer Rangliste mit aktueller Position</td></tr>
+    <tr><td><code>Challenge</code></td><td>Mit States: PROPOSED, ACCEPTED, DECLINED, EXPIRED, COMPLETED, DISPUTED</td></tr>
+    <tr><td><code>FriendlyMatch</code></td><td>Mit States: OPEN, CONFIRMED, COMPLETED, CANCELLED</td></tr>
+    <tr><td><code>MatchResult</code></td><td>Sätze, gewählter Match‑Modus, Sieger, Bestätigungs­status</td></tr>
+    <tr><td><code>TrainingGroup</code></td><td>Trainings­gruppe mit Trainer­zuordnung und Mitgliedern</td></tr>
+    <tr><td><code>TrainerAssignment</code></td><td>Direkte Trainer‑Spieler‑Zuordnung (Fokus‑Spieler) zusätzlich zu Gruppen</td></tr>
+    <tr><td><code>MatchSuggestion</code></td><td>System‑generierter Vorschlag mit Begründung und Lebensdauer</td></tr>
+    <tr><td><code>NotificationPreference</code></td><td>Pro Mitglied: welche Benachrichtigungen über welchen Kanal</td></tr>
+    <tr><td><code>Block</code></td><td>Spieler‑zu‑Spieler‑Blockierung</td></tr>
+    <tr><td><code>AuditEntry</code></td><td>Administrative Eingriffe</td></tr>
+  </tbody>
+</table>
+
+<p>Etwa 15 Haupt‑Entities. Das ist überschaubar und passt in eine modulare Architektur mit klar geschnittenen fachlichen Bereichen (Mitglieder, Saisons, Challenges, Freundschafts­spiele, Vorschläge, Benachrichtigungen, Admin).</p>
+</section>
+
+<!-- 7. SCOPE -->
+<section>
+<h2 id="scope"><span class="num">§ 07</span>Out of Scope (v1)</h2>
+
+<p>Folgende Funktionen sind in v1 bewusst ausgeklammert — entweder weil andere Systeme sie abdecken oder weil sie für den Kern­zweck nicht benötigt werden.</p>
+
+<ul>
+  <li><strong>Doppel‑Ranglisten und ‑Challenges</strong> (Doppel ist nur als Freundschafts­spiel‑Format dabei) — kann in v1.5 nachgezogen werden</li>
+  <li><strong>Platzbuchung</strong> — läuft im bestehenden Vereins‑System</li>
+  <li><strong>Mannschafts‑ und Medenspiel­verwaltung</strong> (außer reinem Anzeige‑Tag)</li>
+  <li><strong>Turnierverwaltung</strong></li>
+  <li><strong>Trainings­anmeldung und Bezahlung</strong></li>
+  <li><strong>Automatischer Sync mit DTB‑LK / mybigpoint</strong></li>
+  <li><strong>Live‑Scoring</strong> während laufender Matches</li>
+  <li><strong>Chat oder Direktnachrichten</strong> zwischen Spielern (Email reicht)</li>
+  <li><strong>Web‑Push‑Notifikationen</strong> — geplant für v2</li>
+  <li><strong>Öffentliche Sichtbarkeit</strong> der Plattform — alles hinter Login in v1</li>
+</ul>
+</section>
+
+<!-- 8. OFFEN -->
+<section>
+<h2 id="offen"><span class="num">§ 08</span>Offene Punkte &amp; Roadmap</h2>
+
+<h4>Vor Implementierungs­beginn zu klären</h4>
+
+<ol>
+  <li><strong>Email‑Versand</strong> — vereins­eigener SMTP oder externer Dienst (Brevo, Postmark)? Abhängig davon: SPF/DKIM/DMARC‑Setup.</li>
+  <li><strong>Initialer Mitglieder­datensatz</strong> — woher kommt die CSV mit den 500 Mitgliedern? Aus welchem Vereins­system?</li>
+  <li><strong>Trainer‑Zuordnung initial</strong> — wer richtet die Trainings­gruppen ein, gibt es bestehende Listen?</li>
+  <li><strong>Rechtliche Absicherung</strong> — Datenschutz­erklärung, Nutzungs­bedingungen, AVV mit Hoster.</li>
+</ol>
+
+<h4>Roadmap‑Kandidaten (v1.5 / v2)</h4>
+
+<ul>
+  <li>Doppel als vollwertiges Format mit eigenen Ranglisten</li>
+  <li>Web‑Push‑Notifikationen (PWA)</li>
+  <li>Auto‑Sync mit DTB‑LK / mybigpoint</li>
+  <li>Öffentliche Vereins‑Landingpage mit Top‑Ranglisten</li>
+  <li>Achievements und Leaderboards mit Spielspaß­charakter</li>
+  <li>Statistik­export für Trainer (Spielerentwicklung über mehrere Saisons)</li>
+  <li>Anbindung an die Platzbuchung (Termin sofort buchen aus der Match‑Vereinbarung heraus)</li>
+</ul>
+</section>
+
+<!-- ANHANG -->
+<section>
+<h2 id="anhang"><span class="num">§ A</span>Anhang: Konfigurations­parameter</h2>
+
+<p>Pro Saison einstellbar — eingefroren ab Start der Saison.</p>
+
+<h4>Challenge‑Regeln</h4>
+<table>
+  <thead><tr><th>Parameter</th><th>Default</th><th>Bemerkung</th></tr></thead>
+  <tbody>
+    <tr><td>Modell</td><td>Pyramide</td><td>Pyramide / ELO / Hybrid</td></tr>
+    <tr><td>Max. Sprung nach oben</td><td>3 Plätze</td><td>nur Pyramide</td></tr>
+    <tr><td>Annahmefrist</td><td>7 Tage</td><td>Auto‑Ablauf danach</td></tr>
+    <tr><td>Spielfrist nach Annahme</td><td>21 Tage</td><td></td></tr>
+    <tr><td>Cooldown gegen selben Gegner</td><td>14 Tage</td><td>rangliste­übergreifend</td></tr>
+    <tr><td>Max. aktive Challenges</td><td>2</td><td>1 ausgehend + 1 eingehend</td></tr>
+    <tr><td>Max. neue Challenges pro Tag</td><td>3</td><td>Misuse‑Prevention</td></tr>
+    <tr><td>Konsequenz Ablehnung ohne Grund</td><td>nur Statistik</td><td>keine / Cooldown / Punktabzug wählbar</td></tr>
+    <tr><td>Konsequenz Nicht‑Erscheinen</td><td>Sieg für Gegner</td><td></td></tr>
+  </tbody>
+</table>
+
+<h4>Aktivität &amp; Auto‑Pause</h4>
+<table>
+  <thead><tr><th>Parameter</th><th>Default</th><th>Bemerkung</th></tr></thead>
+  <tbody>
+    <tr><td>Auto‑Pause nach Inaktivität</td><td>12 Wochen</td><td></td></tr>
+    <tr><td>Sortierung ans Ende nach</td><td>+ 12 Wochen</td><td>Nach Auto‑Pause</td></tr>
+    <tr><td>Reminder vor Pause</td><td>2 Wochen vorher</td><td></td></tr>
+    <tr><td>KPI‑Fenster (Trainer‑Sicht)</td><td>4 Wochen</td><td></td></tr>
+  </tbody>
+</table>
+
+<h4>Match‑Modi</h4>
+<table>
+  <thead><tr><th>Altersgruppe</th><th>Default‑Modus</th></tr></thead>
+  <tbody>
+    <tr><td>Jugend (alle Klassen)</td><td>2 Sätze + Match‑Tiebreak</td></tr>
+    <tr><td>Aktive</td><td>Best‑of‑3 mit Champions‑Tiebreak</td></tr>
+    <tr><td>Senioren</td><td>2 Sätze + Match‑Tiebreak</td></tr>
+  </tbody>
+</table>
+
+<h4>Saison‑Übergang</h4>
+<table>
+  <thead><tr><th>Parameter</th><th>Default</th></tr></thead>
+  <tbody>
+    <tr><td>Strategie</td><td>Abgemilderte Übernahme</td></tr>
+    <tr><td>Top‑X bleiben</td><td>5 Plätze</td></tr>
+    <tr><td>Rest sortiert nach</td><td>DTB‑LK</td></tr>
+  </tbody>
+</table>
+
+<h4>Misuse‑Prevention</h4>
+<table>
+  <thead><tr><th>Parameter</th><th>Default</th></tr></thead>
+  <tbody>
+    <tr><td>Max. Freundschafts­spiel‑Einladungen pro Tag</td><td>10</td></tr>
+    <tr><td>Max. offene Freundschafts­spiel‑Suchen</td><td>5 gleichzeitig</td></tr>
+    <tr><td>Max. Magic‑Link‑Anfragen pro Stunde</td><td>3 pro Email</td></tr>
+    <tr><td>Notifikations‑Digest ab</td><td>5 Mails / Stunde / Empfänger</td></tr>
+  </tbody>
+</table>
+</section>
+
+</div>
+
+<footer>
+  <div class="ornament">— Ende der Spezifikation —</div>
+  TuS Neureut · Tennisabteilung · v1.0 · Mai 2026
+</footer>
+
+</body>
+</html>
