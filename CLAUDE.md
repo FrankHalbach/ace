@@ -128,9 +128,9 @@ Sobald ein ADR akzeptiert ist, wird er nicht mehr geändert — Änderungen erfo
 
 ### Branch-Strategie
 
-- `main` ist immer deploybar
+- `master` ist immer deploybar
 - Feature-Branches: `feat/<feature-name>`
-- Bei einfachen Änderungen direkt auf `main`
+- Bei einfachen Änderungen direkt auf `master`
 
 ## Sicherheits-Grundregeln
 
