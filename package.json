@@ -1,5 +1,5 @@
 {
-  "name": "app",
+  "name": "ace",
   "type": "module",
   "private": true,
   "scripts": {
@@ -7,7 +7,12 @@
     "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare"
+    "postinstall": "nuxt prepare",
+    "db:migrate": "tsx server/db/migrate.ts",
+    "db:generate": "drizzle-kit generate",
+    "db:seed": "tsx server/db/seed.ts",
+    "lint": "eslint .",
+    "test": "vitest"
   },
   "dependencies": {
     "@nuxt/ui": "^4.7.1",
@@ -37,6 +42,7 @@
     "drizzle-kit": "^0.31.10",
     "eslint": "^10.3.0",
     "prettier": "^3.8.3",
+    "tsx": "^4.21.0",
     "vitest": "^4.1.6"
   }
 }
