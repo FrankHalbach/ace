@@ -38,6 +38,7 @@ export const member = sqliteTable(
       .$type<MatchPreferences>()
       .notNull()
       .default(DEFAULT_PREFERENCES),
+    lastFriendlyAt: integer('last_friendly_at', { mode: 'timestamp' }),
     createdAt: integer('created_at', { mode: 'timestamp' })
       .notNull()
       .default(sql`(unixepoch())`),

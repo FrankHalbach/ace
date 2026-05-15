@@ -50,4 +50,15 @@ export const profileService = {
     if (!updated) throw new MemberNotFoundError(id)
     return toDto(updated)
   },
+
+  /**
+   * Aktivitäts-Stempel beim Friendly-Lifecycle (PLAYED / COMPLETED).
+   * Akzeptiert mehrere IDs in einem Aufruf, weil ein Friendly bis zu vier
+   * Teilnehmer hat.
+   */
+  setLastFriendlyAt(memberIds: MemberId[], at: Date): void {
+    for (const id of memberIds) {
+      memberRepo.updateById(id, { lastFriendlyAt: at })
+    }
+  },
 }

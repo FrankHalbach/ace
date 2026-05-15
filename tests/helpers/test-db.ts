@@ -5,6 +5,9 @@ import { _resetDbForTests, useDb } from '../../server/db'
 import { runMigrations } from '../../server/db/migrate'
 import { ageGroup } from '../../server/db/schema/age-group'
 import { challenge } from '../../server/db/schema/challenge'
+import { friendly } from '../../server/db/schema/friendly'
+import { friendlyInvitee } from '../../server/db/schema/friendly-invitee'
+import { friendlyResult } from '../../server/db/schema/friendly-result'
 import { magicLinkToken } from '../../server/db/schema/magic-link-token'
 import { matchPointsAward } from '../../server/db/schema/match-points-award'
 import { matchResult } from '../../server/db/schema/match-result'
@@ -39,6 +42,9 @@ export function createTestDb() {
       db.delete(matchPointsAward).run()
       db.delete(matchResult).run()
       db.delete(challenge).run()
+      db.delete(friendlyResult).run()
+      db.delete(friendlyInvitee).run()
+      db.delete(friendly).run()
       db.delete(rankingEntry).run()
       db.delete(ranking).run()
       db.delete(magicLinkToken).run()
