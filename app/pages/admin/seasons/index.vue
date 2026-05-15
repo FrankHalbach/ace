@@ -65,7 +65,7 @@ async function createSeason() {
       </form>
     </UCard>
 
-    <p v-if="seasons?.length === 0" class="text-stone-500 italic">
+    <p v-if="seasons?.length === 0" class="text-muted italic">
       Noch keine Saisons angelegt.
     </p>
 
@@ -74,13 +74,13 @@ async function createSeason() {
         v-for="s in seasons"
         :key="s.id"
         :to="`/admin/seasons/${s.id}`"
-        class="block p-4 border border-stone-200 rounded-lg hover:border-emerald-600 hover:bg-stone-50 transition"
+        class="block p-4 border border-default rounded-lg hover:border-primary hover:bg-elevated transition"
       >
         <div class="flex items-center justify-between">
           <div class="font-medium text-lg">{{ s.name }}</div>
           <SeasonStatusBadge :status="s.status" />
         </div>
-        <div v-if="s.startedAt" class="text-sm text-stone-500 mt-1">
+        <div v-if="s.startedAt" class="text-sm text-muted mt-1">
           gestartet am {{ new Date(s.startedAt).toLocaleDateString('de-DE') }}
         </div>
       </NuxtLink>

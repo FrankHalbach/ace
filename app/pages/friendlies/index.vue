@@ -56,13 +56,13 @@ const statusLabel: Record<FriendlyStatus, string> = {
 }
 
 const statusColor: Record<FriendlyStatus, string> = {
-  PROPOSED: 'bg-stone-200 text-stone-700',
-  CONFIRMED: 'bg-emerald-100 text-emerald-800',
-  DECLINED: 'bg-red-100 text-red-800',
-  CANCELLED: 'bg-stone-100 text-stone-500',
-  PLAYED: 'bg-orange-100 text-orange-800',
-  COMPLETED: 'bg-emerald-100 text-emerald-800',
-  DISPUTED: 'bg-amber-100 text-amber-800',
+  PROPOSED: 'bg-stone-200 text-stone-700 dark:bg-stone-800 dark:text-stone-200',
+  CONFIRMED: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200',
+  DECLINED: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
+  CANCELLED: 'bg-stone-100 text-stone-500 dark:bg-stone-900 dark:text-stone-400',
+  PLAYED: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200',
+  COMPLETED: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200',
+  DISPUTED: 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200',
 }
 
 function formatDate(d: Date | string): string {
@@ -90,7 +90,7 @@ function formatDate(d: Date | string): string {
           v-for="f in incoming"
           :key="f.id"
           :to="`/friendlies/${f.id}`"
-          class="block p-3 border border-stone-200 rounded-lg hover:border-emerald-600 transition"
+          class="block p-3 border border-default rounded-lg hover:border-primary transition"
         >
           <div class="flex items-center justify-between">
             <div>
@@ -98,7 +98,7 @@ function formatDate(d: Date | string): string {
                 Mitglied #{{ f.initiatorId }} lädt dich ein —
                 {{ f.format === 'singles' ? 'Einzel' : 'Doppel' }}
               </div>
-              <div class="text-xs text-stone-500">
+              <div class="text-xs text-muted">
                 {{ formatDate(f.scheduledAt) }}<span v-if="f.courtInfo"> · {{ f.courtInfo }}</span>
               </div>
             </div>
@@ -117,7 +117,7 @@ function formatDate(d: Date | string): string {
           v-for="f in outgoingPending"
           :key="f.id"
           :to="`/friendlies/${f.id}`"
-          class="block p-3 border border-stone-200 rounded-lg hover:border-emerald-600 transition"
+          class="block p-3 border border-default rounded-lg hover:border-primary transition"
         >
           <div class="flex items-center justify-between">
             <div>
@@ -125,7 +125,7 @@ function formatDate(d: Date | string): string {
                 {{ f.format === 'singles' ? 'Einzel' : 'Doppel' }} —
                 {{ inviteeStatus(f).accepted }}/{{ inviteeStatus(f).total }} angenommen
               </div>
-              <div class="text-xs text-stone-500">
+              <div class="text-xs text-muted">
                 {{ formatDate(f.scheduledAt) }}<span v-if="f.courtInfo"> · {{ f.courtInfo }}</span>
               </div>
             </div>
@@ -144,14 +144,14 @@ function formatDate(d: Date | string): string {
           v-for="f in upcoming"
           :key="f.id"
           :to="`/friendlies/${f.id}`"
-          class="block p-3 border border-stone-200 rounded-lg hover:border-emerald-600 transition"
+          class="block p-3 border border-default rounded-lg hover:border-primary transition"
         >
           <div class="flex items-center justify-between">
             <div>
               <div class="font-medium">
                 {{ f.format === 'singles' ? 'Einzel' : 'Doppel' }}
               </div>
-              <div class="text-xs text-stone-500">
+              <div class="text-xs text-muted">
                 {{ formatDate(f.scheduledAt) }}<span v-if="f.courtInfo"> · {{ f.courtInfo }}</span>
               </div>
             </div>
@@ -170,14 +170,14 @@ function formatDate(d: Date | string): string {
           v-for="f in past"
           :key="f.id"
           :to="`/friendlies/${f.id}`"
-          class="block p-3 border border-stone-200 rounded-lg hover:border-stone-400 transition opacity-75"
+          class="block p-3 border border-default rounded-lg hover:border-muted transition opacity-75"
         >
           <div class="flex items-center justify-between">
             <div>
               <div class="font-medium">
                 {{ f.format === 'singles' ? 'Einzel' : 'Doppel' }}
               </div>
-              <div class="text-xs text-stone-500">
+              <div class="text-xs text-muted">
                 {{ formatDate(f.scheduledAt) }}
               </div>
             </div>
@@ -191,10 +191,10 @@ function formatDate(d: Date | string): string {
 
     <p
       v-if="incoming.length === 0 && outgoingPending.length === 0 && upcoming.length === 0 && past.length === 0"
-      class="text-stone-500 italic"
+      class="text-muted italic"
     >
       Du hast noch keine Freundschaftsspiele.
-      <NuxtLink to="/friendlies/new" class="text-emerald-700 underline">Lade jemanden ein →</NuxtLink>
+      <NuxtLink to="/friendlies/new" class="text-primary underline">Lade jemanden ein →</NuxtLink>
     </p>
   </UContainer>
 </template>

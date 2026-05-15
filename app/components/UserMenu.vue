@@ -69,7 +69,7 @@ const items = computed<DropdownMenuItem[][]>(() => [
       label: displayName.value,
     },
     ...(rolesLabel.value
-      ? [{ type: 'label' as const, label: rolesLabel.value, class: 'text-xs text-stone-500' }]
+      ? [{ type: 'label' as const, label: rolesLabel.value, class: 'text-xs text-muted' }]
       : []),
   ],
   [

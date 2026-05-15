@@ -139,7 +139,7 @@ async function save() {
       </form>
     </UCard>
 
-    <p v-if="profile" class="text-xs text-stone-400 mt-6 font-mono">
+    <p v-if="profile" class="text-xs text-dimmed mt-6 font-mono">
       {{ profile.email }} · LK {{ profile.dtbLk.toFixed(1) }}
     </p>
   </UContainer>

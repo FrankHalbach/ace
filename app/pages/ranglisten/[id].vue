@@ -66,13 +66,13 @@ function canChallenge(targetMemberId: number, targetStatus: string): boolean {
 <template>
   <UContainer v-if="ranking" class="py-6 max-w-3xl">
     <header class="mb-6">
-      <NuxtLink to="/ranglisten" class="text-sm text-stone-500 hover:text-stone-800">
+      <NuxtLink to="/ranglisten" class="text-sm text-muted hover:text-default">
         ← Alle Ranglisten
       </NuxtLink>
       <h1 class="text-2xl font-semibold mt-2">
         {{ ranking.ageGroupName }} · {{ variantLabel[ranking.variant] }}
       </h1>
-      <div class="text-sm text-stone-500 mt-1">
+      <div class="text-sm text-muted mt-1">
         {{ ranking.seasonName }} · {{ modeLabel[ranking.mode] }} · {{ ranking.entries.length }} Spieler
       </div>
     </header>
@@ -81,27 +81,27 @@ function canChallenge(targetMemberId: number, targetStatus: string): boolean {
       <UCheckbox v-model="onlyActive" label="nur aktive Spieler anzeigen" />
     </div>
 
-    <ul v-if="ranking.entries.length > 0" class="divide-y divide-stone-200 border border-stone-200 rounded-lg overflow-hidden">
+    <ul v-if="ranking.entries.length > 0" class="divide-y divide-default border border-default rounded-lg overflow-hidden">
       <li
         v-for="e in ranking.entries"
         :key="e.id"
         class="px-4 py-3 flex items-center justify-between gap-3"
       >
         <div class="flex items-baseline gap-3 flex-1">
-          <div class="font-mono text-sm text-stone-500 min-w-[60px]">{{ e.display.primary }}</div>
+          <div class="font-mono text-sm text-muted min-w-[60px]">{{ e.display.primary }}</div>
           <div>
             <div class="font-medium">
               {{ e.member.firstName }} {{ e.member.lastName }}
-              <span v-if="user && e.memberId === user.memberId" class="ml-1 text-xs text-emerald-700">(du)</span>
+              <span v-if="user && e.memberId === user.memberId" class="ml-1 text-xs text-primary">(du)</span>
             </div>
-            <div class="text-xs text-stone-500">
+            <div class="text-xs text-muted">
               LK {{ e.member.dtbLk.toFixed(1) }}
-              <span v-if="e.member.status === 'pausiert'" class="text-stone-400">· pausiert</span>
+              <span v-if="e.member.status === 'pausiert'" class="text-dimmed">· pausiert</span>
             </div>
           </div>
         </div>
         <div class="flex items-center gap-2">
-          <div v-if="e.display.secondary" class="font-mono text-sm text-emerald-700">
+          <div v-if="e.display.secondary" class="font-mono text-sm text-primary">
             {{ e.display.secondary }}
           </div>
           <UButton
@@ -117,6 +117,6 @@ function canChallenge(targetMemberId: number, targetStatus: string): boolean {
       </li>
     </ul>
 
-    <p v-else class="text-stone-500 italic">Keine Einträge.</p>
+    <p v-else class="text-muted italic">Keine Einträge.</p>
   </UContainer>
 </template>

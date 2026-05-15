@@ -184,13 +184,13 @@ async function markPlayed() {
 <template>
   <UContainer v-if="friendly" class="py-6 max-w-2xl">
     <header class="mb-6">
-      <NuxtLink to="/friendlies" class="text-sm text-stone-500 hover:text-stone-800">
+      <NuxtLink to="/friendlies" class="text-sm text-muted hover:text-default">
         ← Alle Freundschaftsspiele
       </NuxtLink>
       <h1 class="text-2xl font-semibold mt-2">
         {{ friendly.format === 'singles' ? 'Einzel' : 'Doppel' }}-Freundschaftsspiel
       </h1>
-      <div class="text-sm text-stone-500 mt-1">
+      <div class="text-sm text-muted mt-1">
         Status: <strong>{{ statusLabel[friendly.status] }}</strong> ·
         {{ formatDate(friendly.scheduledAt) }}
         <span v-if="friendly.courtInfo"> · {{ friendly.courtInfo }}</span>
@@ -200,31 +200,31 @@ async function markPlayed() {
     <UCard class="mb-6">
       <div class="grid grid-cols-2 gap-4 text-sm">
         <div>
-          <div class="text-xs uppercase text-stone-500 tracking-wider mb-1">
+          <div class="text-xs uppercase text-muted tracking-wider mb-1">
             Initiator-Team
           </div>
           <div v-for="mid in initiatorTeam" :key="mid" class="font-medium">
             Mitglied #{{ mid }}
-            <span v-if="mid === me" class="text-xs text-emerald-700">(du)</span>
+            <span v-if="mid === me" class="text-xs text-primary">(du)</span>
           </div>
         </div>
         <div>
-          <div class="text-xs uppercase text-stone-500 tracking-wider mb-1">Gegner-Team</div>
+          <div class="text-xs uppercase text-muted tracking-wider mb-1">Gegner-Team</div>
           <div v-for="mid in opponentTeam" :key="mid" class="font-medium">
             Mitglied #{{ mid }}
-            <span v-if="mid === me" class="text-xs text-emerald-700">(du)</span>
+            <span v-if="mid === me" class="text-xs text-primary">(du)</span>
           </div>
         </div>
       </div>
-      <div v-if="friendly.invitees.length > 0" class="mt-4 text-xs text-stone-500">
+      <div v-if="friendly.invitees.length > 0" class="mt-4 text-xs text-muted">
         <div v-for="i in friendly.invitees" :key="i.id">
           #{{ i.memberId }} ·
           <span v-if="i.status === 'pending'">offen</span>
-          <span v-else-if="i.status === 'accepted'" class="text-emerald-700">angenommen</span>
-          <span v-else class="text-red-700">abgelehnt</span>
+          <span v-else-if="i.status === 'accepted'" class="text-emerald-700 dark:text-emerald-400">angenommen</span>
+          <span v-else class="text-red-700 dark:text-red-400">abgelehnt</span>
         </div>
       </div>
-      <div v-if="friendly.note" class="mt-3 text-sm text-stone-600">
+      <div v-if="friendly.note" class="mt-3 text-sm text-muted">
         Notiz: <em>{{ friendly.note }}</em>
       </div>
     </UCard>
@@ -275,9 +275,9 @@ async function markPlayed() {
           />
         </UFormField>
         <div v-for="(set, i) in sets" :key="i" class="flex items-center gap-2">
-          <span class="text-sm text-stone-500 w-14">Satz {{ i + 1 }}</span>
+          <span class="text-sm text-muted w-14">Satz {{ i + 1 }}</span>
           <UInput v-model.number="set.a" type="number" min="0" max="20" class="w-20" />
-          <span class="text-stone-400">:</span>
+          <span class="text-dimmed">:</span>
           <UInput v-model.number="set.b" type="number" min="0" max="20" class="w-20" />
           <UButton
             v-if="sets.length > 1"
@@ -288,7 +288,7 @@ async function markPlayed() {
           />
         </div>
         <UButton v-if="sets.length < 3" variant="soft" size="sm" @click="addSet">+ Satz hinzufügen</UButton>
-        <p class="text-xs text-stone-500">
+        <p class="text-xs text-muted">
           Sätze aus deiner Sicht eintragen — links = dein Team.
         </p>
         <div class="flex gap-2 pt-2">
@@ -331,7 +331,7 @@ async function markPlayed() {
           <UButton variant="ghost" color="neutral" @click="showDispute = false">Zurück</UButton>
         </div>
       </form>
-      <p v-else class="text-sm text-stone-500 italic">
+      <p v-else class="text-sm text-muted italic">
         Warte auf Bestätigung durch das Verlierer-Team.
       </p>
     </UCard>
@@ -353,10 +353,10 @@ async function markPlayed() {
 
     <!-- Disputed Result -->
     <UCard v-if="result && result.confirmationStatus === 'disputed'">
-      <h2 class="font-semibold mb-3 text-amber-700">Streitfall</h2>
+      <h2 class="font-semibold mb-3 text-amber-700 dark:text-amber-400">Streitfall</h2>
       <div class="text-sm">
         Begründung: <em>{{ result.disputeNote ?? '—' }}</em>
-        <p class="text-stone-500 mt-2">Ein Trainer entscheidet den Streitfall.</p>
+        <p class="text-muted mt-2">Ein Trainer entscheidet den Streitfall.</p>
       </div>
     </UCard>
   </UContainer>

@@ -73,11 +73,11 @@ const modeLabel: Record<string, string> = {
       />
     </div>
 
-    <p v-if="seasonItems.length === 0" class="text-stone-500 italic">
+    <p v-if="seasonItems.length === 0" class="text-muted italic">
       Noch keine Saisons angelegt.
     </p>
 
-    <p v-else-if="rankings.length === 0" class="text-stone-500 italic">
+    <p v-else-if="rankings.length === 0" class="text-muted italic">
       Keine Ranglisten für die aktuelle Auswahl.
     </p>
 
@@ -86,16 +86,16 @@ const modeLabel: Record<string, string> = {
         v-for="r in rankings"
         :key="r.id"
         :to="`/ranglisten/${r.id}`"
-        class="block p-3 border border-stone-200 rounded-lg hover:border-emerald-600 hover:bg-stone-50 transition"
+        class="block p-3 border border-default rounded-lg hover:border-primary hover:bg-elevated transition"
       >
         <div class="flex items-center justify-between">
           <div>
             <div class="font-medium">{{ r.ageGroupName }} · {{ variantLabel[r.variant] }}</div>
-            <div class="text-xs text-stone-500">
+            <div class="text-xs text-muted">
               {{ modeLabel[r.mode] }} · {{ r.entryCount }} Spieler
             </div>
           </div>
-          <UIcon name="i-lucide-chevron-right" class="text-stone-400" />
+          <UIcon name="i-lucide-chevron-right" class="text-dimmed" />
         </div>
       </NuxtLink>
     </div>

@@ -38,12 +38,12 @@ const statusLabel: Record<ChallengeStatus, string> = {
 }
 
 const statusColor: Record<ChallengeStatus, string> = {
-  PROPOSED: 'bg-stone-200 text-stone-700',
-  ACCEPTED: 'bg-orange-100 text-orange-800',
-  DECLINED: 'bg-red-100 text-red-800',
-  EXPIRED: 'bg-stone-100 text-stone-500',
-  COMPLETED: 'bg-emerald-100 text-emerald-800',
-  DISPUTED: 'bg-amber-100 text-amber-800',
+  PROPOSED: 'bg-stone-200 text-stone-700 dark:bg-stone-800 dark:text-stone-200',
+  ACCEPTED: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200',
+  DECLINED: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
+  EXPIRED: 'bg-stone-100 text-stone-500 dark:bg-stone-900 dark:text-stone-400',
+  COMPLETED: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200',
+  DISPUTED: 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200',
 }
 
 function otherParty(c: ChallengeDto): number {
@@ -62,12 +62,12 @@ function otherParty(c: ChallengeDto): number {
           v-for="c in incoming"
           :key="c.id"
           :to="`/challenges/${c.id}`"
-          class="block p-3 border border-stone-200 rounded-lg hover:border-emerald-600 transition"
+          class="block p-3 border border-default rounded-lg hover:border-primary transition"
         >
           <div class="flex items-center justify-between">
             <div>
               <div class="font-medium">Mitglied #{{ otherParty(c) }} fordert dich</div>
-              <div class="text-xs text-stone-500">
+              <div class="text-xs text-muted">
                 Rangliste #{{ c.rankingId }} · {{ new Date(c.createdAt).toLocaleDateString('de-DE') }}
               </div>
             </div>
@@ -89,12 +89,12 @@ function otherParty(c: ChallengeDto): number {
           v-for="c in outgoing"
           :key="c.id"
           :to="`/challenges/${c.id}`"
-          class="block p-3 border border-stone-200 rounded-lg hover:border-emerald-600 transition"
+          class="block p-3 border border-default rounded-lg hover:border-primary transition"
         >
           <div class="flex items-center justify-between">
             <div>
               <div class="font-medium">Du forderst Mitglied #{{ otherParty(c) }}</div>
-              <div class="text-xs text-stone-500">
+              <div class="text-xs text-muted">
                 Rangliste #{{ c.rankingId }} · wartet auf Antwort
               </div>
             </div>
@@ -113,12 +113,12 @@ function otherParty(c: ChallengeDto): number {
           v-for="c in active"
           :key="c.id"
           :to="`/challenges/${c.id}`"
-          class="block p-3 border border-stone-200 rounded-lg hover:border-emerald-600 transition"
+          class="block p-3 border border-default rounded-lg hover:border-primary transition"
         >
           <div class="flex items-center justify-between">
             <div>
               <div class="font-medium">vs Mitglied #{{ otherParty(c) }}</div>
-              <div class="text-xs text-stone-500">
+              <div class="text-xs text-muted">
                 Rangliste #{{ c.rankingId }} · spielen und Ergebnis melden
               </div>
             </div>
@@ -137,12 +137,12 @@ function otherParty(c: ChallengeDto): number {
           v-for="c in history"
           :key="c.id"
           :to="`/challenges/${c.id}`"
-          class="block p-3 border border-stone-200 rounded-lg hover:border-stone-400 transition opacity-75"
+          class="block p-3 border border-default rounded-lg hover:border-muted transition opacity-75"
         >
           <div class="flex items-center justify-between">
             <div>
               <div class="font-medium">vs Mitglied #{{ otherParty(c) }}</div>
-              <div class="text-xs text-stone-500">
+              <div class="text-xs text-muted">
                 Rangliste #{{ c.rankingId }} ·
                 {{ new Date(c.completedAt ?? c.declinedAt ?? c.expiredAt ?? c.createdAt).toLocaleDateString('de-DE') }}
               </div>
@@ -157,7 +157,7 @@ function otherParty(c: ChallengeDto): number {
 
     <p
       v-if="incoming.length === 0 && outgoing.length === 0 && active.length === 0 && history.length === 0"
-      class="text-stone-500 italic"
+      class="text-muted italic"
     >
       Du hast noch keine Challenges. Gehe zu einer Rangliste und fordere jemanden heraus.
     </p>
