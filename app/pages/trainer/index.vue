@@ -8,6 +8,7 @@ definePageMeta({ middleware: 'trainer' })
 useHead({ title: 'Trainer' })
 
 const toast = useToast()
+const { name: memberName } = await useMemberLookup()
 
 const { data: disputes, refresh: refreshDisputes } = await useFetch<DisputeListItem[]>(
   '/api/trainer/disputes',
@@ -77,9 +78,9 @@ function formatSets(sets: { a: number; b: number }[] | null): string {
               </span>
             </div>
             <div v-if="d.kind === 'challenge'" class="text-muted">
-              Mitglied #{{ d.challengerId }} vs #{{ d.challengedId }}
+              {{ memberName(d.challengerId) }} vs {{ memberName(d.challengedId) }}
               <template v-if="d.reportedWinnerId !== null">
-                · Sieger laut Meldung: #{{ d.reportedWinnerId }}
+                · Sieger laut Meldung: {{ memberName(d.reportedWinnerId) }}
                 · {{ formatSets(d.reportedSets) }}
               </template>
               <template v-else>
@@ -89,11 +90,11 @@ function formatSets(sets: { a: number; b: number }[] | null): string {
             <div v-else class="text-muted">
               Teilnehmer:
               <span v-for="(p, i) in d.participants" :key="p">
-                #{{ p }}<span v-if="i < d.participants.length - 1">, </span>
+                {{ memberName(p) }}<span v-if="i < d.participants.length - 1">, </span>
               </span>
               · Sieger laut Meldung:
               <span v-for="(w, i) in d.reportedWinnerIds" :key="w">
-                #{{ w }}<span v-if="i < d.reportedWinnerIds.length - 1">, </span>
+                {{ memberName(w) }}<span v-if="i < d.reportedWinnerIds.length - 1">, </span>
               </span>
               · {{ formatSets(d.reportedSets) }}
             </div>

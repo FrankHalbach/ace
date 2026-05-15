@@ -5,7 +5,8 @@ definePageMeta({ middleware: 'auth' })
 useHead({ title: 'Challenges' })
 
 const { user } = useUserSession()
-const { data: challenges, refresh } = await useFetch<ChallengeDto[]>('/api/challenges', {
+const { name: memberName } = await useMemberLookup()
+const { data: challenges } = await useFetch<ChallengeDto[]>('/api/challenges', {
   default: () => [],
 })
 
@@ -66,7 +67,7 @@ function otherParty(c: ChallengeDto): number {
         >
           <div class="flex items-center justify-between">
             <div>
-              <div class="font-medium">Mitglied #{{ otherParty(c) }} fordert dich</div>
+              <div class="font-medium">{{ memberName(otherParty(c)) }} fordert dich</div>
               <div class="text-xs text-muted">
                 Rangliste #{{ c.rankingId }} · {{ new Date(c.createdAt).toLocaleDateString('de-DE') }}
               </div>
@@ -93,7 +94,7 @@ function otherParty(c: ChallengeDto): number {
         >
           <div class="flex items-center justify-between">
             <div>
-              <div class="font-medium">Du forderst Mitglied #{{ otherParty(c) }}</div>
+              <div class="font-medium">Du forderst {{ memberName(otherParty(c)) }}</div>
               <div class="text-xs text-muted">
                 Rangliste #{{ c.rankingId }} · wartet auf Antwort
               </div>
@@ -117,7 +118,7 @@ function otherParty(c: ChallengeDto): number {
         >
           <div class="flex items-center justify-between">
             <div>
-              <div class="font-medium">vs Mitglied #{{ otherParty(c) }}</div>
+              <div class="font-medium">vs {{ memberName(otherParty(c)) }}</div>
               <div class="text-xs text-muted">
                 Rangliste #{{ c.rankingId }} · spielen und Ergebnis melden
               </div>
@@ -141,7 +142,7 @@ function otherParty(c: ChallengeDto): number {
         >
           <div class="flex items-center justify-between">
             <div>
-              <div class="font-medium">vs Mitglied #{{ otherParty(c) }}</div>
+              <div class="font-medium">vs {{ memberName(otherParty(c)) }}</div>
               <div class="text-xs text-muted">
                 Rangliste #{{ c.rankingId }} ·
                 {{ new Date(c.completedAt ?? c.declinedAt ?? c.expiredAt ?? c.createdAt).toLocaleDateString('de-DE') }}
