@@ -126,3 +126,41 @@ MatchPointsAward
 
 - **ADR-006 (Wertungssystem-Strategie)** integriert diesen Modus als vierte
   Implementierung neben Pyramide, ELO und Hybrid. Strategie-Pattern.
+
+---
+
+## N-02 · User-Menu im Header und Theme-Mode (light/dark/system)
+
+**Status**: vorgeschlagen
+**Datum**: 2026-05-15
+**Quelle**: Produktentscheidung
+**Berührte FR-IDs**: NFR-1 (Mobile-First)
+
+### Anforderung
+
+Eingeloggte Mitglieder bekommen einen einheitlichen Header mit Avatar-
+basiertem User-Menu. Aus dem Menü erreichbar:
+
+- Mein Profil
+- Theme-Mode-Auswahl: `light` / `dark` / `system` (Default `system`)
+- Logout
+
+Die Theme-Auswahl wird im Browser des Mitglieds (LocalStorage) persistiert
+und nicht serverseitig gespeichert — kein Schema-Change, keine API-
+Änderung. `system` folgt dem `prefers-color-scheme` des Gerätes.
+
+### Begründung
+
+- Aktuell rollt jede Page ihren eigenen Header-Streifen mit „Willkommen,
+  X" + Logout — uneinheitlich, dupliziert
+- Theme-Mode ist eine pure UX-Verbesserung (NFR-1: viel Smartphone-Nutzung
+  am Platz, draußen Sonne / abends Halle)
+- @nuxt/ui bringt `useColorMode` ohnehin mit; der Toggle ist ein UI-Element
+  drumherum
+
+### Out of Scope dieses Nachtrags
+
+- Foto-Upload (FR-1) — eigenes Feature `profile-photo`, mit Storage-Strategie
+- Theme-Tokens (Brand-Farben) anpassen — bleibt wie aktuell konfiguriert
+- Server-seitige Theme-Persistenz (würde bei Geräte-Wechsel synchronisieren) —
+  v2, falls Bedarf entsteht
