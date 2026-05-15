@@ -1,0 +1,168 @@
+<script setup lang="ts">
+import type { ChallengeDto, ChallengeStatus } from '~~/server/modules/challenges'
+
+definePageMeta({ middleware: 'auth' })
+useHead({ title: 'Challenges' })
+
+const { user } = useUserSession()
+const { data: challenges, refresh } = await useFetch<ChallengeDto[]>('/api/challenges', {
+  default: () => [],
+})
+
+const incoming = computed(() =>
+  (challenges.value ?? []).filter(
+    (c) => c.challengedId === user.value?.memberId && c.status === 'PROPOSED',
+  ),
+)
+const outgoing = computed(() =>
+  (challenges.value ?? []).filter(
+    (c) => c.challengerId === user.value?.memberId && c.status === 'PROPOSED',
+  ),
+)
+const active = computed(() =>
+  (challenges.value ?? []).filter((c) => c.status === 'ACCEPTED'),
+)
+const history = computed(() =>
+  (challenges.value ?? []).filter((c) =>
+    ['COMPLETED', 'DECLINED', 'EXPIRED', 'DISPUTED'].includes(c.status),
+  ),
+)
+
+const statusLabel: Record<ChallengeStatus, string> = {
+  PROPOSED: 'Offen',
+  ACCEPTED: 'Angenommen',
+  DECLINED: 'Abgelehnt',
+  EXPIRED: 'Abgelaufen',
+  COMPLETED: 'Abgeschlossen',
+  DISPUTED: 'Strittig',
+}
+
+const statusColor: Record<ChallengeStatus, string> = {
+  PROPOSED: 'bg-stone-200 text-stone-700',
+  ACCEPTED: 'bg-orange-100 text-orange-800',
+  DECLINED: 'bg-red-100 text-red-800',
+  EXPIRED: 'bg-stone-100 text-stone-500',
+  COMPLETED: 'bg-emerald-100 text-emerald-800',
+  DISPUTED: 'bg-amber-100 text-amber-800',
+}
+
+function otherParty(c: ChallengeDto): number {
+  return c.challengerId === user.value?.memberId ? c.challengedId : c.challengerId
+}
+</script>
+
+<template>
+  <UContainer class="py-6 max-w-3xl">
+    <header class="flex items-center justify-between mb-6">
+      <h1 class="text-2xl font-semibold">Challenges</h1>
+      <NuxtLink to="/" class="text-sm text-stone-500 hover:text-stone-800">← Start</NuxtLink>
+    </header>
+
+    <section v-if="incoming.length > 0" class="mb-8">
+      <h2 class="text-lg font-semibold mb-3">📥 Eingehend ({{ incoming.length }})</h2>
+      <div class="space-y-2">
+        <NuxtLink
+          v-for="c in incoming"
+          :key="c.id"
+          :to="`/challenges/${c.id}`"
+          class="block p-3 border border-stone-200 rounded-lg hover:border-emerald-600 transition"
+        >
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="font-medium">Mitglied #{{ otherParty(c) }} fordert dich</div>
+              <div class="text-xs text-stone-500">
+                Rangliste #{{ c.rankingId }} · {{ new Date(c.createdAt).toLocaleDateString('de-DE') }}
+              </div>
+            </div>
+            <span
+              class="inline-block px-2 py-0.5 rounded-full text-xs font-mono"
+              :class="statusColor[c.status]"
+            >
+              {{ statusLabel[c.status] }}
+            </span>
+          </div>
+        </NuxtLink>
+      </div>
+    </section>
+
+    <section v-if="outgoing.length > 0" class="mb-8">
+      <h2 class="text-lg font-semibold mb-3">📤 Ausgehend ({{ outgoing.length }})</h2>
+      <div class="space-y-2">
+        <NuxtLink
+          v-for="c in outgoing"
+          :key="c.id"
+          :to="`/challenges/${c.id}`"
+          class="block p-3 border border-stone-200 rounded-lg hover:border-emerald-600 transition"
+        >
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="font-medium">Du forderst Mitglied #{{ otherParty(c) }}</div>
+              <div class="text-xs text-stone-500">
+                Rangliste #{{ c.rankingId }} · wartet auf Antwort
+              </div>
+            </div>
+            <span class="inline-block px-2 py-0.5 rounded-full text-xs font-mono" :class="statusColor[c.status]">
+              {{ statusLabel[c.status] }}
+            </span>
+          </div>
+        </NuxtLink>
+      </div>
+    </section>
+
+    <section v-if="active.length > 0" class="mb-8">
+      <h2 class="text-lg font-semibold mb-3">🎾 Aktive Matches ({{ active.length }})</h2>
+      <div class="space-y-2">
+        <NuxtLink
+          v-for="c in active"
+          :key="c.id"
+          :to="`/challenges/${c.id}`"
+          class="block p-3 border border-stone-200 rounded-lg hover:border-emerald-600 transition"
+        >
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="font-medium">vs Mitglied #{{ otherParty(c) }}</div>
+              <div class="text-xs text-stone-500">
+                Rangliste #{{ c.rankingId }} · spielen und Ergebnis melden
+              </div>
+            </div>
+            <span class="inline-block px-2 py-0.5 rounded-full text-xs font-mono" :class="statusColor[c.status]">
+              {{ statusLabel[c.status] }}
+            </span>
+          </div>
+        </NuxtLink>
+      </div>
+    </section>
+
+    <section v-if="history.length > 0">
+      <h2 class="text-lg font-semibold mb-3">Historie</h2>
+      <div class="space-y-2">
+        <NuxtLink
+          v-for="c in history"
+          :key="c.id"
+          :to="`/challenges/${c.id}`"
+          class="block p-3 border border-stone-200 rounded-lg hover:border-stone-400 transition opacity-75"
+        >
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="font-medium">vs Mitglied #{{ otherParty(c) }}</div>
+              <div class="text-xs text-stone-500">
+                Rangliste #{{ c.rankingId }} ·
+                {{ new Date(c.completedAt ?? c.declinedAt ?? c.expiredAt ?? c.createdAt).toLocaleDateString('de-DE') }}
+              </div>
+            </div>
+            <span class="inline-block px-2 py-0.5 rounded-full text-xs font-mono" :class="statusColor[c.status]">
+              {{ statusLabel[c.status] }}
+            </span>
+          </div>
+        </NuxtLink>
+      </div>
+    </section>
+
+    <p
+      v-if="incoming.length === 0 && outgoing.length === 0 && active.length === 0 && history.length === 0"
+      class="text-stone-500 italic"
+    >
+      Du hast noch keine Challenges. Gehe zu einer Rangliste und fordere jemanden heraus.
+    </p>
+  </UContainer>
+</template>

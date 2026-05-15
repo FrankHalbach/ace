@@ -1,12 +1,17 @@
 /**
  * Rankings-Modul Public API (ADR-005).
- *
- * Match-Mutationen (Position-Tausch, Punkte-Addition) sind hier NICHT
- * exportiert — die kommen mit `challenges` und `results`.
  */
 export { generateForSeason } from './service/generate'
 export { rankingReadService } from './service/read'
+export { applyMutations, getRankingEntries, getRankingMeta } from './service/mutations'
+export { strategyFor } from './strategy'
 export { RankingNotFoundError } from './types'
+export type {
+  ApplyResultInput,
+  RankingMutation,
+  ValidateChallengeInput,
+  ValidationResult,
+} from './strategy/types'
 export type {
   MemberRankingStandingDto,
   RankingConfig,

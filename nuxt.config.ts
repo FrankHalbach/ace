@@ -27,8 +27,14 @@ export default defineNuxtConfig({
       tasks: true,
     },
     scheduledTasks: {
-      // Täglich 03:00 — abgelaufene Magic-Link-Tokens löschen
-      '0 3 * * *': ['cleanup-expired-tokens'],
+      // Täglich 03:00 — Tokens, Challenges, Match-Results aufräumen
+      '0 3 * * *': [
+        'cleanup-expired-tokens',
+        'dispute-stale-accepted',
+        'auto-dispute-pending-results',
+      ],
+      // Stündlich — PROPOSED-Challenges auf EXPIRED setzen
+      '0 * * * *': ['expire-proposed-challenges'],
     },
   },
 })

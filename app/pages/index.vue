@@ -40,6 +40,11 @@ definePageMeta({
           </NuxtLink>
         </p>
         <p>
+          <NuxtLink to="/challenges" class="text-emerald-700 underline underline-offset-2">
+            Meine Challenges →
+          </NuxtLink>
+        </p>
+        <p>
           <NuxtLink to="/profile" class="text-emerald-700 underline underline-offset-2">
             Mein Profil bearbeiten →
           </NuxtLink>
