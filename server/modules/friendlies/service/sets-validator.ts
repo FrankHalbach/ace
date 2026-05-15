@@ -1,15 +1,17 @@
-import type { MatchMode, SetScore } from '../types'
-import { InvalidSetsError } from '../types'
+import { InvalidSetsError, type FriendlyMatchMode, type SetScore } from '../types'
 
 /**
- * Basis-Validierung pro Match-Modus. v1 ist absichtlich liberal:
- * wir prüfen Anzahl der Sätze und dass es einen klaren Sieger pro Satz gibt.
- * Detail-Validierung (Tiebreak-Format genau `10:x`, etc.) folgt später.
+ * Basis-Validierung pro Match-Modus. Bewusst liberal: prüft Anzahl der Sätze
+ * und dass jeder Satz einen klaren Sieger hat. Detail-Validierung
+ * (Tiebreak-Format genau `10:x`, etc.) folgt später.
+ *
+ * Inhaltlich identisch zu `results/service/sets-validator.ts` — wenn diese
+ * Logik einmal mehr braucht (z. B. Punkte-Skalierung pro Modus), wandert sie
+ * nach `server/shared/`.
  */
-export function validateSetsForMode(mode: MatchMode, sets: SetScore[]): void {
+export function validateSetsForMode(mode: FriendlyMatchMode, sets: SetScore[]): void {
   if (sets.length === 0) throw new InvalidSetsError('Mindestens ein Satz erforderlich.')
 
-  // jeder Satz braucht einen Sieger
   for (const [i, set] of sets.entries()) {
     if (set.a === set.b) {
       throw new InvalidSetsError(`Satz ${i + 1}: Unentschieden nicht erlaubt.`)
@@ -37,8 +39,9 @@ export function validateSetsForMode(mode: MatchMode, sets: SetScore[]): void {
 }
 
 /**
- * Prüft, dass der gemeldete Sieger tatsächlich die Mehrheit der Sätze gewonnen hat.
- * `winnerIsA` = true heißt: Sieger ist Spieler A (im sets-Array `a`).
+ * Prüft, dass das gemeldete Sieger-Team tatsächlich die Mehrheit der Sätze
+ * gewonnen hat. `winnerIsA = true` heißt: Sieger-Team ist Spielfeld-Seite A
+ * (im sets-Array `a`).
  */
 export function verifyWinnerConsistency(sets: SetScore[], winnerIsA: boolean): void {
   let aWins = 0
@@ -50,7 +53,7 @@ export function verifyWinnerConsistency(sets: SetScore[], winnerIsA: boolean): v
   const aWonMatch = aWins > bWins
   if (aWonMatch !== winnerIsA) {
     throw new InvalidSetsError(
-      `Inkonsistenz: Sieger laut Auswahl stimmt nicht mit den Satz-Gewinnen überein (${aWins}:${bWins}).`,
+      `Inkonsistenz: Sieger-Team passt nicht zu den Satz-Gewinnen (${aWins}:${bWins}).`,
     )
   }
 }

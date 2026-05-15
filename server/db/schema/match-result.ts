@@ -7,6 +7,7 @@ import { member, type MemberId } from './member'
 export type MatchResultId = Brand<number, 'MatchResultId'>
 
 export type MatchMode =
+  | 'two-sets-match-tiebreak'
   | 'best-of-3-tiebreak'
   | 'best-of-3-full'
   | 'best-of-3-champions'
@@ -33,6 +34,7 @@ export const matchResult = sqliteTable(
     sets: text('sets', { mode: 'json' }).$type<SetScore[]>().notNull(),
     matchMode: text('match_mode', {
       enum: [
+        'two-sets-match-tiebreak',
         'best-of-3-tiebreak',
         'best-of-3-full',
         'best-of-3-champions',

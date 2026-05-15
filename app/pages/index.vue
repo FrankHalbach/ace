@@ -45,6 +45,11 @@ definePageMeta({
           </NuxtLink>
         </p>
         <p>
+          <NuxtLink to="/friendlies" class="text-emerald-700 underline underline-offset-2">
+            Freundschaftsspiele →
+          </NuxtLink>
+        </p>
+        <p>
           <NuxtLink to="/profile" class="text-emerald-700 underline underline-offset-2">
             Mein Profil bearbeiten →
           </NuxtLink>
@@ -60,10 +65,9 @@ definePageMeta({
     <section class="mt-8">
       <h2 class="text-lg font-semibold mb-3">In Entwicklung</h2>
       <ul class="space-y-2 text-stone-700">
-        <li>· Rangliste</li>
-        <li>· Challenges</li>
-        <li>· Freundschaftsspiele</li>
         <li>· Match-Vorschläge</li>
+        <li>· Trainer-Aktivitätsbericht</li>
+        <li>· Streitfall-Resolve-UI für Trainer</li>
       </ul>
     </section>
 

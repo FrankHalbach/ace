@@ -32,6 +32,7 @@ export default defineNuxtConfig({
         'cleanup-expired-tokens',
         'dispute-stale-accepted',
         'auto-dispute-pending-results',
+        'auto-dispute-friendly-results',
       ],
       // Stündlich — PROPOSED-Challenges auf EXPIRED setzen
       '0 * * * *': ['expire-proposed-challenges'],
