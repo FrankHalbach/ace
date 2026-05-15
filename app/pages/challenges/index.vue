@@ -53,10 +53,7 @@ function otherParty(c: ChallengeDto): number {
 
 <template>
   <UContainer class="py-6 max-w-3xl">
-    <header class="flex items-center justify-between mb-6">
-      <h1 class="text-2xl font-semibold">Challenges</h1>
-      <NuxtLink to="/" class="text-sm text-stone-500 hover:text-stone-800">← Start</NuxtLink>
-    </header>
+    <h1 class="text-2xl font-semibold mb-6">Challenges</h1>
 
     <section v-if="incoming.length > 0" class="mb-8">
       <h2 class="text-lg font-semibold mb-3">📥 Eingehend ({{ incoming.length }})</h2>

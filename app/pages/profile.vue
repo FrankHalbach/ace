@@ -66,10 +66,7 @@ async function save() {
 
 <template>
   <UContainer class="py-8 max-w-xl">
-    <header class="flex items-center justify-between mb-6">
-      <h1 class="text-2xl font-semibold">Mein Profil</h1>
-      <UButton variant="ghost" color="neutral" to="/">Zurück</UButton>
-    </header>
+    <h1 class="text-2xl font-semibold mb-6">Mein Profil</h1>
 
     <UCard v-if="profile">
       <form class="space-y-6" @submit.prevent="save">
