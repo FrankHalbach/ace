@@ -11,6 +11,7 @@
     "db:migrate": "tsx server/db/migrate.ts",
     "db:generate": "drizzle-kit generate",
     "db:seed": "tsx server/db/seed.ts",
+    "db:reset": "tsx server/db/reset.ts",
     "lint": "eslint .",
     "test": "vitest"
   },
