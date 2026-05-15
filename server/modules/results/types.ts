@@ -15,6 +15,7 @@ export const reportResultInput = z.object({
   sets: z.array(setScoreSchema).min(1).max(5),
   matchMode: z
     .enum([
+      'two-sets-match-tiebreak',
       'best-of-3-tiebreak',
       'best-of-3-full',
       'best-of-3-champions',

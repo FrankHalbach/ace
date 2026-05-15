@@ -20,11 +20,12 @@ export function validateSetsForMode(mode: MatchMode, sets: SetScore[]): void {
     case 'pro-set':
       if (sets.length !== 1) throw new InvalidSetsError('Pro-Set: genau ein Satz.')
       break
+    case 'two-sets-match-tiebreak':
     case 'best-of-3-tiebreak':
     case 'best-of-3-champions':
     case 'best-of-3-full':
       if (sets.length < 2 || sets.length > 3) {
-        throw new InvalidSetsError('Best-of-3: 2 oder 3 Sätze.')
+        throw new InvalidSetsError('Best-of-3 / 2 Sätze + Match-TB: 2 oder 3 Sätze.')
       }
       break
     case 'short-sets-tiebreak':

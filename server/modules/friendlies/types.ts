@@ -31,6 +31,7 @@ export type {
 }
 
 const matchModeEnum = z.enum([
+  'two-sets-match-tiebreak',
   'best-of-3-tiebreak',
   'best-of-3-full',
   'best-of-3-champions',
