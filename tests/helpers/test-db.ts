@@ -3,9 +3,11 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { _resetDbForTests, useDb } from '../../server/db'
 import { runMigrations } from '../../server/db/migrate'
+import { ageGroup } from '../../server/db/schema/age-group'
 import { magicLinkToken } from '../../server/db/schema/magic-link-token'
 import { member } from '../../server/db/schema/member'
 import { rateLimitEvent } from '../../server/db/schema/rate-limit-event'
+import { season } from '../../server/db/schema/season'
 
 /**
  * Erzeugt eine temporäre SQLite-Datei, wendet Migrations an und liefert
@@ -31,6 +33,8 @@ export function createTestDb() {
       // Reihenfolge wegen FK-Cascade egal, aber explizit pro Tabelle.
       db.delete(magicLinkToken).run()
       db.delete(rateLimitEvent).run()
+      db.delete(ageGroup).run()
+      db.delete(season).run()
       db.delete(member).run()
     },
     cleanup: () => {

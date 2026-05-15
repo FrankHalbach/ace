@@ -1,3 +1,5 @@
 export * from './member'
 export * from './magic-link-token'
 export * from './rate-limit-event'
+export * from './season'
+export * from './age-group'
