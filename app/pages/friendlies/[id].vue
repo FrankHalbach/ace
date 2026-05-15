@@ -203,7 +203,7 @@ async function markPlayed() {
       <div class="grid grid-cols-2 gap-4 text-sm">
         <div>
           <div class="text-xs uppercase text-muted tracking-wider mb-1">
-            Initiator-Team
+            {{ friendly.format === 'doubles' ? 'Initiator-Team' : 'Initiator' }}
           </div>
           <div v-for="mid in initiatorTeam" :key="mid" class="font-medium">
             {{ memberName(mid) }}
@@ -211,7 +211,9 @@ async function markPlayed() {
           </div>
         </div>
         <div>
-          <div class="text-xs uppercase text-muted tracking-wider mb-1">Gegner-Team</div>
+          <div class="text-xs uppercase text-muted tracking-wider mb-1">
+            {{ friendly.format === 'doubles' ? 'Gegner-Team' : 'Gegner' }}
+          </div>
           <div v-for="mid in opponentTeam" :key="mid" class="font-medium">
             {{ memberName(mid) }}
             <span v-if="mid === me" class="text-xs text-primary">(du)</span>
@@ -267,13 +269,20 @@ async function markPlayed() {
         </UButton>
       </div>
       <form v-else class="space-y-4" @submit.prevent="reportResult">
-        <UFormField label="Sieger-Team">
+        <UFormField :label="friendly.format === 'doubles' ? 'Sieger-Team' : 'Sieger'">
           <URadioGroup
             v-model="myTeamWon"
-            :items="[
-              { label: 'Mein Team hat gewonnen', value: true },
-              { label: 'Das andere Team hat gewonnen', value: false },
-            ]"
+            :items="
+              friendly.format === 'doubles'
+                ? [
+                    { label: 'Mein Team hat gewonnen', value: true },
+                    { label: 'Das andere Team hat gewonnen', value: false },
+                  ]
+                : [
+                    { label: 'Ich habe gewonnen', value: true },
+                    { label: 'Mein Gegner hat gewonnen', value: false },
+                  ]
+            "
           />
         </UFormField>
         <div v-for="(set, i) in sets" :key="i" class="flex items-center gap-2">
@@ -291,7 +300,8 @@ async function markPlayed() {
         </div>
         <UButton v-if="sets.length < 3" variant="soft" size="sm" @click="addSet">+ Satz hinzufügen</UButton>
         <p class="text-xs text-muted">
-          Sätze aus deiner Sicht eintragen — links = dein Team.
+          Sätze aus deiner Sicht eintragen — links =
+          {{ friendly.format === 'doubles' ? 'dein Team' : 'du' }}.
         </p>
         <div class="flex gap-2 pt-2">
           <UButton
@@ -334,7 +344,8 @@ async function markPlayed() {
         </div>
       </form>
       <p v-else class="text-sm text-muted italic">
-        Warte auf Bestätigung durch das Verlierer-Team.
+        Warte auf Bestätigung durch
+        {{ friendly.format === 'doubles' ? 'das Verlierer-Team' : 'den Verlierer' }}.
       </p>
     </UCard>
 
