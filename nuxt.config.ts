@@ -3,31 +3,30 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
 
-  modules: [
-    '@nuxt/ui',
-    '@nuxt/eslint',
-    'nuxt-auth-utils',
-  ],
+  modules: ['@nuxt/ui', '@nuxt/eslint', 'nuxt-auth-utils'],
 
   typescript: {
     strict: true,
-    typeCheck: false, // separat per `pnpm typecheck` ausführen
+    typeCheck: false,
   },
 
   runtimeConfig: {
-    // server-only — aus .env: NUXT_SESSION_PASSWORD, NUXT_BREVO_API_KEY, NUXT_DB_PATH
-    sessionPassword: '',
-    brevoApiKey: '',
-    dbPath: './data/ace.db',
     public: {
+      // aus .env: NUXT_PUBLIC_BASE_URL
       baseUrl: 'http://localhost:3000',
     },
+    // Server-only runtime config (NUXT_SESSION_PASSWORD wird von nuxt-auth-utils
+    // direkt aus der env gelesen; NUXT_BREVO_API_KEY und NUXT_DB_PATH lesen
+    // wir via process.env in den jeweiligen Modulen).
   },
 
   nitro: {
     experimental: {
-      // erlaubt Cron-Job-Handler in server/tasks/
       tasks: true,
+    },
+    scheduledTasks: {
+      // Täglich 03:00 — abgelaufene Magic-Link-Tokens löschen
+      '0 3 * * *': ['cleanup-expired-tokens'],
     },
   },
 })
