@@ -39,6 +39,11 @@ definePageMeta({
             Mein Profil bearbeiten →
           </NuxtLink>
         </p>
+        <p v-if="profile.roles.includes('admin')">
+          <NuxtLink to="/admin" class="text-emerald-700 underline underline-offset-2">
+            Admin-Bereich →
+          </NuxtLink>
+        </p>
       </div>
     </UCard>
 
