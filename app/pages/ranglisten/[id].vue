@@ -12,11 +12,6 @@ const url = computed(() => `/api/rankings/${id.value}?onlyActive=${onlyActive.va
 
 const { data: ranking } = await useFetch<RankingDetailDto>(url, { watch: [url] })
 
-useHead({
-  title: () =>
-    ranking.value ? `${ranking.value.ageGroupName} · ${variantLabel[ranking.value.variant]}` : 'Rangliste',
-})
-
 const variantLabel: Record<RankingVariant, string> = {
   herren: 'Herren',
   damen: 'Damen',
@@ -29,6 +24,11 @@ const modeLabel: Record<string, string> = {
   hybrid: 'Hybrid',
   'points-table': 'Punkte-Tabelle',
 }
+
+useHead({
+  title: () =>
+    ranking.value ? `${ranking.value.ageGroupName} · ${variantLabel[ranking.value.variant]}` : 'Rangliste',
+})
 </script>
 
 <template>
