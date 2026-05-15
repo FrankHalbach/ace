@@ -8,6 +8,7 @@ const route = useRoute()
 const id = computed(() => Number(route.params.id))
 const { user } = useUserSession()
 const toast = useToast()
+const { name: memberName } = await useMemberLookup()
 
 const { data: challenge, refresh } = await useFetch<ChallengeDto>(
   () => `/api/challenges/${id.value}`,
@@ -174,12 +175,12 @@ const isLoser = computed(() => {
       <div class="grid grid-cols-2 gap-4 text-sm">
         <div>
           <div class="text-xs uppercase text-muted tracking-wider mb-1">Herausforderer</div>
-          <div class="font-medium">Mitglied #{{ challenge.challengerId }}</div>
+          <div class="font-medium">{{ memberName(challenge.challengerId) }}</div>
           <div v-if="isChallenger" class="text-xs text-primary">(du)</div>
         </div>
         <div>
           <div class="text-xs uppercase text-muted tracking-wider mb-1">Herausgeforderter</div>
-          <div class="font-medium">Mitglied #{{ challenge.challengedId }}</div>
+          <div class="font-medium">{{ memberName(challenge.challengedId) }}</div>
           <div v-if="isChallenged" class="text-xs text-primary">(du)</div>
         </div>
       </div>
@@ -261,7 +262,7 @@ const isLoser = computed(() => {
     <UCard v-if="result && result.confirmationStatus === 'pending'" class="mb-6">
       <h2 class="font-semibold mb-3">Gemeldetes Ergebnis</h2>
       <div class="text-sm mb-3">
-        Sieger: <strong>Mitglied #{{ result.winnerId }}</strong><br>
+        Sieger: <strong>{{ memberName(result.winnerId) }}</strong><br>
         Sätze:
         <span v-for="(s, i) in result.sets" :key="i" class="font-mono ml-1">
           {{ s.a }}:{{ s.b }}<span v-if="i < result.sets.length - 1">,</span>
@@ -289,7 +290,7 @@ const isLoser = computed(() => {
     <UCard v-if="result && result.confirmationStatus === 'confirmed'">
       <h2 class="font-semibold mb-3">Bestätigtes Ergebnis</h2>
       <div class="text-sm">
-        Sieger: <strong>Mitglied #{{ result.winnerId }}</strong><br>
+        Sieger: <strong>{{ memberName(result.winnerId) }}</strong><br>
         Sätze:
         <span v-for="(s, i) in result.sets" :key="i" class="font-mono ml-1">
           {{ s.a }}:{{ s.b }}<span v-if="i < result.sets.length - 1">,</span>

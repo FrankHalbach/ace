@@ -13,6 +13,8 @@ const id = computed(() => Number(route.params.id))
 const { user } = useUserSession()
 const toast = useToast()
 
+const { name: memberName } = await useMemberLookup()
+
 const { data: friendly, refresh } = await useFetch<FriendlyDetailDto>(
   () => `/api/friendlies/${id.value}`,
 )
@@ -204,21 +206,21 @@ async function markPlayed() {
             Initiator-Team
           </div>
           <div v-for="mid in initiatorTeam" :key="mid" class="font-medium">
-            Mitglied #{{ mid }}
+            {{ memberName(mid) }}
             <span v-if="mid === me" class="text-xs text-primary">(du)</span>
           </div>
         </div>
         <div>
           <div class="text-xs uppercase text-muted tracking-wider mb-1">Gegner-Team</div>
           <div v-for="mid in opponentTeam" :key="mid" class="font-medium">
-            Mitglied #{{ mid }}
+            {{ memberName(mid) }}
             <span v-if="mid === me" class="text-xs text-primary">(du)</span>
           </div>
         </div>
       </div>
       <div v-if="friendly.invitees.length > 0" class="mt-4 text-xs text-muted">
         <div v-for="i in friendly.invitees" :key="i.id">
-          #{{ i.memberId }} ·
+          {{ memberName(i.memberId) }} ·
           <span v-if="i.status === 'pending'">offen</span>
           <span v-else-if="i.status === 'accepted'" class="text-emerald-700 dark:text-emerald-400">angenommen</span>
           <span v-else class="text-red-700 dark:text-red-400">abgelehnt</span>
@@ -311,7 +313,7 @@ async function markPlayed() {
       <div class="text-sm mb-3">
         Sieger:
         <strong v-for="(mid, i) in result.winnerMemberIds" :key="mid">
-          Mitglied #{{ mid }}<span v-if="i < result.winnerMemberIds.length - 1">, </span>
+          {{ memberName(mid) }}<span v-if="i < result.winnerMemberIds.length - 1">, </span>
         </strong><br>
         Sätze:
         <span v-for="(s, i) in result.sets" :key="i" class="font-mono ml-1">
@@ -342,7 +344,7 @@ async function markPlayed() {
       <div class="text-sm">
         Sieger:
         <strong v-for="(mid, i) in result.winnerMemberIds" :key="mid">
-          Mitglied #{{ mid }}<span v-if="i < result.winnerMemberIds.length - 1">, </span>
+          {{ memberName(mid) }}<span v-if="i < result.winnerMemberIds.length - 1">, </span>
         </strong><br>
         Sätze:
         <span v-for="(s, i) in result.sets" :key="i" class="font-mono ml-1">

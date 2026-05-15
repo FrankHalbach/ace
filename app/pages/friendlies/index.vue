@@ -5,6 +5,7 @@ definePageMeta({ middleware: 'auth' })
 useHead({ title: 'Freundschaftsspiele' })
 
 const { user } = useUserSession()
+const { name: memberName } = await useMemberLookup()
 const { data: friendlies } = await useFetch<FriendlyDetailDto[]>('/api/friendlies', {
   default: () => [],
 })
@@ -95,7 +96,7 @@ function formatDate(d: Date | string): string {
           <div class="flex items-center justify-between">
             <div>
               <div class="font-medium">
-                Mitglied #{{ f.initiatorId }} lädt dich ein —
+                {{ memberName(f.initiatorId) }} lädt dich ein —
                 {{ f.format === 'singles' ? 'Einzel' : 'Doppel' }}
               </div>
               <div class="text-xs text-muted">
