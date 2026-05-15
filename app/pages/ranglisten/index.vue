@@ -5,18 +5,30 @@ import type { SeasonDto } from '~~/server/modules/seasons'
 definePageMeta({ middleware: 'auth' })
 useHead({ title: 'Ranglisten' })
 
-const { data: seasons } = await useFetch<SeasonDto[]>('/api/seasons')
+const { data: seasons } = await useFetch<SeasonDto[]>('/api/seasons', { default: () => [] })
 
-// Saison-Filter: standardmäßig die zuletzt erstellte aktive Saison
 const selectedSeasonId = ref<number | null>(null)
+const selectedVariant = ref<RankingVariant | 'alle'>('alle')
+
+// Default-Saison setzen, sobald die Liste da ist
 watchEffect(() => {
-  if (selectedSeasonId.value === null && seasons.value && seasons.value.length > 0) {
-    const active = seasons.value.find((s) => s.status === 'ACTIVE') ?? seasons.value[0]
-    selectedSeasonId.value = active.id
-  }
+  if (selectedSeasonId.value !== null) return
+  const list = seasons.value
+  if (!list || list.length === 0) return
+  const active = list.find((s) => s.status === 'ACTIVE') ?? list[0]
+  selectedSeasonId.value = active.id
 })
 
-const selectedVariant = ref<RankingVariant | 'alle'>('alle')
+// Stabile Items-Computeds — USelect mag keine neu-erzeugten Arrays pro Render
+const seasonItems = computed(() =>
+  (seasons.value ?? []).map((s) => ({ label: `${s.name} (${s.status})`, value: s.id })),
+)
+const variantItems = [
+  { label: 'Alle Varianten', value: 'alle' as const },
+  { label: 'Herren', value: 'herren' as const },
+  { label: 'Damen', value: 'damen' as const },
+  { label: 'Offen', value: 'offen' as const },
+]
 
 const rankingsUrl = computed(() => {
   if (!selectedSeasonId.value) return null
@@ -27,6 +39,7 @@ const rankingsUrl = computed(() => {
 
 const { data: rankings } = await useFetch<RankingSummaryDto[]>(rankingsUrl, {
   watch: [rankingsUrl],
+  default: () => [],
 })
 
 const variantLabel: Record<RankingVariant, string> = {
@@ -50,27 +63,25 @@ const modeLabel: Record<string, string> = {
       <NuxtLink to="/" class="text-sm text-stone-500 hover:text-stone-800">← Start</NuxtLink>
     </header>
 
-    <div class="flex flex-wrap gap-3 mb-6">
+    <div v-if="seasonItems.length > 0" class="flex flex-wrap gap-3 mb-6">
       <USelect
-        v-if="seasons && seasons.length > 0"
         v-model="selectedSeasonId"
-        :items="seasons.map((s) => ({ label: `${s.name} (${s.status})`, value: s.id }))"
+        :items="seasonItems"
         class="min-w-[200px]"
       />
       <USelect
         v-model="selectedVariant"
-        :items="[
-          { label: 'Alle Varianten', value: 'alle' },
-          { label: 'Herren', value: 'herren' },
-          { label: 'Damen', value: 'damen' },
-          { label: 'Offen', value: 'offen' },
-        ]"
+        :items="variantItems"
         class="min-w-[180px]"
       />
     </div>
 
-    <p v-if="rankings?.length === 0" class="text-stone-500 italic">
-      Keine Ranglisten in dieser Saison.
+    <p v-if="seasonItems.length === 0" class="text-stone-500 italic">
+      Noch keine Saisons angelegt.
+    </p>
+
+    <p v-else-if="rankings.length === 0" class="text-stone-500 italic">
+      Keine Ranglisten für die aktuelle Auswahl.
     </p>
 
     <div v-else class="space-y-2">
