@@ -16,8 +16,12 @@ export type RateLimitConfig = {
   windowMs: number
 }
 
+/**
+ * Default 3/h gemäß Spec. Per Env überschreibbar — vor allem für lokale
+ * Entwicklung sinnvoll (z. B. `NUXT_AUTH_MAGIC_LINK_LIMIT_PER_HOUR=100`).
+ */
 export const MAGIC_LINK_RATE_LIMIT: Omit<RateLimitConfig, 'key'> = {
-  limit: 3,
+  limit: Number(process.env.NUXT_AUTH_MAGIC_LINK_LIMIT_PER_HOUR) || 3,
   windowMs: 60 * 60 * 1000, // 1 Stunde
 }
 
