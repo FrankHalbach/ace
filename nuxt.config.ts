@@ -5,6 +5,8 @@ export default defineNuxtConfig({
 
   modules: ['@nuxt/ui', '@nuxt/eslint', 'nuxt-auth-utils'],
 
+  css: ['~/assets/css/main.css'],
+
   typescript: {
     strict: true,
     typeCheck: false,
