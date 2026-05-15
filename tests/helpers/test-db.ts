@@ -4,7 +4,10 @@ import { join } from 'node:path'
 import { _resetDbForTests, useDb } from '../../server/db'
 import { runMigrations } from '../../server/db/migrate'
 import { ageGroup } from '../../server/db/schema/age-group'
+import { challenge } from '../../server/db/schema/challenge'
 import { magicLinkToken } from '../../server/db/schema/magic-link-token'
+import { matchPointsAward } from '../../server/db/schema/match-points-award'
+import { matchResult } from '../../server/db/schema/match-result'
 import { member } from '../../server/db/schema/member'
 import { ranking } from '../../server/db/schema/ranking'
 import { rankingEntry } from '../../server/db/schema/ranking-entry'
@@ -33,6 +36,9 @@ export function createTestDb() {
     reset: () => {
       const db = useDb()
       // Reihenfolge wegen FK-Cascade egal, aber explizit pro Tabelle.
+      db.delete(matchPointsAward).run()
+      db.delete(matchResult).run()
+      db.delete(challenge).run()
       db.delete(rankingEntry).run()
       db.delete(ranking).run()
       db.delete(magicLinkToken).run()

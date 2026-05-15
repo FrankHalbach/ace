@@ -1,8 +1,11 @@
 {
   "recommendations": [
-    "bierner.markdown-mermaid",
     "Vue.volar",
+    "bierner.markdown-mermaid",
     "dbaeumer.vscode-eslint",
     "esbenp.prettier-vscode"
+  ],
+  "unwantedRecommendations": [
+    "octref.vetur"
   ]
 }

@@ -1,11 +1,16 @@
 import { z } from 'zod'
 import type { MemberDto, MemberId } from '../../members'
+import { applyEloResult } from './elo'
 import type {
+  ApplyResultInput,
   DisplayInfo,
   EntryDisplayInput,
   InitialEntryFields,
   InitialOrderInput,
+  RankingMutation,
   RankingStrategy,
+  ValidateChallengeInput,
+  ValidationResult,
 } from './types'
 
 const DEFAULT_INITIAL_RATING = 1500
@@ -46,5 +51,34 @@ export const hybridStrategy: RankingStrategy = {
       primary: `#${entry.position}`,
       secondary: entry.eloRating !== null ? `${Math.round(entry.eloRating)} ELO` : undefined,
     }
+  },
+
+  /**
+   * Sprung-Distanz prüfen wie Pyramide.
+   */
+  validateChallenge(input: ValidateChallengeInput): ValidationResult {
+    const { challengerEntry, challengedEntry, config } = input
+    if (challengerEntry.position <= challengedEntry.position) {
+      return { ok: false, code: 'jump-not-allowed', reason: 'Nur nach oben fordern.' }
+    }
+    const distance = challengerEntry.position - challengedEntry.position
+    const maxJumpUp = config.maxJumpUp ?? DEFAULT_MAX_JUMP_UP
+    if (distance > maxJumpUp) {
+      return {
+        ok: false,
+        code: 'jump-not-allowed',
+        reason: `Maximal ${maxJumpUp} Plätze nach oben.`,
+      }
+    }
+    return { ok: true }
+  },
+
+  /**
+   * Hybrid: ELO-Update + Positionen neu sortieren nach Rating (wie ELO-Strategy).
+   * Optional könnten wir hier auch Position-Tausch wie Pyramide implementieren —
+   * für v1 ist Rating-getriebene Position konsistenter.
+   */
+  applyResult(input: ApplyResultInput): RankingMutation[] {
+    return applyEloResult(input, DEFAULT_K_FACTOR)
   },
 }

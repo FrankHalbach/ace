@@ -1,11 +1,15 @@
 import { z } from 'zod'
 import type { MemberId, MemberDto } from '../../members'
 import type {
+  ApplyResultInput,
   DisplayInfo,
   EntryDisplayInput,
   InitialEntryFields,
   InitialOrderInput,
+  RankingMutation,
   RankingStrategy,
+  ValidateChallengeInput,
+  ValidationResult,
 } from './types'
 
 const DEFAULT_MAX_JUMP_UP = 3
@@ -61,6 +65,55 @@ export const pyramidStrategy: RankingStrategy = {
 
   getDisplayInfo(entry: EntryDisplayInput): DisplayInfo {
     return { primary: `#${entry.position}` }
+  },
+
+  validateChallenge(input: ValidateChallengeInput): ValidationResult {
+    const { challengerEntry, challengedEntry, config } = input
+    // Challenger ist niedriger gerankt (höhere position-Nummer), darf nach oben fordern.
+    if (challengerEntry.position <= challengedEntry.position) {
+      return {
+        ok: false,
+        code: 'jump-not-allowed',
+        reason: 'Du kannst nur Spieler über dir fordern.',
+      }
+    }
+    const distance = challengerEntry.position - challengedEntry.position
+    const maxJumpUp = config.maxJumpUp ?? DEFAULT_MAX_JUMP_UP
+    if (distance > maxJumpUp) {
+      return {
+        ok: false,
+        code: 'jump-not-allowed',
+        reason: `Maximal ${maxJumpUp} Plätze nach oben (du bist ${distance} entfernt).`,
+      }
+    }
+    return { ok: true }
+  },
+
+  applyResult(input: ApplyResultInput): RankingMutation[] {
+    const { winnerId, challengerEntry, challengedEntry, allEntries, now } = input
+    const mutations: RankingMutation[] = [
+      { kind: 'set-last-match', entryId: challengerEntry.id, at: now },
+      { kind: 'set-last-match', entryId: challengedEntry.id, at: now },
+    ]
+
+    if (winnerId !== challengerEntry.memberId) {
+      // Challenged hat gewonnen → keine Positions-Änderung
+      return mutations
+    }
+
+    // Challenger hat gewonnen → übernimmt Challenged-Position, alle dazwischen
+    // (inkl. Challenged) rutschen einen Platz nach unten.
+    const oldChallengerPos = challengerEntry.position
+    const newChallengerPos = challengedEntry.position
+
+    for (const entry of allEntries) {
+      if (entry.id === challengerEntry.id) {
+        mutations.push({ kind: 'set-position', entryId: entry.id, position: newChallengerPos })
+      } else if (entry.position >= newChallengerPos && entry.position < oldChallengerPos) {
+        mutations.push({ kind: 'set-position', entryId: entry.id, position: entry.position + 1 })
+      }
+    }
+    return mutations
   },
 }
 
