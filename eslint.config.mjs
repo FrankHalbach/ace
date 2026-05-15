@@ -63,6 +63,9 @@ export default withNuxt(
     rules: {
       'prefer-const': 'error',
       'no-var': 'error',
+      // Unbenutzte Parameter mit Underscore-Prefix ignorieren (Interface-
+      // Platzhalter, Default-Implementierungen ohne Argument-Verwendung).
+      'no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
     },
   },
 )

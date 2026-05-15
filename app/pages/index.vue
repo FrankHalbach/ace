@@ -35,6 +35,11 @@ definePageMeta({
           Du bist als <strong>{{ profile.roles.join(', ') }}</strong> eingeloggt.
         </p>
         <p>
+          <NuxtLink to="/ranglisten" class="text-emerald-700 underline underline-offset-2">
+            Ranglisten →
+          </NuxtLink>
+        </p>
+        <p>
           <NuxtLink to="/profile" class="text-emerald-700 underline underline-offset-2">
             Mein Profil bearbeiten →
           </NuxtLink>

@@ -15,6 +15,13 @@
       "when": 1778831440715,
       "tag": "0001_seasons",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1778834839216,
+      "tag": "0002_rankings",
+      "breakpoints": true
     }
   ]
 }
