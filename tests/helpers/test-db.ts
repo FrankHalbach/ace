@@ -6,6 +6,8 @@ import { runMigrations } from '../../server/db/migrate'
 import { ageGroup } from '../../server/db/schema/age-group'
 import { magicLinkToken } from '../../server/db/schema/magic-link-token'
 import { member } from '../../server/db/schema/member'
+import { ranking } from '../../server/db/schema/ranking'
+import { rankingEntry } from '../../server/db/schema/ranking-entry'
 import { rateLimitEvent } from '../../server/db/schema/rate-limit-event'
 import { season } from '../../server/db/schema/season'
 
@@ -31,6 +33,8 @@ export function createTestDb() {
     reset: () => {
       const db = useDb()
       // Reihenfolge wegen FK-Cascade egal, aber explizit pro Tabelle.
+      db.delete(rankingEntry).run()
+      db.delete(ranking).run()
       db.delete(magicLinkToken).run()
       db.delete(rateLimitEvent).run()
       db.delete(ageGroup).run()

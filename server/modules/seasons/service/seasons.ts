@@ -102,6 +102,10 @@ export const seasonsService = {
 
   // --- Lifecycle ----------------------------------------------------------
 
+  /**
+   * Pure Status-Transition. Side-Effects (z. B. Ranglisten erzeugen) gehören
+   * in den API-Handler — der orchestriert Cross-Modul-Aufrufe.
+   */
   start(id: SeasonId): SeasonDto {
     return transition(id, 'PLANNED', 'ACTIVE', { startedAt: new Date() })
   },

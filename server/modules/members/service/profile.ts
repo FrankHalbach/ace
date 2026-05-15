@@ -25,6 +25,10 @@ export class MemberNotFoundError extends Error {
 }
 
 export const profileService = {
+  listAll(): MemberDto[] {
+    return memberRepo.listAll().map(toDto)
+  },
+
   findByEmail(email: string): MemberDto | undefined {
     const row = memberRepo.findByEmail(email)
     return row ? toDto(row) : undefined

@@ -3,6 +3,10 @@ import { useDb } from '../../../db'
 import { member, type MemberId, type MemberInsert, type MemberRow } from '../../../db/schema/member'
 
 export const memberRepo = {
+  listAll(): MemberRow[] {
+    return useDb().select().from(member).orderBy(member.id).all()
+  },
+
   findByEmail(email: string): MemberRow | undefined {
     return useDb()
       .select()
