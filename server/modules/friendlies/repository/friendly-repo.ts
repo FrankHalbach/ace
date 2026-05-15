@@ -48,6 +48,15 @@ export const friendlyRepo = {
     return row?.c ?? 0
   },
 
+  listByStatus(status: FriendlyStatus): FriendlyRow[] {
+    return useDb()
+      .select()
+      .from(friendly)
+      .where(eq(friendly.status, status))
+      .orderBy(sql`${friendly.disputedAt} DESC, ${friendly.createdAt} DESC`)
+      .all()
+  },
+
   /**
    * Liste aller Friendlies, in denen `memberId` Initiator ODER Eingeladener ist —
    * absteigend nach `scheduledAt` sortiert.

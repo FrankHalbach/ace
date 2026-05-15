@@ -184,6 +184,50 @@ export const resultsService = {
     return toDto(matchResultRepo.findById(id)!)
   },
 
+  /**
+   * Trainer-Force-Confirm: bestätigt das gemeldete Ergebnis ohne Loser-Check
+   * und ohne dass es im pending-Status sein muss. Funktioniert auch auf
+   * disputed Ergebnissen — wendet die Mutation an, falls noch nicht applied.
+   */
+  forceConfirm(id: MatchResultId, now: Date = new Date()): MatchResultDto {
+    const row = matchResultRepo.findById(id)
+    if (!row) throw new MatchResultNotFoundError(id)
+    if (row.applied) throw new AlreadyConfirmedError()
+
+    const challenge = challengesService.findById(row.challengeId)
+    if (!challenge) throw new MatchResultNotFoundError(id)
+
+    const loserId =
+      row.winnerId === challenge.challengerId ? challenge.challengedId : challenge.challengerId
+
+    const entries = getRankingEntries(challenge.rankingId)
+    const challengerEntry = entries.find((e) => e.memberId === challenge.challengerId)!
+    const challengedEntry = entries.find((e) => e.memberId === challenge.challengedId)!
+
+    const meta = getRankingMeta(challenge.rankingId)!
+    const strategy = strategyFor(meta.mode)
+    const mutations = strategy.applyResult({
+      winnerId: row.winnerId,
+      loserId,
+      challengerEntry,
+      challengedEntry,
+      allEntries: entries,
+      config: meta.config,
+      now,
+    })
+
+    applyMutations(mutations, id)
+    matchResultRepo.updateById(id, {
+      confirmationStatus: 'confirmed',
+      confirmedAt: now,
+      applied: true,
+      appliedAt: now,
+    })
+    challengesService.markCompleted(challenge.id, now)
+
+    return toDto(matchResultRepo.findById(id)!)
+  },
+
   /** Cron: pending → disputed nach 3 Tagen (FR-32) */
   autoDisputeStale(now: Date = new Date()): number {
     const cutoff = new Date(now.getTime() - PENDING_DISPUTE_AFTER_MS)

@@ -13,6 +13,7 @@ export type ChallengeStatus =
   | 'EXPIRED'
   | 'COMPLETED'
   | 'DISPUTED'
+  | 'CANCELLED'
 
 export type DeclineReason = 'injury' | 'vacation' | 'work' | 'other'
 
@@ -33,7 +34,7 @@ export const challenge = sqliteTable(
       .references(() => ranking.id, { onDelete: 'cascade' })
       .$type<RankingId>(),
     status: text('status', {
-      enum: ['PROPOSED', 'ACCEPTED', 'DECLINED', 'EXPIRED', 'COMPLETED', 'DISPUTED'],
+      enum: ['PROPOSED', 'ACCEPTED', 'DECLINED', 'EXPIRED', 'COMPLETED', 'DISPUTED', 'CANCELLED'],
     })
       .notNull()
       .default('PROPOSED'),
@@ -46,6 +47,7 @@ export const challenge = sqliteTable(
     expiredAt: integer('expired_at', { mode: 'timestamp' }),
     completedAt: integer('completed_at', { mode: 'timestamp' }),
     disputedAt: integer('disputed_at', { mode: 'timestamp' }),
+    cancelledAt: integer('cancelled_at', { mode: 'timestamp' }),
 
     declineReason: text('decline_reason', { enum: ['injury', 'vacation', 'work', 'other'] }),
     declineNote: text('decline_note'),

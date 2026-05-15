@@ -33,6 +33,7 @@ export type ChallengeDto = {
   expiredAt: Date | null
   completedAt: Date | null
   disputedAt: Date | null
+  cancelledAt: Date | null
   declineReason: DeclineReason | null
   declineNote: string | null
 }

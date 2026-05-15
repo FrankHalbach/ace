@@ -20,17 +20,20 @@ export const challengeRepo = {
     return rows[0]!
   },
 
-  /** Atomic Transition — nur wenn aktueller Status == `from` */
+  /** Atomic Transition — nur wenn aktueller Status `from` (oder einer aus dem Array). */
   transition(
     id: ChallengeId,
-    from: ChallengeStatus,
+    from: ChallengeStatus | ChallengeStatus[],
     to: ChallengeStatus,
     patch: Partial<ChallengeInsert>,
   ): ChallengeRow | undefined {
+    const fromCondition = Array.isArray(from)
+      ? inArray(challenge.status, from)
+      : eq(challenge.status, from)
     const rows = useDb()
       .update(challenge)
       .set({ status: to, ...patch })
-      .where(and(eq(challenge.id, id), eq(challenge.status, from)))
+      .where(and(eq(challenge.id, id), fromCondition))
       .returning()
       .all()
     return rows[0]
@@ -94,6 +97,15 @@ export const challengeRepo = {
       .from(challenge)
       .where(or(eq(challenge.challengerId, memberId), eq(challenge.challengedId, memberId)))
       .orderBy(sql`${challenge.createdAt} DESC`)
+      .all()
+  },
+
+  listByStatus(status: ChallengeStatus): ChallengeRow[] {
+    return useDb()
+      .select()
+      .from(challenge)
+      .where(eq(challenge.status, status))
+      .orderBy(sql`${challenge.disputedAt} DESC, ${challenge.createdAt} DESC`)
       .all()
   },
 

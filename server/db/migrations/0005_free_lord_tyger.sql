@@ -1,0 +1,1 @@
+ALTER TABLE `challenge` ADD `cancelled_at` integer;

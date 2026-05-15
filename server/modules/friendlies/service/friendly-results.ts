@@ -195,6 +195,25 @@ export const friendlyResultsService = {
     return toDto(friendlyResultRepo.findById(id)!)
   },
 
+  /**
+   * Trainer-Force-Confirm: bestätigt das gemeldete Ergebnis ohne Loser-Check.
+   * Funktioniert auch auf disputed Ergebnissen — markiert das Friendly als
+   * COMPLETED.
+   */
+  forceConfirm(id: FriendlyResultId, now: Date = new Date()): FriendlyResultDto {
+    const row = friendlyResultRepo.findById(id)
+    if (!row) throw new FriendlyResultNotFoundError(id)
+    if (row.confirmationStatus === 'confirmed') throw new AlreadyConfirmedError()
+
+    friendlyResultRepo.updateById(id, {
+      confirmationStatus: 'confirmed',
+      confirmedAt: now,
+    })
+    friendliesService.markCompleted(row.friendlyId, now)
+
+    return toDto(friendlyResultRepo.findById(id)!)
+  },
+
   /** Cron: pending FriendlyResults nach 3 Tagen → disputed (FR-32). */
   autoDisputeStale(now: Date = new Date()): number {
     const cutoff = new Date(now.getTime() - PENDING_DISPUTE_AFTER_MS)
