@@ -1,4 +1,6 @@
 <script setup lang="ts">
+definePageMeta({ layout: false })
+
 const route = useRoute()
 const errorParam = computed(() => (typeof route.query.error === 'string' ? route.query.error : null))
 

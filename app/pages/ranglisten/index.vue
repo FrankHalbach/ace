@@ -58,10 +58,7 @@ const modeLabel: Record<string, string> = {
 
 <template>
   <UContainer class="py-6 max-w-3xl">
-    <header class="flex items-center justify-between mb-6">
-      <h1 class="text-2xl font-semibold">Ranglisten</h1>
-      <NuxtLink to="/" class="text-sm text-stone-500 hover:text-stone-800">← Start</NuxtLink>
-    </header>
+    <h1 class="text-2xl font-semibold mb-6">Ranglisten</h1>
 
     <div v-if="seasonItems.length > 0" class="flex flex-wrap gap-3 mb-6">
       <USelect

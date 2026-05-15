@@ -3,17 +3,11 @@ import type { MemberDto } from '~~/server/modules/members'
 
 const { loggedIn, user } = useUserSession()
 
-// Eigenes Profil laden — sobald die Session bekannt ist
 const { data: profile } = await useFetch<MemberDto>('/api/members/me', {
   immediate: loggedIn.value,
 })
 
 useHead({ title: 'Start' })
-
-async function logout() {
-  await $fetch('/api/auth/logout', { method: 'POST' })
-  await navigateTo('/login')
-}
 
 definePageMeta({
   middleware: 'auth',
@@ -22,41 +16,25 @@ definePageMeta({
 
 <template>
   <UContainer class="py-8 max-w-2xl">
-    <header class="flex items-center justify-between mb-8">
-      <h1 class="text-2xl font-semibold">
-        Willkommen<span v-if="profile">, {{ profile.firstName }}</span>.
-      </h1>
-      <UButton variant="ghost" color="neutral" @click="logout">Logout</UButton>
-    </header>
+    <h1 class="text-2xl font-semibold mb-6">
+      Willkommen<span v-if="profile">, {{ profile.firstName }}</span>.
+    </h1>
 
     <UCard v-if="profile">
       <div class="space-y-2">
-        <p class="text-sm text-stone-500">
-          Du bist als <strong>{{ profile.roles.join(', ') }}</strong> eingeloggt.
-        </p>
         <p>
-          <NuxtLink to="/ranglisten" class="text-emerald-700 underline underline-offset-2">
+          <NuxtLink to="/ranglisten" class="text-primary underline underline-offset-2">
             Ranglisten →
           </NuxtLink>
         </p>
         <p>
-          <NuxtLink to="/challenges" class="text-emerald-700 underline underline-offset-2">
+          <NuxtLink to="/challenges" class="text-primary underline underline-offset-2">
             Meine Challenges →
           </NuxtLink>
         </p>
         <p>
-          <NuxtLink to="/friendlies" class="text-emerald-700 underline underline-offset-2">
+          <NuxtLink to="/friendlies" class="text-primary underline underline-offset-2">
             Freundschaftsspiele →
-          </NuxtLink>
-        </p>
-        <p>
-          <NuxtLink to="/profile" class="text-emerald-700 underline underline-offset-2">
-            Mein Profil bearbeiten →
-          </NuxtLink>
-        </p>
-        <p v-if="profile.roles.includes('admin')">
-          <NuxtLink to="/admin" class="text-emerald-700 underline underline-offset-2">
-            Admin-Bereich →
           </NuxtLink>
         </p>
       </div>
@@ -64,7 +42,8 @@ definePageMeta({
 
     <section class="mt-8">
       <h2 class="text-lg font-semibold mb-3">In Entwicklung</h2>
-      <ul class="space-y-2 text-stone-700">
+      <ul class="space-y-2 text-stone-700 dark:text-stone-300">
+        <li>· Profilfoto</li>
         <li>· Match-Vorschläge</li>
         <li>· Trainer-Aktivitätsbericht</li>
         <li>· Streitfall-Resolve-UI für Trainer</li>

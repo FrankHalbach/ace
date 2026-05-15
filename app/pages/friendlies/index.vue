@@ -80,10 +80,7 @@ function formatDate(d: Date | string): string {
   <UContainer class="py-6 max-w-3xl">
     <header class="flex items-center justify-between mb-6">
       <h1 class="text-2xl font-semibold">Freundschaftsspiele</h1>
-      <div class="flex gap-2">
-        <UButton color="primary" to="/friendlies/new">+ Anbieten</UButton>
-        <NuxtLink to="/" class="text-sm text-stone-500 hover:text-stone-800 self-center">← Start</NuxtLink>
-      </div>
+      <UButton color="primary" to="/friendlies/new">+ Anbieten</UButton>
     </header>
 
     <section v-if="incoming.length > 0" class="mb-8">

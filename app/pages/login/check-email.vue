@@ -1,4 +1,6 @@
 <script setup lang="ts">
+definePageMeta({ layout: false })
+
 const route = useRoute()
 const email = computed(() => (typeof route.query.email === 'string' ? route.query.email : null))
 
