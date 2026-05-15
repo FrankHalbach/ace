@@ -164,3 +164,37 @@ und nicht serverseitig gespeichert — kein Schema-Change, keine API-
 - Theme-Tokens (Brand-Farben) anpassen — bleibt wie aktuell konfiguriert
 - Server-seitige Theme-Persistenz (würde bei Geräte-Wechsel synchronisieren) —
   v2, falls Bedarf entsteht
+
+---
+
+## N-03 · Altersgruppen-Naming bleibt vereinsspezifisch
+
+**Status**: vorgeschlagen
+**Datum**: 2026-05-15
+**Quelle**: Produktentscheidung TuS Neureut
+**Berührte FR-IDs**: FR-2d, FR-2j
+
+### Anforderung
+
+Spec FR-2d nennt explizit „Senioren-Klassen (H40, H50, H60 sowie D40, D50)".
+Beim TuS Neureut wird der Begriff „Senioren" **nicht** verwendet — die
+Altersgruppen heißen dort z. B. „Über 50", „Über 60". FR-2j sieht diese
+Freiheit bereits vor (Admin definiert Altersgruppen pro Saison frei mit
+eigenem Namen).
+
+Konkrete Konsequenzen:
+
+- **Seed/Demo-Daten** verwenden „Über 50" statt „Senior 50+".
+- **Spec-Beispiele** sind als Beispiele zu verstehen, keine Vorgaben.
+- **Schema-Feld `seniorsFriendly`** in `MatchPreferences` (sowie das
+  zugehörige UI-Label „Senioren-Freundschaftsspiele") sollten in einer
+  späteren Iteration in einen vereinsneutraleren Begriff umbenannt werden,
+  z. B. `over50Friendly`. Schema-Migration und UI-Anpassung sind
+  überschaubar; aktuell bewusst nicht sofort, weil die Bedeutung der
+  Präferenz noch geschärft werden muss („gegen ältere Spieler bereit zu
+  spielen" vs. „in der Altersklasse 50+ ranking-spielen").
+
+### Out of Scope dieses Nachtrags
+
+- Konkrete Umbenennung von `MatchPreferences.seniorsFriendly` — separate Iteration
+- Anpassung der Spec v1.0 — kommt in v1.1

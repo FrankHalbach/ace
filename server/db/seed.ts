@@ -34,7 +34,7 @@ const seedMembers: MemberInsert[] = [
   { email: 'sara@neureut.de', firstName: 'Sara', lastName: 'Becker', birthYear: 1989, gender: 'w', dtbLk: 11.0, roles: ['player'] },
   { email: 'mia@neureut.de', firstName: 'Mia', lastName: 'Schulz', birthYear: 1993, gender: 'w', dtbLk: 12.5, roles: ['player'] },
 
-  // Senior 50+
+  // Über 50
   { email: 'heinz@neureut.de', firstName: 'Heinz', lastName: 'Wagner', birthYear: 1965, gender: 'm', dtbLk: 13.5, roles: ['player'] },
 
   // U18
@@ -77,7 +77,7 @@ export function runSeed(): void {
       active: true,
     })
     seasonsService.addAgeGroup(season.id, {
-      name: 'Senior 50+',
+      name: 'Über 50',
       minAge: 50,
       maxAge: null,
       genderRule: 'separate',
