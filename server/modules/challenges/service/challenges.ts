@@ -37,6 +37,7 @@ function toDto(row: ChallengeRow): ChallengeDto {
     expiredAt: row.expiredAt,
     completedAt: row.completedAt,
     disputedAt: row.disputedAt,
+    cancelledAt: row.cancelledAt,
     declineReason: row.declineReason,
     declineNote: row.declineNote,
   }
@@ -63,6 +64,10 @@ export const challengesService = {
 
   listForMember(memberId: MemberId): ChallengeDto[] {
     return challengeRepo.listForMember(memberId).map(toDto)
+  },
+
+  listDisputed(): ChallengeDto[] {
+    return challengeRepo.listByStatus('DISPUTED').map(toDto)
   },
 
   // ───────────────────────────────────────────────────────────────────────
@@ -200,7 +205,8 @@ export const challengesService = {
   markCompleted(id: ChallengeId, now: Date = new Date()): ChallengeDto {
     const row = challengeRepo.findById(id)
     if (!row) throw new ChallengeNotFoundError(id)
-    const updated = challengeRepo.transition(id, 'ACCEPTED', 'COMPLETED', { completedAt: now })
+    // Erlaubt aus ACCEPTED (Spieler-Confirm) ODER DISPUTED (Trainer-Force-Confirm).
+    const updated = challengeRepo.transition(id, ['ACCEPTED', 'DISPUTED'], 'COMPLETED', { completedAt: now })
     if (!updated) throw new ChallengeInvalidTransitionError(row.status, 'COMPLETED')
     return toDto(updated)
   },
@@ -210,6 +216,15 @@ export const challengesService = {
     if (!row) throw new ChallengeNotFoundError(id)
     const updated = challengeRepo.transition(id, 'ACCEPTED', 'DISPUTED', { disputedAt: now })
     if (!updated) throw new ChallengeInvalidTransitionError(row.status, 'DISPUTED')
+    return toDto(updated)
+  },
+
+  /** Trainer cancelt einen Streitfall — Challenge → CANCELLED, keine Rangliste-Wirkung. */
+  cancelByTrainer(id: ChallengeId, now: Date = new Date()): ChallengeDto {
+    const row = challengeRepo.findById(id)
+    if (!row) throw new ChallengeNotFoundError(id)
+    const updated = challengeRepo.transition(id, 'DISPUTED', 'CANCELLED', { cancelledAt: now })
+    if (!updated) throw new ChallengeInvalidTransitionError(row.status, 'CANCELLED')
     return toDto(updated)
   },
 

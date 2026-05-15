@@ -92,6 +92,14 @@ export const friendliesService = {
     })
   },
 
+  listDisputed(): FriendlyDetailDto[] {
+    const rows = friendlyRepo.listByStatus('DISPUTED')
+    return rows.map((row) => {
+      const invitees = friendlyInviteeRepo.listByFriendly(row.id)
+      return { ...toDto(row), invitees: invitees.map(toInviteeDto) }
+    })
+  },
+
   // ───────────────────────────────────────────────────────────────────────
   // Create
   // ───────────────────────────────────────────────────────────────────────
@@ -269,7 +277,8 @@ export const friendliesService = {
   markCompleted(id: FriendlyId, now: Date = new Date()): FriendlyDto {
     const row = friendlyRepo.findById(id)
     if (!row) throw new FriendlyNotFoundError(id)
-    const fromStates: FriendlyStatus[] = ['CONFIRMED', 'PLAYED']
+    // Erlaubt aus CONFIRMED/PLAYED (Spieler-Confirm) ODER DISPUTED (Trainer-Force-Confirm).
+    const fromStates: FriendlyStatus[] = ['CONFIRMED', 'PLAYED', 'DISPUTED']
     const updated = friendlyRepo.transition(id, fromStates, 'COMPLETED', { completedAt: now })
     if (!updated) throw new FriendlyInvalidTransitionError(row.status, 'COMPLETED')
     const invitees = friendlyInviteeRepo.listByFriendly(id)
@@ -283,6 +292,15 @@ export const friendliesService = {
     const fromStates: FriendlyStatus[] = ['CONFIRMED', 'PLAYED']
     const updated = friendlyRepo.transition(id, fromStates, 'DISPUTED', { disputedAt: now })
     if (!updated) throw new FriendlyInvalidTransitionError(row.status, 'DISPUTED')
+    return toDto(updated)
+  },
+
+  /** Trainer cancelt einen Streitfall — Friendly → CANCELLED, keine Rangliste-Wirkung. */
+  cancelByTrainer(id: FriendlyId, now: Date = new Date()): FriendlyDto {
+    const row = friendlyRepo.findById(id)
+    if (!row) throw new FriendlyNotFoundError(id)
+    const updated = friendlyRepo.transition(id, 'DISPUTED', 'CANCELLED', { cancelledAt: now })
+    if (!updated) throw new FriendlyInvalidTransitionError(row.status, 'CANCELLED')
     return toDto(updated)
   },
 }

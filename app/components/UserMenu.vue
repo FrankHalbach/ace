@@ -80,8 +80,15 @@ const items = computed<DropdownMenuItem[][]>(() => [
       children: themeItems.value,
     },
   ],
-  ...(profile.value?.roles.includes('admin')
-    ? [[{ label: 'Admin-Bereich', icon: 'i-lucide-shield', to: '/admin' }]]
+  ...(profile.value?.roles.some((r) => r === 'trainer' || r === 'admin')
+    ? [
+        [
+          { label: 'Trainer-Bereich', icon: 'i-lucide-whistle', to: '/trainer' },
+          ...(profile.value.roles.includes('admin')
+            ? [{ label: 'Admin-Bereich', icon: 'i-lucide-shield', to: '/admin' }]
+            : []),
+        ],
+      ]
     : []),
   [
     {
