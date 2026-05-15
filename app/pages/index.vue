@@ -42,7 +42,7 @@ definePageMeta({
 
     <section class="mt-8">
       <h2 class="text-lg font-semibold mb-3">In Entwicklung</h2>
-      <ul class="space-y-2 text-stone-700 dark:text-stone-300">
+      <ul class="space-y-2 text-toned">
         <li>· Profilfoto</li>
         <li>· Match-Vorschläge</li>
         <li>· Trainer-Aktivitätsbericht</li>
@@ -50,7 +50,7 @@ definePageMeta({
       </ul>
     </section>
 
-    <p v-if="user" class="mt-12 text-xs text-stone-400 font-mono">
+    <p v-if="user" class="mt-12 text-xs text-dimmed font-mono">
       memberId={{ user.memberId }}
     </p>
   </UContainer>

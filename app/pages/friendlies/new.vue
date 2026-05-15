@@ -126,7 +126,7 @@ async function submit() {
 <template>
   <UContainer class="py-6 max-w-xl">
     <header class="mb-6">
-      <NuxtLink to="/friendlies" class="text-sm text-stone-500 hover:text-stone-800">
+      <NuxtLink to="/friendlies" class="text-sm text-muted hover:text-default">
         ← Freundschaftsspiele
       </NuxtLink>
       <h1 class="text-2xl font-semibold mt-2">Freundschaftsspiel anbieten</h1>

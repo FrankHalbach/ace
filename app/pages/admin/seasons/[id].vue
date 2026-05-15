@@ -107,7 +107,7 @@ function ageRange(min: number | null, max: number | null): string {
   <div v-if="season">
     <header class="flex items-center justify-between mb-6">
       <div class="flex items-center gap-3">
-        <NuxtLink to="/admin/seasons" class="text-stone-500 hover:text-stone-800 text-sm">
+        <NuxtLink to="/admin/seasons" class="text-muted hover:text-default text-sm">
           ← Saisons
         </NuxtLink>
       </div>
@@ -134,7 +134,7 @@ function ageRange(min: number | null, max: number | null): string {
           </UButton>
         </div>
       </UFormField>
-      <p v-if="!isPlanned" class="text-xs text-stone-500 mt-2">
+      <p v-if="!isPlanned" class="text-xs text-muted mt-2">
         Name nur im Status „Geplant" änderbar.
       </p>
     </UCard>
@@ -182,11 +182,11 @@ function ageRange(min: number | null, max: number | null): string {
         </form>
       </UCard>
 
-      <p v-if="season.ageGroups.length === 0" class="text-sm text-stone-500 italic">
+      <p v-if="season.ageGroups.length === 0" class="text-sm text-muted italic">
         Noch keine Altersgruppen.
       </p>
 
-      <ul v-else class="divide-y divide-stone-200 border border-stone-200 rounded-lg overflow-hidden">
+      <ul v-else class="divide-y divide-default border border-default rounded-lg overflow-hidden">
         <li
           v-for="ag in season.ageGroups"
           :key="ag.id"
@@ -194,9 +194,9 @@ function ageRange(min: number | null, max: number | null): string {
         >
           <div>
             <div class="font-medium">{{ ag.name }}</div>
-            <div class="text-xs text-stone-500">
+            <div class="text-xs text-muted">
               {{ ageRange(ag.minAge, ag.maxAge) }} · {{ genderRuleLabel[ag.genderRule] }}
-              <span v-if="!ag.active" class="ml-1 text-orange-600">(inaktiv)</span>
+              <span v-if="!ag.active" class="ml-1 text-orange-600 dark:text-orange-400">(inaktiv)</span>
             </div>
           </div>
           <UButton
@@ -211,31 +211,31 @@ function ageRange(min: number | null, max: number | null): string {
       </ul>
     </section>
 
-    <section class="border-t border-stone-200 pt-6">
+    <section class="border-t border-default pt-6">
       <h2 class="text-lg font-semibold mb-3">Lifecycle</h2>
 
       <div v-if="season.status === 'PLANNED'" class="space-y-2">
-        <p class="text-sm text-stone-600">
+        <p class="text-sm text-muted">
           Beim Start werden die Regeln eingefroren — keine Änderungen mehr an Name oder Altersgruppen.
         </p>
         <UButton color="primary" @click="transition('start')">Saison starten →</UButton>
       </div>
 
       <div v-else-if="season.status === 'ACTIVE'" class="space-y-2">
-        <p class="text-sm text-stone-600">
+        <p class="text-sm text-muted">
           Saison ist aktiv. Schließen, wenn die Spielzeit zu Ende ist.
         </p>
         <UButton color="warning" @click="transition('close')">Saison schließen</UButton>
       </div>
 
       <div v-else-if="season.status === 'CLOSED'" class="space-y-2">
-        <p class="text-sm text-stone-600">
+        <p class="text-sm text-muted">
           Saison geschlossen. Beim Archivieren wird sie read-only.
         </p>
         <UButton color="neutral" @click="transition('archive')">Archivieren</UButton>
       </div>
 
-      <p v-else class="text-sm text-stone-500 italic">Saison ist archiviert.</p>
+      <p v-else class="text-sm text-muted italic">Saison ist archiviert.</p>
     </section>
   </div>
 </template>

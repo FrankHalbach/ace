@@ -19,12 +19,12 @@ useHead({ title: 'Email-Bestätigung' })
         </template>
         geschickt. Klicke auf den Link in der Mail, um dich anzumelden.
       </p>
-      <p class="text-sm text-stone-600 mb-4">
+      <p class="text-sm text-muted mb-4">
         Der Link ist 15 Minuten gültig und kann nur einmal verwendet werden.
       </p>
-      <p class="text-sm text-stone-600">
+      <p class="text-sm text-muted">
         Keine Email bekommen? Schau in den Spam-Ordner oder
-        <NuxtLink to="/login" class="text-emerald-700 underline underline-offset-2">
+        <NuxtLink to="/login" class="text-primary underline underline-offset-2">
           fordere einen neuen Link an
         </NuxtLink>.
       </p>

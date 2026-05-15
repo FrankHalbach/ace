@@ -52,7 +52,7 @@ async function submit() {
 <template>
   <UContainer class="py-16 max-w-md">
     <h1 class="text-3xl font-semibold mb-2">Anmelden bei ace</h1>
-    <p class="text-stone-600 mb-8">
+    <p class="text-muted mb-8">
       Wir schicken dir einen einmaligen Login-Link per Email. Kein Passwort, keine Apps.
     </p>
 
@@ -84,7 +84,7 @@ async function submit() {
       </form>
     </UCard>
 
-    <p class="text-xs text-stone-500 mt-6">
+    <p class="text-xs text-muted mt-6">
       Der Link ist 15 Minuten gültig und nur einmal nutzbar. Falls du noch nicht im Verein
       angemeldet bist, wende dich an den Sportwart.
     </p>
