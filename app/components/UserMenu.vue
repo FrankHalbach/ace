@@ -73,7 +73,10 @@ const items = computed<DropdownMenuItem[][]>(() => [
       : []),
   ],
   [
-    { label: 'Mein Profil', icon: 'i-lucide-user', to: '/profile' },
+    ...(profile.value
+      ? [{ label: 'Mein Spieler-Profil', icon: 'i-lucide-user-round', to: `/spieler/${profile.value.id}` }]
+      : []),
+    { label: 'Profil bearbeiten', icon: 'i-lucide-user-cog', to: '/profile' },
     {
       label: 'Theme',
       icon: 'i-lucide-palette',

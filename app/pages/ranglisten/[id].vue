@@ -89,7 +89,7 @@ function canChallenge(targetMemberId: number, targetStatus: string): boolean {
       >
         <div class="flex items-baseline gap-3 flex-1">
           <div class="font-mono text-sm text-muted min-w-[60px]">{{ e.display.primary }}</div>
-          <div>
+          <NuxtLink :to="`/spieler/${e.memberId}`" class="hover:text-primary transition">
             <div class="font-medium">
               {{ e.member.firstName }} {{ e.member.lastName }}
               <span v-if="user && e.memberId === user.memberId" class="ml-1 text-xs text-primary">(du)</span>
@@ -98,7 +98,7 @@ function canChallenge(targetMemberId: number, targetStatus: string): boolean {
               LK {{ e.member.dtbLk.toFixed(1) }}
               <span v-if="e.member.status === 'pausiert'" class="text-dimmed">· pausiert</span>
             </div>
-          </div>
+          </NuxtLink>
         </div>
         <div class="flex items-center gap-2">
           <div v-if="e.display.secondary" class="font-mono text-sm text-primary">
