@@ -1,19 +1,14 @@
 <script setup lang="ts">
-import type { MemberDto } from '~~/server/modules/members'
+import type { PlayerProfileDto } from '~~/server/modules/members'
 import type { SuggestionDto, SuggestionReason } from '~~/server/modules/suggestions'
-
-const reasonIcon: Record<SuggestionReason, string> = {
-  'inactive-partner': 'i-lucide-clock-3',
-  'new-pairing': 'i-lucide-sparkles',
-  'similar-strength': 'i-lucide-scale',
-}
 
 const { loggedIn, user } = useUserSession()
 const toast = useToast()
 
-const { data: profile } = await useFetch<MemberDto>('/api/members/me', {
-  immediate: loggedIn.value,
-})
+const { data: profile } = await useFetch<PlayerProfileDto>(
+  () => `/api/members/${user.value?.memberId}/profile`,
+  { immediate: loggedIn.value && !!user.value?.memberId, watch: [user] },
+)
 
 const { data: suggestions, refresh: refreshSuggestions } = await useFetch<SuggestionDto[]>(
   '/api/suggestions',
@@ -25,6 +20,12 @@ useHead({ title: 'Start' })
 definePageMeta({
   middleware: 'auth',
 })
+
+const reasonIcon: Record<SuggestionReason, string> = {
+  'inactive-partner': 'i-lucide-clock-3',
+  'new-pairing': 'i-lucide-sparkles',
+  'similar-strength': 'i-lucide-scale',
+}
 
 const challenging = ref<number | null>(null)
 
@@ -48,100 +49,157 @@ async function sendChallenge(s: SuggestionDto) {
     challenging.value = null
   }
 }
+
+type RankingStanding = PlayerProfileDto['rankings'][number]
+
+const topRanking = computed<RankingStanding | null>(() => {
+  const r = profile.value?.rankings ?? []
+  if (r.length === 0) return null
+  return r.slice().sort((a: RankingStanding, b: RankingStanding) => a.position - b.position)[0] ?? null
+})
 </script>
 
 <template>
-  <UContainer class="py-8 max-w-2xl">
-    <h1 class="text-2xl font-semibold mb-6">
-      Willkommen<span v-if="profile">, {{ profile.firstName }}</span>.
-    </h1>
+  <UContainer class="py-10 max-w-2xl">
+    <!-- HERO -->
+    <section class="mb-10">
+      <h1 class="text-3xl md:text-4xl font-semibold tracking-tight">
+        Hallo<span v-if="profile">, {{ profile.firstName }}</span>.
+      </h1>
+      <p class="text-base text-muted mt-2">
+        Bereit für ein Match?
+      </p>
+    </section>
 
-    <section v-if="suggestions.length > 0" class="mb-8">
-      <div class="flex items-baseline justify-between mb-3">
-        <h2 class="text-lg font-semibold">Für dich vorgeschlagen</h2>
-        <span class="text-xs text-dimmed tabular-nums">{{ suggestions.length }} / 5</span>
+    <!-- STAT STRIP -->
+    <section
+      v-if="profile"
+      class="mb-12 grid grid-cols-3 gap-3 sm:gap-8 border-y border-default py-5"
+    >
+      <div class="min-w-0">
+        <p class="text-xs text-muted font-medium tracking-wide mb-1">Deine LK</p>
+        <p class="text-2xl font-semibold font-mono tabular-nums text-primary leading-none">
+          {{ profile.dtbLk.toFixed(1) }}
+        </p>
       </div>
-      <ul class="divide-y divide-default">
+      <div class="min-w-0 sm:border-l sm:border-default sm:pl-8">
+        <p class="text-xs text-muted font-medium tracking-wide mb-1">Position</p>
+        <p v-if="topRanking" class="text-2xl font-semibold font-mono tabular-nums leading-none">
+          <span class="text-base text-muted font-normal">#</span>{{ topRanking.position }}
+        </p>
+        <p v-else class="text-2xl font-semibold text-dimmed leading-none">—</p>
+        <p v-if="topRanking" class="text-xs text-muted truncate mt-1.5">
+          {{ topRanking.ageGroupName }}
+        </p>
+        <p v-else class="text-xs text-muted truncate mt-1.5">
+          keine Rangliste
+        </p>
+      </div>
+      <div class="min-w-0 sm:border-l sm:border-default sm:pl-8">
+        <p class="text-xs text-muted font-medium tracking-wide mb-1">Matches</p>
+        <p class="text-2xl font-semibold font-mono tabular-nums leading-none">
+          {{ profile.matchesLast4Weeks }}
+        </p>
+        <p class="text-xs text-muted truncate mt-1.5">letzte 4 Wo</p>
+      </div>
+    </section>
+
+    <!-- SUGGESTIONS -->
+    <section v-if="suggestions.length > 0" class="mb-12">
+      <div class="flex items-baseline justify-between mb-2">
+        <h2 class="text-sm font-semibold tracking-wide text-muted">
+          Für dich vorgeschlagen
+        </h2>
+        <NuxtLink
+          to="/ranglisten"
+          class="text-xs text-muted hover:text-primary inline-flex items-center gap-1 transition-colors"
+        >
+          Mehr Spieler
+          <UIcon name="i-lucide-arrow-right" class="size-3.5" />
+        </NuxtLink>
+      </div>
+
+      <ul class="divide-y divide-default border-y border-default">
         <li
           v-for="s in suggestions"
           :key="s.memberId"
-          class="py-3 transition-colors hover:bg-elevated/40 -mx-2 px-2 rounded"
+          class="py-2.5 flex items-center justify-between gap-3 flex-wrap"
         >
-          <div class="flex items-center justify-between gap-3 flex-wrap">
-            <NuxtLink :to="`/spieler/${s.memberId}`" class="flex-1 min-w-0 group">
-              <div class="flex items-center gap-2">
-                <span class="font-medium group-hover:text-primary transition-colors">
-                  {{ s.firstName }} {{ s.lastName }}
-                </span>
-                <span class="text-[11px] font-mono tabular-nums text-muted ring-1 ring-default rounded px-1.5 py-0.5">
-                  LK {{ s.dtbLk.toFixed(1) }}
-                </span>
-              </div>
-              <div class="flex items-center gap-1.5 mt-1 text-xs text-muted">
-                <UIcon :name="reasonIcon[s.reason]" class="size-3.5 shrink-0" />
-                <span>{{ s.reasonText }}</span>
-              </div>
-              <div v-if="s.rankingName" class="text-xs text-dimmed mt-0.5 ml-5">
-                Rangliste: {{ s.rankingName }}
-              </div>
-            </NuxtLink>
-            <div class="flex gap-2">
-              <UButton
-                v-if="s.rankingId !== null"
-                size="xs"
-                color="primary"
-                icon="i-lucide-swords"
-                :loading="challenging === s.memberId"
-                @click="sendChallenge(s)"
+          <NuxtLink :to="`/spieler/${s.memberId}`" class="group flex-1 min-w-0">
+            <div class="flex items-baseline gap-2 flex-wrap">
+              <span class="text-sm font-semibold group-hover:text-primary transition-colors">
+                {{ s.firstName }} {{ s.lastName }}
+              </span>
+              <span
+                class="text-[11px] font-mono tabular-nums text-muted ring-1 ring-default rounded px-1.5 py-0.5"
               >
-                Challenge
-              </UButton>
-              <UButton
-                size="xs"
-                variant="soft"
-                color="secondary"
-                icon="i-lucide-handshake"
-                :to="`/friendlies/new?opponentId=${s.memberId}`"
-              >
-                Friendly
-              </UButton>
+                LK {{ s.dtbLk.toFixed(1) }}
+              </span>
             </div>
+            <div class="flex items-center gap-1 mt-0.5 text-xs text-muted min-w-0">
+              <UIcon :name="reasonIcon[s.reason]" class="size-3.5 shrink-0" />
+              <span class="truncate">{{ s.reasonText }}</span>
+            </div>
+          </NuxtLink>
+
+          <div class="flex gap-1.5 shrink-0">
+            <UButton
+              v-if="s.rankingId !== null"
+              size="xs"
+              color="primary"
+              icon="i-lucide-swords"
+              :loading="challenging === s.memberId"
+              @click="sendChallenge(s)"
+            >
+              Challenge
+            </UButton>
+            <UButton
+              size="xs"
+              variant="soft"
+              color="secondary"
+              icon="i-lucide-handshake"
+              :to="`/friendlies/new?opponentId=${s.memberId}`"
+            >
+              Friendly
+            </UButton>
           </div>
         </li>
       </ul>
     </section>
 
-    <UCard v-if="profile">
-      <div class="space-y-2">
-        <p>
-          <NuxtLink to="/ranglisten" class="text-primary underline underline-offset-2">
-            Ranglisten →
-          </NuxtLink>
-        </p>
-        <p>
-          <NuxtLink to="/challenges" class="text-primary underline underline-offset-2">
-            Meine Challenges →
-          </NuxtLink>
-        </p>
-        <p>
-          <NuxtLink to="/friendlies" class="text-primary underline underline-offset-2">
-            Freundschaftsspiele →
-          </NuxtLink>
-        </p>
+    <!-- QUICK NAV -->
+    <section class="mb-12">
+      <h2 class="text-sm font-semibold tracking-wide text-muted mb-4">
+        Schnellzugriff
+      </h2>
+      <div class="grid grid-cols-3 gap-3">
+        <NuxtLink
+          to="/ranglisten"
+          class="flex flex-col items-center gap-2 p-4 rounded-lg border border-default bg-default transition-colors hover:border-primary hover:bg-elevated/30"
+        >
+          <UIcon name="i-lucide-target" class="size-6 text-primary" />
+          <span class="text-sm font-medium">Ranglisten</span>
+        </NuxtLink>
+        <NuxtLink
+          to="/challenges"
+          class="flex flex-col items-center gap-2 p-4 rounded-lg border border-default bg-default transition-colors hover:border-primary hover:bg-elevated/30"
+        >
+          <UIcon name="i-lucide-swords" class="size-6 text-primary" />
+          <span class="text-sm font-medium">Challenges</span>
+        </NuxtLink>
+        <NuxtLink
+          to="/friendlies"
+          class="flex flex-col items-center gap-2 p-4 rounded-lg border border-default bg-default transition-colors hover:border-primary hover:bg-elevated/30"
+        >
+          <UIcon name="i-lucide-handshake" class="size-6 text-primary" />
+          <span class="text-sm font-medium">Friendlies</span>
+        </NuxtLink>
       </div>
-    </UCard>
-
-    <section class="mt-8">
-      <h2 class="text-lg font-semibold mb-3">In Entwicklung</h2>
-      <ul class="space-y-2 text-toned">
-        <li>· Profilfoto</li>
-        <li>· Email-Versand der Match-Vorschläge</li>
-        <li>· Trainings­gruppen + Fokus-Spieler-Markierung</li>
-      </ul>
     </section>
 
-    <p v-if="user" class="mt-12 text-xs text-dimmed font-mono">
-      memberId={{ user.memberId }}
+    <!-- FOOTER NOTE -->
+    <p class="text-xs text-dimmed mt-16 text-center">
+      In Entwicklung · Profilfoto · Email-Versand der Match-Vorschläge · Trainingsgruppen
     </p>
   </UContainer>
 </template>
