@@ -19,6 +19,19 @@ import type { FriendlyInviteeRow } from '../../../db/schema/friendly-invitee'
 
 const SCHEDULED_TOLERANCE_MS = 60 * 60 * 1000 // 1 Stunde Vergangenheit toleriert
 const MAX_NEW_PER_DAY = 5
+// Termin-Konflikt-Fenster: ±2 Stunden um den geplanten Slot. Ein Tennis-
+// Match dauert 60–120 Minuten — wer in dem Fenster schon ein anderes Match
+// hat, kann nicht zuverlässig spielen. Siehe Nachtrag N-04.
+const SCHEDULE_CONFLICT_WINDOW_MS = 2 * 60 * 60 * 1000
+
+const germanDateTime = new Intl.DateTimeFormat('de-DE', {
+  weekday: 'short',
+  day: '2-digit',
+  month: '2-digit',
+  year: 'numeric',
+  hour: '2-digit',
+  minute: '2-digit',
+})
 
 function toDto(row: FriendlyRow): FriendlyDto {
   return {
@@ -178,6 +191,24 @@ export const friendliesService = {
       )
     }
 
+    // 7. Termin-Konflikt — weder Initiator noch Eingeladener darf zur Slot-
+    //    Zeit (±2h) in einem anderen aktiven Friendly stehen. Siehe N-04.
+    const slotStart = new Date(input.scheduledAt.getTime() - SCHEDULE_CONFLICT_WINDOW_MS)
+    const slotEnd = new Date(input.scheduledAt.getTime() + SCHEDULE_CONFLICT_WINDOW_MS)
+    const conflict = friendlyRepo.findConflictForMembers(
+      [initiatorId, ...inviteeIds],
+      slotStart,
+      slotEnd,
+    )
+    if (conflict) {
+      const who = profileService.findById(conflict.memberId)
+      const name = who ? `${who.firstName} ${who.lastName}` : `Spieler ${conflict.memberId}`
+      throw new FriendlyValidationError(
+        'friendly.schedule-conflict',
+        `${name} hat bereits ein Match am ${germanDateTime.format(conflict.scheduledAt)}.`,
+      )
+    }
+
     // ─── Insert Friendly + Invitees in zwei Schritten ────────────────────
     const friendlyRow = friendlyRepo.insert({
       initiatorId,
@@ -222,6 +253,22 @@ export const friendliesService = {
   // ───────────────────────────────────────────────────────────────────────
 
   accept(id: FriendlyId, memberId: MemberId, now: Date = new Date()): FriendlyDetailDto {
+    // Termin-Konflikt-Check für den akzeptierenden Eingeladenen — andere
+    // Teilnehmer wurden bei Create geprüft, ihre eventuelle Doppel-Buchung
+    // ist nicht unser Problem. Das aktuelle Friendly aus der Suche ausklammern
+    // (sonst kollidiert es mit sich selbst).
+    const current = friendlyRepo.findById(id)
+    if (current) {
+      const slotStart = new Date(current.scheduledAt.getTime() - SCHEDULE_CONFLICT_WINDOW_MS)
+      const slotEnd = new Date(current.scheduledAt.getTime() + SCHEDULE_CONFLICT_WINDOW_MS)
+      const conflict = friendlyRepo.findConflictForMembers([memberId], slotStart, slotEnd, id)
+      if (conflict) {
+        throw new FriendlyValidationError(
+          'friendly.schedule-conflict',
+          `Du hast bereits ein Match am ${germanDateTime.format(conflict.scheduledAt)}.`,
+        )
+      }
+    }
     return setInviteeStatusAndRecompute(id, memberId, 'accepted', now)
   },
 

@@ -365,6 +365,7 @@ describe('Dispute-Flow', () => {
 describe('Friendly-Listing für Mitglied', () => {
   it('listet Friendlies auf, in denen ich Initiator oder Eingeladener bin', () => {
     const [a, b, c] = insertMembers(3)
+    // Zwei Termine außerhalb des Schedule-Konflikt-Fensters (±2h, siehe N-04)
     friendliesService.create(a, {
       format: 'singles',
       scheduledAt: tomorrow(),
@@ -373,7 +374,7 @@ describe('Friendly-Listing für Mitglied', () => {
     })
     friendliesService.create(c, {
       format: 'singles',
-      scheduledAt: tomorrow(),
+      scheduledAt: new Date(tomorrow().getTime() + 5 * 60 * 60 * 1000),
       opponentIds: [b],
       matchMode: 'best-of-3-champions',
     })

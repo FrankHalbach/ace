@@ -1,4 +1,4 @@
-import { and, count, eq, gte, inArray, or, sql } from 'drizzle-orm'
+import { and, count, eq, gte, inArray, lte, ne, or, sql } from 'drizzle-orm'
 import { useDb } from '../../../db'
 import {
   friendly,
@@ -55,6 +55,56 @@ export const friendlyRepo = {
       .where(eq(friendly.status, status))
       .orderBy(sql`${friendly.disputedAt} DESC, ${friendly.createdAt} DESC`)
       .all()
+  },
+
+  /**
+   * Sucht den ersten aktiven Friendly (PROPOSED|CONFIRMED), in dem einer der
+   * `memberIds` als Initiator ODER Eingeladener steht und dessen `scheduledAt`
+   * im Fenster [slotStart, slotEnd] liegt. Optional ein Friendly ausschließen
+   * (für Accept-Check: das gerade akzeptierte Friendly selbst soll nicht als
+   * Konflikt zählen). Liefert `undefined` wenn frei.
+   */
+  findConflictForMembers(
+    memberIds: MemberId[],
+    slotStart: Date,
+    slotEnd: Date,
+    excludeFriendlyId?: FriendlyId,
+  ): { id: FriendlyId; scheduledAt: Date; memberId: MemberId } | undefined {
+    if (memberIds.length === 0) return undefined
+    const activeStatuses: FriendlyStatus[] = ['PROPOSED', 'CONFIRMED']
+    const windowConds = [
+      inArray(friendly.status, activeStatuses),
+      gte(friendly.scheduledAt, slotStart),
+      lte(friendly.scheduledAt, slotEnd),
+    ]
+    if (excludeFriendlyId !== undefined) {
+      windowConds.push(ne(friendly.id, excludeFriendlyId))
+    }
+    // Als Initiator
+    const asInitiator = useDb()
+      .select({
+        id: friendly.id,
+        scheduledAt: friendly.scheduledAt,
+        memberId: friendly.initiatorId,
+      })
+      .from(friendly)
+      .where(and(...windowConds, inArray(friendly.initiatorId, memberIds)))
+      .limit(1)
+      .get()
+    if (asInitiator) return asInitiator
+    // Als Eingeladener
+    const asInvitee = useDb()
+      .select({
+        id: friendly.id,
+        scheduledAt: friendly.scheduledAt,
+        memberId: friendlyInvitee.memberId,
+      })
+      .from(friendly)
+      .innerJoin(friendlyInvitee, eq(friendly.id, friendlyInvitee.friendlyId))
+      .where(and(...windowConds, inArray(friendlyInvitee.memberId, memberIds)))
+      .limit(1)
+      .get()
+    return asInvitee
   },
 
   /**
