@@ -40,19 +40,21 @@ const defaultScheduled = new Date(today.getTime() + 24 * 60 * 60 * 1000)
 defaultScheduled.setMinutes(0, 0, 0)
 defaultScheduled.setHours(18)
 
-const scheduledAtLocal = ref(toLocalInput(defaultScheduled))
+const scheduledDate = ref(toDateInput(defaultScheduled))
+const scheduledTime = ref(toTimeInput(defaultScheduled))
 const courtInfo = ref('')
-const note = ref('')
-const matchMode = ref<FriendlyMatchMode>('best-of-3-champions')
 
-function toLocalInput(d: Date): string {
+function toDateInput(d: Date): string {
   const y = d.getFullYear()
   const m = String(d.getMonth() + 1).padStart(2, '0')
   const day = String(d.getDate()).padStart(2, '0')
-  const hh = String(d.getHours()).padStart(2, '0')
-  const mm = String(d.getMinutes()).padStart(2, '0')
-  return `${y}-${m}-${day}T${hh}:${mm}`
+  return `${y}-${m}-${day}`
 }
+function toTimeInput(d: Date): string {
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+}
+const note = ref('')
+const matchMode = ref<FriendlyMatchMode>('best-of-3-champions')
 
 const me = computed(() => user.value?.memberId)
 
@@ -95,7 +97,7 @@ async function submit() {
   submitting.value = true
   const body: CreateFriendlyInput = {
     format: format.value,
-    scheduledAt: new Date(scheduledAtLocal.value),
+    scheduledAt: new Date(`${scheduledDate.value}T${scheduledTime.value}`),
     courtInfo: courtInfo.value || undefined,
     note: note.value || undefined,
     matchMode: matchMode.value,
@@ -162,7 +164,10 @@ async function submit() {
         </UFormField>
 
         <UFormField label="Termin">
-          <UInput v-model="scheduledAtLocal" type="datetime-local" class="w-full" />
+          <div class="flex gap-2">
+            <UInput v-model="scheduledDate" type="date" class="flex-1" />
+            <UInput v-model="scheduledTime" type="time" step="1800" class="w-28" />
+          </div>
         </UFormField>
 
         <UFormField label="Platz / Halle (optional)">
