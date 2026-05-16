@@ -55,8 +55,16 @@ async function challenge(targetMemberId: number) {
   }
 }
 
+type RankingEntry = RankingDetailDto['entries'][number]
+
+const viewerEntry = computed<RankingEntry | null>(() => {
+  if (!user.value || !ranking.value) return null
+  return ranking.value.entries.find((e: RankingEntry) => e.memberId === user.value!.memberId) ?? null
+})
+
 function canChallenge(targetMemberId: number, targetStatus: string): boolean {
   if (!user.value) return false
+  if (!viewerEntry.value) return false
   if (user.value.memberId === targetMemberId) return false
   if (targetStatus === 'pausiert') return false
   return true
@@ -80,6 +88,10 @@ function canChallenge(targetMemberId: number, targetStatus: string): boolean {
     <div class="mb-4">
       <UCheckbox v-model="onlyActive" label="nur aktive Spieler anzeigen" />
     </div>
+
+    <p v-if="user && !viewerEntry" class="mb-4 text-sm text-muted">
+      Du stehst nicht in dieser Rangliste — Forderungen sind hier nicht möglich.
+    </p>
 
     <ul v-if="ranking.entries.length > 0" class="divide-y divide-default border border-default rounded-lg overflow-hidden">
       <li
