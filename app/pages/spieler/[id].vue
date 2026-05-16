@@ -113,7 +113,7 @@ function formatDate(d: Date | string): string {
           <div v-if="m.kind === 'challenge'" class="flex items-center justify-between gap-3">
             <NuxtLink :to="`/challenges/${m.challengeId}`" class="flex-1 min-w-0 hover:text-primary transition">
               <div class="font-medium truncate">
-                Challenge gegen {{ m.opponentName }}
+                Forderung gegen {{ m.opponentName }}
                 <span
                   class="ml-2 text-xs font-mono"
                   :class="m.result === 'win' ? 'text-emerald-700 dark:text-emerald-400' : 'text-stone-500 dark:text-stone-400'"

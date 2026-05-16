@@ -45,22 +45,12 @@ const themeOptions: { value: ThemePref; icon: string; label: string }[] = [
   { value: 'system', icon: 'i-lucide-monitor', label: 'System (Gerät folgen)' },
 ]
 
-// Top-level Items: "Mein Profil" plus optionale Rollen-Bereiche. Theme und
-// Logout liegen als kompakter Footer im content-bottom-Slot.
-const items = computed<DropdownMenuItem[][]>(() => {
-  const groups: DropdownMenuItem[][] = [
-    [{ label: 'Mein Profil', icon: 'i-lucide-user-round', to: '/profile' }],
-  ]
-  const roleGroup: DropdownMenuItem[] = []
-  if (profile.value?.roles.includes('trainer') || profile.value?.roles.includes('admin')) {
-    roleGroup.push({ label: 'Trainer-Bereich', icon: 'i-lucide-whistle', to: '/trainer' })
-  }
-  if (profile.value?.roles.includes('admin')) {
-    roleGroup.push({ label: 'Admin-Bereich', icon: 'i-lucide-shield', to: '/admin' })
-  }
-  if (roleGroup.length > 0) groups.push(roleGroup)
-  return groups
-})
+// Top-level Items: "Mein Profil". Trainer-/Admin-Bereich liegen als
+// Schnellzugriffs-Karten auf der Startseite (rollen-konditional), Theme
+// und Abmelden liegen als kompakter Footer im content-bottom-Slot.
+const items = computed<DropdownMenuItem[][]>(() => [
+  [{ label: 'Mein Profil', icon: 'i-lucide-user-round', to: '/profile' }],
+])
 </script>
 
 <template>

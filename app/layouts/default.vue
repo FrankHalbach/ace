@@ -49,7 +49,7 @@ const activePath = computed(() => route.path)
       v-if="loggedIn"
       class="sticky top-0 z-30 border-b border-default bg-default/90 backdrop-blur supports-[backdrop-filter]:bg-default/75"
     >
-      <UContainer class="flex items-center gap-3 sm:gap-8 py-3 max-w-3xl">
+      <UContainer class="flex items-center justify-between gap-3 py-3 max-w-3xl">
         <!-- Brand lockup: ace · (tennis-ball dot) · TuS Neureut -->
         <NuxtLink
           to="/"
@@ -67,40 +67,6 @@ const activePath = computed(() => route.path)
             TuS Neureut
           </span>
         </NuxtLink>
-
-        <!-- Desktop tabs (ab sm) -->
-        <nav
-          class="hidden sm:flex items-center gap-1 flex-1"
-          aria-label="Hauptnavigation"
-        >
-          <NuxtLink
-            v-for="tab in tabs"
-            :key="tab.to"
-            :to="tab.to"
-            class="group inline-flex items-center gap-2 pl-1 pr-3 py-1 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-            :class="tab.activeWhen(activePath)
-              ? 'text-primary'
-              : 'text-muted hover:text-default'"
-            :aria-current="tab.activeWhen(activePath) ? 'page' : undefined"
-          >
-            <span
-              class="size-7 inline-flex items-center justify-center rounded-full transition-colors"
-              :class="tab.activeWhen(activePath)
-                ? 'bg-primary text-inverted shadow-sm'
-                : 'bg-transparent group-hover:bg-elevated'"
-            >
-              <UIcon :name="tab.icon" class="size-4" />
-            </span>
-            <span
-              class="text-sm leading-none"
-              :class="tab.activeWhen(activePath) ? 'font-semibold' : 'font-medium'"
-            >
-              {{ tab.label }}
-            </span>
-          </NuxtLink>
-        </nav>
-
-        <div class="sm:hidden flex-1" />
 
         <ClientOnly>
           <UserMenu />

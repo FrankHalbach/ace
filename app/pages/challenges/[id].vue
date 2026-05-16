@@ -18,7 +18,7 @@ const { data: result, refresh: refreshResult } = await useFetch<MatchResultDto |
   { default: () => null, watch: [() => challenge.value?.status] },
 )
 
-useHead({ title: () => (challenge.value ? `Challenge #${challenge.value.id}` : 'Challenge') })
+useHead({ title: () => (challenge.value ? `Forderung #${challenge.value.id}` : 'Forderung') })
 
 const statusLabel: Record<ChallengeStatus, string> = {
   PROPOSED: 'Offen',
@@ -42,7 +42,7 @@ async function accept() {
   submitting.value = true
   try {
     await $fetch(`/api/challenges/${id.value}/accept`, { method: 'POST' })
-    toast.add({ title: 'Challenge angenommen', color: 'primary' })
+    toast.add({ title: 'Forderung angenommen', color: 'primary' })
     await refresh()
   } catch (err: unknown) {
     toast.add({ title: 'Fehler', description: (err as { statusMessage?: string }).statusMessage ?? '', color: 'error' })
@@ -58,7 +58,7 @@ async function decline() {
       method: 'POST',
       body: { reason: declineReason.value, note: declineNote.value || undefined },
     })
-    toast.add({ title: 'Challenge abgelehnt', color: 'primary' })
+    toast.add({ title: 'Forderung abgelehnt', color: 'primary' })
     showDecline.value = false
     await refresh()
   } catch (err: unknown) {
@@ -162,9 +162,9 @@ const isLoser = computed(() => {
   <UContainer v-if="challenge" class="py-6 max-w-2xl">
     <header class="mb-6">
       <NuxtLink to="/challenges" class="text-sm text-muted hover:text-default">
-        ← Alle Challenges
+        ← Alle Forderungen
       </NuxtLink>
-      <h1 class="text-2xl font-semibold mt-2">Challenge #{{ challenge.id }}</h1>
+      <h1 class="text-2xl font-semibold mt-2">Forderung #{{ challenge.id }}</h1>
       <div class="text-sm text-muted mt-1">
         Status: <strong>{{ statusLabel[challenge.status] }}</strong> ·
         Rangliste #{{ challenge.rankingId }}

@@ -37,11 +37,11 @@ async function sendChallenge(s: SuggestionDto) {
       method: 'POST',
       body: { challengedId: s.memberId, rankingId: s.rankingId },
     })
-    toast.add({ title: `Challenge an ${s.firstName} versendet`, color: 'primary' })
+    toast.add({ title: `Forderung an ${s.firstName} versendet`, color: 'primary' })
     await refreshSuggestions()
   } catch (err: unknown) {
     toast.add({
-      title: 'Challenge fehlgeschlagen',
+      title: 'Forderung fehlgeschlagen',
       description: (err as { statusMessage?: string }).statusMessage ?? '',
       color: 'error',
     })
@@ -57,6 +57,14 @@ const topRanking = computed<RankingStanding | null>(() => {
   if (r.length === 0) return null
   return r.slice().sort((a: RankingStanding, b: RankingStanding) => a.position - b.position)[0] ?? null
 })
+
+// Rollen aus der Session: Trainer-/Admin-Karten erscheinen nur, wenn die
+// jeweilige Rolle gesetzt ist. user.value ist nach loggedIn-Check non-null.
+const isStaff = computed(() => {
+  const roles = user.value?.roles ?? []
+  return roles.includes('trainer') || roles.includes('admin')
+})
+const isAdmin = computed(() => user.value?.roles?.includes('admin') ?? false)
 </script>
 
 <template>
@@ -151,7 +159,7 @@ const topRanking = computed<RankingStanding | null>(() => {
               :loading="challenging === s.memberId"
               @click="sendChallenge(s)"
             >
-              Challenge
+              Fordern
             </UButton>
             <UButton
               size="xs"
@@ -185,7 +193,7 @@ const topRanking = computed<RankingStanding | null>(() => {
           class="flex flex-col items-center gap-2 p-4 rounded-lg border border-default bg-default transition-colors hover:border-primary hover:bg-elevated/30"
         >
           <UIcon name="i-lucide-swords" class="size-6 text-primary" />
-          <span class="text-sm font-medium">Challenges</span>
+          <span class="text-sm font-medium">Forderungen</span>
         </NuxtLink>
         <NuxtLink
           to="/friendlies"
@@ -193,6 +201,22 @@ const topRanking = computed<RankingStanding | null>(() => {
         >
           <UIcon name="i-lucide-handshake" class="size-6 text-primary" />
           <span class="text-sm font-medium">Freundschaftsspiele</span>
+        </NuxtLink>
+        <NuxtLink
+          v-if="isStaff"
+          to="/trainer"
+          class="flex flex-col items-center gap-2 p-4 rounded-lg border border-default bg-default transition-colors hover:border-secondary hover:bg-elevated/30"
+        >
+          <UIcon name="i-lucide-clipboard-list" class="size-6 text-secondary" />
+          <span class="text-sm font-medium">Trainer-Bereich</span>
+        </NuxtLink>
+        <NuxtLink
+          v-if="isAdmin"
+          to="/admin"
+          class="flex flex-col items-center gap-2 p-4 rounded-lg border border-default bg-default transition-colors hover:border-secondary hover:bg-elevated/30"
+        >
+          <UIcon name="i-lucide-shield" class="size-6 text-secondary" />
+          <span class="text-sm font-medium">Admin-Bereich</span>
         </NuxtLink>
       </div>
     </section>
