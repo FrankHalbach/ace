@@ -38,66 +38,29 @@ async function logout() {
   await navigateTo('/login')
 }
 
-const themeItems = computed<DropdownMenuItem[]>(() => [
-  {
-    label: 'Hell',
-    icon: 'i-lucide-sun',
-    type: 'checkbox',
-    checked: colorMode.preference === 'light',
-    onUpdateChecked() {
-      colorMode.preference = 'light'
-    },
-  },
-  {
-    label: 'Dunkel',
-    icon: 'i-lucide-moon',
-    type: 'checkbox',
-    checked: colorMode.preference === 'dark',
-    onUpdateChecked() {
-      colorMode.preference = 'dark'
-    },
-  },
-  {
-    label: 'System',
-    icon: 'i-lucide-monitor',
-    type: 'checkbox',
-    checked: colorMode.preference === 'system',
-    onUpdateChecked() {
-      colorMode.preference = 'system'
-    },
-  },
-])
+type ThemePref = 'light' | 'dark' | 'system'
+const themeOptions: { value: ThemePref; icon: string; label: string }[] = [
+  { value: 'light', icon: 'i-lucide-sun', label: 'Hell' },
+  { value: 'dark', icon: 'i-lucide-moon', label: 'Dunkel' },
+  { value: 'system', icon: 'i-lucide-monitor', label: 'System (Gerät folgen)' },
+]
 
-const items = computed<DropdownMenuItem[][]>(() => [
-  ...(profile.value
-    ? [[{ label: 'Mein Spieler-Profil', icon: 'i-lucide-user-round', to: `/spieler/${profile.value.id}` }]]
-    : []),
-  [
-    {
-      label: 'Theme',
-      icon: 'i-lucide-palette',
-      children: themeItems.value,
-    },
-  ],
-  ...(profile.value?.roles.some((r) => r === 'trainer' || r === 'admin')
-    ? [
-        [
-          { label: 'Trainer-Bereich', icon: 'i-lucide-whistle', to: '/trainer' },
-          ...(profile.value.roles.includes('admin')
-            ? [{ label: 'Admin-Bereich', icon: 'i-lucide-shield', to: '/admin' }]
-            : []),
-        ],
-      ]
-    : []),
-  [
-    {
-      label: 'Logout',
-      icon: 'i-lucide-log-out',
-      color: 'error' as const,
-      onSelect: () => logout(),
-    },
-  ],
-])
+// Top-level Items: "Mein Profil" plus optionale Rollen-Bereiche. Theme und
+// Logout liegen als kompakter Footer im content-bottom-Slot.
+const items = computed<DropdownMenuItem[][]>(() => {
+  const groups: DropdownMenuItem[][] = [
+    [{ label: 'Mein Profil', icon: 'i-lucide-user-round', to: '/profile' }],
+  ]
+  const roleGroup: DropdownMenuItem[] = []
+  if (profile.value?.roles.includes('trainer') || profile.value?.roles.includes('admin')) {
+    roleGroup.push({ label: 'Trainer-Bereich', icon: 'i-lucide-whistle', to: '/trainer' })
+  }
+  if (profile.value?.roles.includes('admin')) {
+    roleGroup.push({ label: 'Admin-Bereich', icon: 'i-lucide-shield', to: '/admin' })
+  }
+  if (roleGroup.length > 0) groups.push(roleGroup)
+  return groups
+})
 </script>
 
 <template>
@@ -116,10 +79,11 @@ const items = computed<DropdownMenuItem[][]>(() => [
       />
     </UButton>
 
-    <!-- Header über der Items-Liste: Avatar + Name + Rolle + LK -->
-    <template #content-top>
+    <!-- Header: nur im Haupt-Menü, NICHT in Sub-Menüs (Nuxt UI proxiert
+         content-slots in alle Children-Dropdowns — daher das v-if). -->
+    <template #content-top="{ sub }">
       <div
-        v-if="profile"
+        v-if="profile && !sub"
         class="flex items-center gap-3 px-2 py-2.5 mb-1 border-b border-default"
       >
         <UAvatar :alt="displayName" :text="initials" size="md" />
@@ -146,6 +110,53 @@ const items = computed<DropdownMenuItem[][]>(() => [
             </span>
           </div>
         </div>
+      </div>
+    </template>
+
+    <!-- Footer: Theme-Switcher (Segmented Control) + Logout — nur im
+         Haupt-Menü rendern. -->
+    <template #content-bottom="{ sub }">
+      <div v-if="!sub">
+        <div class="border-t border-default mx-1 my-1" />
+
+        <div class="flex items-center justify-between gap-3 px-2 py-1.5">
+          <span class="mono text-[10px] font-semibold tracking-[0.14em] uppercase text-muted leading-none">
+            Darstellung
+          </span>
+          <div
+            role="radiogroup"
+            aria-label="Farbmodus"
+            class="inline-flex items-center gap-0.5 rounded-md bg-elevated/60 p-0.5"
+          >
+            <button
+              v-for="opt in themeOptions"
+              :key="opt.value"
+              type="button"
+              role="radio"
+              :aria-checked="colorMode.preference === opt.value"
+              :aria-label="opt.label"
+              :title="opt.label"
+              class="size-7 inline-flex items-center justify-center rounded transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+              :class="colorMode.preference === opt.value
+                ? 'bg-default text-primary shadow-sm'
+                : 'text-muted hover:text-default hover:bg-default/70'"
+              @click="colorMode.preference = opt.value"
+            >
+              <UIcon :name="opt.icon" class="size-3.5" />
+            </button>
+          </div>
+        </div>
+
+        <div class="border-t border-default mx-1 my-1" />
+
+        <button
+          type="button"
+          class="w-full flex items-center gap-2 px-2 py-1.5 text-sm font-medium rounded-md text-error hover:bg-error/10 transition-colors focus-visible:outline-none focus-visible:bg-error/10"
+          @click="logout"
+        >
+          <UIcon name="i-lucide-log-out" class="size-4 shrink-0" />
+          Abmelden
+        </button>
       </div>
     </template>
   </UDropdownMenu>

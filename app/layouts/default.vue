@@ -1,12 +1,12 @@
 <script setup lang="ts">
-const { loggedIn, user } = useUserSession()
+const { loggedIn } = useUserSession()
 const route = useRoute()
 
 type Tab = {
   label: string
   to: string
   icon: string
-  activeWhen: (path: string, ctx: { myMemberId: number | null }) => boolean
+  activeWhen: (path: string) => boolean
 }
 
 // Segment-genaues Path-Match — sonst kollidieren z. B. /spieler und /spiele,
@@ -15,16 +15,9 @@ function pathHas(path: string, prefix: string): boolean {
   return path === prefix || path.startsWith(prefix + '/')
 }
 
-function isOwnSpielerProfile(path: string, myMemberId: number | null): boolean {
-  return myMemberId !== null && path === `/spieler/${myMemberId}`
-}
-
-// IA gemäß Layout-Proposal: 4 Tabs, Trainer/Admin bleiben im UserMenu unter
-// Profil. "Spiele" zeigt aktuell noch auf /challenges; nach dem /spiele-Merger
-// (Phase 3) verlinkt das auf die neue Wrapper-Route.
-//
-// /spieler/:id ist kontext-abhängig: das eigene Profil aktiviert "Profil",
-// fremde Profile (Drill-down aus der Rangliste) bleiben unter "Rangliste".
+// IA: 3 Tabs für die Tennis-Surfaces. Mein Profil, Trainer-/Admin-Bereich
+// und Einstellungen liegen im UserMenu (oben rechts). Die Spieler-Profile
+// (Drill-down aus der Rangliste) bleiben unter "Rangliste".
 const tabs: Tab[] = [
   {
     label: 'Start',
@@ -36,9 +29,7 @@ const tabs: Tab[] = [
     label: 'Rangliste',
     to: '/ranglisten',
     icon: 'i-lucide-target',
-    activeWhen: (p, { myMemberId }) =>
-      pathHas(p, '/ranglisten')
-      || (pathHas(p, '/spieler') && !isOwnSpielerProfile(p, myMemberId)),
+    activeWhen: (p) => pathHas(p, '/ranglisten') || pathHas(p, '/spieler'),
   },
   {
     label: 'Spiele',
@@ -47,20 +38,9 @@ const tabs: Tab[] = [
     activeWhen: (p) =>
       pathHas(p, '/challenges') || pathHas(p, '/friendlies') || pathHas(p, '/spiele'),
   },
-  {
-    label: 'Profil',
-    to: '/profile',
-    icon: 'i-lucide-user-round',
-    activeWhen: (p, { myMemberId }) =>
-      pathHas(p, '/profile')
-      || pathHas(p, '/trainer')
-      || pathHas(p, '/admin')
-      || isOwnSpielerProfile(p, myMemberId),
-  },
 ]
 
 const activePath = computed(() => route.path)
-const tabCtx = computed(() => ({ myMemberId: user.value?.memberId ?? null }))
 </script>
 
 <template>
@@ -98,14 +78,14 @@ const tabCtx = computed(() => ({ myMemberId: user.value?.memberId ?? null }))
             :key="tab.to"
             :to="tab.to"
             class="group inline-flex items-center gap-2 pl-1 pr-3 py-1 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-            :class="tab.activeWhen(activePath, tabCtx)
+            :class="tab.activeWhen(activePath)
               ? 'text-primary'
               : 'text-muted hover:text-default'"
-            :aria-current="tab.activeWhen(activePath, tabCtx) ? 'page' : undefined"
+            :aria-current="tab.activeWhen(activePath) ? 'page' : undefined"
           >
             <span
               class="size-7 inline-flex items-center justify-center rounded-full transition-colors"
-              :class="tab.activeWhen(activePath, tabCtx)
+              :class="tab.activeWhen(activePath)
                 ? 'bg-primary text-inverted shadow-sm'
                 : 'bg-transparent group-hover:bg-elevated'"
             >
@@ -113,7 +93,7 @@ const tabCtx = computed(() => ({ myMemberId: user.value?.memberId ?? null }))
             </span>
             <span
               class="text-sm leading-none"
-              :class="tab.activeWhen(activePath, tabCtx) ? 'font-semibold' : 'font-medium'"
+              :class="tab.activeWhen(activePath) ? 'font-semibold' : 'font-medium'"
             >
               {{ tab.label }}
             </span>
@@ -146,20 +126,20 @@ const tabCtx = computed(() => ({ myMemberId: user.value?.memberId ?? null }))
         class="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 -translate-y-px h-px w-10 bg-[color:var(--tennis-ball)] opacity-60"
         aria-hidden="true"
       />
-      <div class="grid grid-cols-4 items-stretch h-16">
+      <div class="grid grid-cols-3 items-stretch h-16">
         <NuxtLink
           v-for="tab in tabs"
           :key="tab.to"
           :to="tab.to"
           class="relative flex flex-col items-center justify-center gap-1.5 transition-colors active:scale-[0.97] focus-visible:outline-none focus-visible:bg-elevated"
-          :class="tab.activeWhen(activePath, tabCtx)
+          :class="tab.activeWhen(activePath)
             ? 'text-primary'
             : 'text-muted'"
-          :aria-current="tab.activeWhen(activePath, tabCtx) ? 'page' : undefined"
+          :aria-current="tab.activeWhen(activePath) ? 'page' : undefined"
         >
           <span
             class="size-9 inline-flex items-center justify-center rounded-full transition-all duration-200"
-            :class="tab.activeWhen(activePath, tabCtx)
+            :class="tab.activeWhen(activePath)
               ? 'bg-primary text-inverted shadow-md scale-[1.02]'
               : 'bg-transparent'"
           >
@@ -167,7 +147,7 @@ const tabCtx = computed(() => ({ myMemberId: user.value?.memberId ?? null }))
           </span>
           <span
             class="text-[10px] leading-none tracking-wide"
-            :class="tab.activeWhen(activePath, tabCtx) ? 'font-semibold' : 'font-medium'"
+            :class="tab.activeWhen(activePath) ? 'font-semibold' : 'font-medium'"
           >
             {{ tab.label }}
           </span>
