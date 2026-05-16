@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import type { MemberDto } from '~~/server/modules/members'
-import type { SuggestionDto } from '~~/server/modules/suggestions'
+import type { SuggestionDto, SuggestionReason } from '~~/server/modules/suggestions'
+
+const reasonIcon: Record<SuggestionReason, string> = {
+  'inactive-partner': 'i-lucide-clock-3',
+  'new-pairing': 'i-lucide-sparkles',
+  'similar-strength': 'i-lucide-scale',
+}
 
 const { loggedIn, user } = useUserSession()
 const toast = useToast()
@@ -51,25 +57,40 @@ async function sendChallenge(s: SuggestionDto) {
     </h1>
 
     <section v-if="suggestions.length > 0" class="mb-8">
-      <h2 class="text-lg font-semibold mb-3">Für dich vorgeschlagen</h2>
-      <ul class="divide-y divide-default border border-default rounded-lg overflow-hidden">
-        <li v-for="s in suggestions" :key="s.memberId" class="px-4 py-3">
+      <div class="flex items-baseline justify-between mb-3">
+        <h2 class="text-lg font-semibold">Für dich vorgeschlagen</h2>
+        <span class="text-xs text-dimmed tabular-nums">{{ suggestions.length }} / 5</span>
+      </div>
+      <ul class="divide-y divide-default">
+        <li
+          v-for="s in suggestions"
+          :key="s.memberId"
+          class="py-3 transition-colors hover:bg-elevated/40 -mx-2 px-2 rounded"
+        >
           <div class="flex items-center justify-between gap-3 flex-wrap">
-            <NuxtLink :to="`/spieler/${s.memberId}`" class="flex-1 min-w-0 hover:text-primary transition">
-              <div class="font-medium">
-                {{ s.firstName }} {{ s.lastName }}
-                <span class="text-xs text-muted ml-1">· LK {{ s.dtbLk.toFixed(1) }}</span>
+            <NuxtLink :to="`/spieler/${s.memberId}`" class="flex-1 min-w-0 group">
+              <div class="flex items-center gap-2">
+                <span class="font-medium group-hover:text-primary transition-colors">
+                  {{ s.firstName }} {{ s.lastName }}
+                </span>
+                <span class="text-[11px] font-mono tabular-nums text-muted ring-1 ring-default rounded px-1.5 py-0.5">
+                  LK {{ s.dtbLk.toFixed(1) }}
+                </span>
               </div>
-              <div class="text-xs text-muted">{{ s.reasonText }}</div>
-              <div v-if="s.rankingName" class="text-xs text-dimmed">
+              <div class="flex items-center gap-1.5 mt-1 text-xs text-muted">
+                <UIcon :name="reasonIcon[s.reason]" class="size-3.5 shrink-0" />
+                <span>{{ s.reasonText }}</span>
+              </div>
+              <div v-if="s.rankingName" class="text-xs text-dimmed mt-0.5 ml-5">
                 Rangliste: {{ s.rankingName }}
               </div>
             </NuxtLink>
             <div class="flex gap-2">
               <UButton
+                v-if="s.rankingId !== null"
                 size="xs"
                 color="primary"
-                :disabled="s.rankingId === null"
+                icon="i-lucide-swords"
                 :loading="challenging === s.memberId"
                 @click="sendChallenge(s)"
               >
@@ -78,7 +99,8 @@ async function sendChallenge(s: SuggestionDto) {
               <UButton
                 size="xs"
                 variant="soft"
-                color="neutral"
+                color="secondary"
+                icon="i-lucide-handshake"
                 :to="`/friendlies/new?opponentId=${s.memberId}`"
               >
                 Friendly
