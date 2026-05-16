@@ -3,7 +3,7 @@ import { friendliesService } from './friendlies'
 import { friendlyInviteeRepo } from '../repository/friendly-invitee-repo'
 import { friendlyRepo } from '../repository/friendly-repo'
 import { friendlyResultRepo } from '../repository/friendly-result-repo'
-import { validateSetsForMode, verifyWinnerConsistency } from './sets-validator'
+import { validateSetsForMode, verifyWinnerConsistency } from '../../../shared/match-scoring'
 import {
   AlreadyConfirmedError,
   FriendlyInvalidTransitionError,
@@ -113,9 +113,10 @@ export const friendlyResultsService = {
       throw new NotWinnerError()
     }
 
+    // Friendlies haben kein Saison-Kontext — Pro-Set-Länge nutzt den Default (8).
     validateSetsForMode(friendlyRow.matchMode, input.sets)
     // Konvention: Spielfeld-Seite A entspricht dem Initiator-Team.
-    verifyWinnerConsistency(input.sets, winnerIsInitiatorTeam)
+    verifyWinnerConsistency(input.sets, winnerIsInitiatorTeam, { winnerSubject: 'team' })
 
     if (friendlyResultRepo.findByFriendly(friendlyId)) {
       throw new AlreadyConfirmedError()

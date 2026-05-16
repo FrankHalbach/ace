@@ -3,6 +3,7 @@ import type { ChallengeId } from '../challenges'
 import type { MemberId } from '../members'
 import type { ConfirmationStatus, MatchMode, MatchResultId, SetScore } from '../../db/schema/match-result'
 
+export { InvalidSetsError } from '../../shared/match-scoring'
 export type { ChallengeId, ConfirmationStatus, MatchMode, MatchResultId, SetScore }
 
 const setScoreSchema = z.object({
@@ -72,13 +73,6 @@ export class AlreadyConfirmedError extends Error {
   readonly code = 'result.already-confirmed' as const
   constructor() {
     super('result is already confirmed and immutable')
-  }
-}
-
-export class InvalidSetsError extends Error {
-  readonly code = 'result.invalid-sets' as const
-  constructor(message: string) {
-    super(message)
   }
 }
 
