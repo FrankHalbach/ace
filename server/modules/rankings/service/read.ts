@@ -15,7 +15,6 @@ import {
   type RankingEntryDto,
   type RankingId,
   type RankingSummaryDto,
-  type RankingVariant,
   type SeasonId,
   type AgeGroupId,
 } from '../types'
@@ -23,7 +22,6 @@ import {
 export type RankingFilter = {
   seasonId?: SeasonId
   ageGroupId?: AgeGroupId
-  variant?: RankingVariant
 }
 
 export const rankingReadService = {
@@ -35,7 +33,6 @@ export const rankingReadService = {
     const wheres = []
     if (filter.seasonId) wheres.push(eq(ranking.seasonId, filter.seasonId))
     if (filter.ageGroupId) wheres.push(eq(ranking.ageGroupId, filter.ageGroupId))
-    if (filter.variant) wheres.push(eq(ranking.variant, filter.variant))
 
     const rows = useDb()
       .select({
@@ -48,14 +45,13 @@ export const rankingReadService = {
       .innerJoin(ageGroup, eq(ranking.ageGroupId, ageGroup.id))
       .innerJoin(season, eq(ranking.seasonId, season.id))
       .where(wheres.length ? and(...wheres) : undefined)
-      .orderBy(season.createdAt, ageGroup.name, ranking.variant)
+      .orderBy(season.createdAt, ageGroup.name)
       .all()
 
     return rows.map((r) => ({
       id: r.ranking.id,
       seasonId: r.ranking.seasonId,
       ageGroupId: r.ranking.ageGroupId,
-      variant: r.ranking.variant,
       mode: r.ranking.mode,
       config: r.ranking.config,
       createdAt: r.ranking.createdAt,
@@ -114,7 +110,6 @@ export const rankingReadService = {
       id: rank.id,
       seasonId: rank.seasonId,
       ageGroupId: rank.ageGroupId,
-      variant: rank.variant,
       mode: rank.mode,
       config: rank.config,
       createdAt: rank.createdAt,
@@ -141,7 +136,7 @@ export const rankingReadService = {
       .innerJoin(season, eq(ranking.seasonId, season.id))
       .innerJoin(ageGroup, eq(ranking.ageGroupId, ageGroup.id))
       .where(eq(rankingEntry.memberId, memberId))
-      .orderBy(season.createdAt, ageGroup.name, ranking.variant)
+      .orderBy(season.createdAt, ageGroup.name)
       .all()
 
     return rows.map((r) => {
@@ -151,7 +146,6 @@ export const rankingReadService = {
         seasonId: r.ranking.seasonId,
         seasonName: r.seasonName,
         ageGroupName: r.ageGroupName,
-        variant: r.ranking.variant,
         mode: r.ranking.mode,
         position: r.entry.position,
         points: r.entry.points,

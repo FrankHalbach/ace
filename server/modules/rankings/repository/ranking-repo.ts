@@ -5,7 +5,6 @@ import {
   type RankingId,
   type RankingInsert,
   type RankingRow,
-  type RankingVariant,
 } from '../../../db/schema/ranking'
 import type { SeasonId } from '../../../db/schema/season'
 
@@ -19,7 +18,7 @@ export const rankingRepo = {
       .select()
       .from(ranking)
       .where(eq(ranking.seasonId, seasonId))
-      .orderBy(ranking.ageGroupId, ranking.variant)
+      .orderBy(ranking.ageGroupId)
       .all()
   },
 
@@ -27,11 +26,7 @@ export const rankingRepo = {
     return useDb().select().from(ranking).all()
   },
 
-  findExact(
-    seasonId: SeasonId,
-    ageGroupId: number,
-    variant: RankingVariant,
-  ): RankingRow | undefined {
+  findExact(seasonId: SeasonId, ageGroupId: number): RankingRow | undefined {
     return useDb()
       .select()
       .from(ranking)
@@ -39,7 +34,6 @@ export const rankingRepo = {
         and(
           eq(ranking.seasonId, seasonId),
           eq(ranking.ageGroupId, ageGroupId as never),
-          eq(ranking.variant, variant),
         ),
       )
       .get()

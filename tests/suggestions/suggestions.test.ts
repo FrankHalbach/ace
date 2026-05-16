@@ -44,15 +44,15 @@ function setupSeasonWithMembers(members: { firstName: string; dtbLk: number }[])
   const ids = members.map((m) => insertMember(m))
   const season = seasonsService.create({ name: 'S 2026' })
   seasonsService.addAgeGroup(season.id, {
-    name: 'Aktive',
+    name: 'Herren',
     minAge: 18,
     maxAge: null,
-    genderRule: 'separate',
+    gender: 'm',
     active: true,
   })
   seasonsService.start(season.id)
   generateForSeason(season.id)
-  const herren = rankingReadService.list({ seasonId: season.id }).find((r) => r.variant === 'herren')!
+  const herren = rankingReadService.list({ seasonId: season.id })[0]!
   return { ids, rankingId: herren.id as RankingId }
 }
 
@@ -149,7 +149,7 @@ describe('suggestionsService.suggestFor', () => {
     const list = suggestionsService.suggestFor(me!)
     const tomS = list.find((s) => s.firstName === 'Tom')!
     expect(tomS.rankingId).toBe(rankingId)
-    expect(tomS.rankingName).toContain('Aktive · Herren')
+    expect(tomS.rankingName).toBe('Herren')
     void tom // not used directly
   })
 

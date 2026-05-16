@@ -27,7 +27,7 @@ function seedMembers(rows: Partial<MemberInsert>[]): void {
 }
 
 describe('generateForSeason', () => {
-  it('erzeugt für genderRule=both 3 Ranglisten pro AgeGroup', () => {
+  it('erzeugt genau eine Rangliste pro aktiver AgeGroup', () => {
     seedMembers([
       { email: 'h1@x.de', birthYear: 1985, gender: 'm', dtbLk: 8 },
       { email: 'h2@x.de', birthYear: 1985, gender: 'm', dtbLk: 12 },
@@ -35,21 +35,28 @@ describe('generateForSeason', () => {
     ])
     const season = seasonsService.create({ name: 'Sommer 2026' })
     seasonsService.addAgeGroup(season.id, {
-      name: 'Aktive',
+      name: 'Herren',
       minAge: 18,
       maxAge: null,
-      genderRule: 'both',
+      gender: 'm',
+      active: true,
+    })
+    seasonsService.addAgeGroup(season.id, {
+      name: 'Damen',
+      minAge: 18,
+      maxAge: null,
+      gender: 'w',
       active: true,
     })
     seasonsService.start(season.id)
     const result = generateForSeason(season.id)
 
-    expect(result.rankingsCreated).toBe(3)
+    expect(result.rankingsCreated).toBe(2)
     const lists = rankingReadService.list({ seasonId: season.id })
-    expect(lists.map((l) => l.variant).sort()).toEqual(['damen', 'herren', 'offen'])
+    expect(lists.map((l) => l.ageGroupName).sort()).toEqual(['Damen', 'Herren'])
   })
 
-  it('erzeugt für genderRule=mixed nur die Offene Rangliste', () => {
+  it('mixed-AgeGroup nimmt alle Geschlechter auf', () => {
     seedMembers([
       { email: 'j1@x.de', birthYear: 2010, gender: 'm', dtbLk: 18 },
       { email: 'j2@x.de', birthYear: 2010, gender: 'w', dtbLk: 19 },
@@ -59,7 +66,7 @@ describe('generateForSeason', () => {
       name: 'U18',
       minAge: 15,
       maxAge: 17,
-      genderRule: 'mixed',
+      gender: 'mixed',
       active: true,
     })
     seasonsService.start(season.id)
@@ -67,34 +74,30 @@ describe('generateForSeason', () => {
 
     const lists = rankingReadService.list({ seasonId: season.id })
     expect(lists).toHaveLength(1)
-    expect(lists[0].variant).toBe('offen')
+    expect(lists[0].ageGroupName).toBe('U18')
     expect(lists[0].entryCount).toBe(2)
   })
 
-  it('herren-Rangliste enthält nur Männer im Altersbereich', () => {
+  it('Herren-AgeGroup filtert nach Geschlecht und Altersbereich', () => {
     seedMembers([
       { email: 'h1@x.de', birthYear: 1985, gender: 'm', dtbLk: 8 },  // Aktive
       { email: 'h2@x.de', birthYear: 2015, gender: 'm', dtbLk: 12 }, // zu jung
-      { email: 'd1@x.de', birthYear: 1985, gender: 'w', dtbLk: 10 }, // weiblich → nicht in herren
+      { email: 'd1@x.de', birthYear: 1985, gender: 'w', dtbLk: 10 }, // weiblich → nicht in Herren
     ])
     const season = seasonsService.create({ name: 'Sommer 2026' })
     seasonsService.addAgeGroup(season.id, {
-      name: 'Aktive',
+      name: 'Herren',
       minAge: 18,
       maxAge: null,
-      genderRule: 'both',
+      gender: 'm',
       active: true,
     })
     seasonsService.start(season.id)
     generateForSeason(season.id)
 
     const lists = rankingReadService.list({ seasonId: season.id })
-    const herren = lists.find((l) => l.variant === 'herren')!
-    expect(herren.entryCount).toBe(1)
-    const damen = lists.find((l) => l.variant === 'damen')!
-    expect(damen.entryCount).toBe(1)
-    const offen = lists.find((l) => l.variant === 'offen')!
-    expect(offen.entryCount).toBe(2) // Männer und Frauen im richtigen Alter
+    expect(lists).toHaveLength(1)
+    expect(lists[0].entryCount).toBe(1)
   })
 
   it('initiale Positionen nach LK aufsteigend (Pyramide-Default)', () => {
@@ -105,17 +108,17 @@ describe('generateForSeason', () => {
     ])
     const season = seasonsService.create({ name: 'Sommer 2026' })
     seasonsService.addAgeGroup(season.id, {
-      name: 'Aktive',
+      name: 'Herren',
       minAge: 18,
       maxAge: null,
-      genderRule: 'separate',
+      gender: 'm',
       active: true,
     })
     seasonsService.start(season.id)
     generateForSeason(season.id)
 
     const lists = rankingReadService.list({ seasonId: season.id })
-    const herren = lists.find((l) => l.variant === 'herren')!
+    const herren = lists[0]!
     const detail = rankingReadService.getDetail(herren.id)
     expect(detail.entries.map((e) => e.member.firstName)).toEqual(['B', 'C', 'A'])
     expect(detail.entries.map((e) => e.position)).toEqual([1, 2, 3])
@@ -125,16 +128,16 @@ describe('generateForSeason', () => {
     seedMembers([{ email: 'h@x.de', birthYear: 1985, gender: 'm', dtbLk: 10 }])
     const season = seasonsService.create({ name: 'Sommer 2026' })
     seasonsService.addAgeGroup(season.id, {
-      name: 'Aktive',
+      name: 'Herren',
       minAge: 18,
       maxAge: null,
-      genderRule: 'separate',
+      gender: 'm',
       active: true,
     })
     seasonsService.start(season.id)
     const first = generateForSeason(season.id)
     const second = generateForSeason(season.id)
-    expect(first.rankingsCreated).toBe(2)
+    expect(first.rankingsCreated).toBe(1)
     expect(second.rankingsCreated).toBe(0)
   })
 
@@ -142,10 +145,10 @@ describe('generateForSeason', () => {
     seedMembers([{ email: 'h@x.de', birthYear: 1985, gender: 'm', dtbLk: 10 }])
     const season = seasonsService.create({ name: 'Sommer 2026' })
     seasonsService.addAgeGroup(season.id, {
-      name: 'Aktive',
+      name: 'Herren',
       minAge: 18,
       maxAge: null,
-      genderRule: 'both',
+      gender: 'm',
       active: false,
     })
     seasonsService.start(season.id)

@@ -63,7 +63,6 @@ export type PlayerProfileDto = {
     rankingId: number
     seasonName: string
     ageGroupName: string
-    variant: 'herren' | 'damen' | 'offen'
     mode: 'pyramid' | 'elo' | 'hybrid' | 'points-table'
     position: number
     entryCount: number

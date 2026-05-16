@@ -57,7 +57,6 @@ export function getMemberProfile(id: MemberId, viewerId: MemberId): PlayerProfil
       rankingId: s.rankingId,
       seasonName: s.seasonName,
       ageGroupName: s.ageGroupName,
-      variant: s.variant,
       mode: s.mode,
       position: s.position,
       entryCount: detail.entries.length,
@@ -151,7 +150,6 @@ function rankingNameFromStanding(
 ): string {
   const r = rankings.find((x) => x.rankingId === rankingId)
   if (!r) return `#${rankingId}`
-  const variantLabel = { herren: 'Herren', damen: 'Damen', offen: 'Offen' }[r.variant] ?? r.variant
-  return `${r.ageGroupName} · ${variantLabel}`
+  return r.ageGroupName
 }
 

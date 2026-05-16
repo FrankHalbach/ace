@@ -4,11 +4,10 @@ import type { AgeGroupDto, SeasonDetailDto } from '../../seasons'
 import { rankingEntryRepo } from '../repository/ranking-entry-repo'
 import { rankingRepo } from '../repository/ranking-repo'
 import { strategyFor } from '../strategy'
-import type { RankingConfig, RankingMode, RankingVariant, SeasonId } from '../types'
+import type { RankingConfig, RankingMode, SeasonId } from '../types'
 
 /**
- * Erzeugt für eine Saison alle Ranglisten und füllt sie mit den passenden
- * Mitgliedern.
+ * Erzeugt für eine Saison alle Ranglisten — eine pro aktiver Altersgruppe.
  *
  * Wird vom seasonsService.start() aufgerufen. Idempotent: läuft die Funktion
  * doppelt, werden die bestehenden Ranglisten erkannt und übersprungen
@@ -28,74 +27,58 @@ export function generateForSeason(seasonId: SeasonId): { rankingsCreated: number
 
   for (const ageGroup of detail.ageGroups) {
     if (!ageGroup.active) continue
-    const variants = variantsForGenderRule(ageGroup.genderRule)
 
-    for (const variant of variants) {
-      // Idempotenz: schon vorhanden?
-      const existing = rankingRepo.findExact(seasonId, ageGroup.id, variant)
-      if (existing) continue
+    // Idempotenz: schon vorhanden?
+    const existing = rankingRepo.findExact(seasonId, ageGroup.id)
+    if (existing) continue
 
-      const matching = allMembers.filter((m) => fitsInRanking(m, ageGroup, variant, ageYear))
-      const strategy = strategyFor(defaultMode)
-      const config: RankingConfig = strategy.defaultConfig()
+    const matching = allMembers.filter((m) => fitsInRanking(m, ageGroup, ageYear))
+    const strategy = strategyFor(defaultMode)
+    const config: RankingConfig = strategy.defaultConfig()
 
-      const rankingRow = rankingRepo.insert({
-        seasonId,
-        ageGroupId: ageGroup.id,
-        variant,
-        mode: defaultMode,
-        config,
-      })
-      rankingsCreated++
+    const rankingRow = rankingRepo.insert({
+      seasonId,
+      ageGroupId: ageGroup.id,
+      mode: defaultMode,
+      config,
+    })
+    rankingsCreated++
 
-      if (matching.length === 0) continue
-      const orderedIds = strategy.getInitialOrder({
-        members: matching,
-        transition: 'reset', // erste Saison: immer reset
-      })
+    if (matching.length === 0) continue
+    const orderedIds = strategy.getInitialOrder({
+      members: matching,
+      transition: 'reset', // erste Saison: immer reset
+    })
 
-      const memberById = new Map(matching.map((m) => [m.id, m]))
-      const entries = orderedIds.map((memberId, idx) => {
-        const member = memberById.get(memberId)!
-        const initFields = strategy.initialEntryFields(member)
-        return {
-          rankingId: rankingRow.id,
-          memberId,
-          position: idx + 1,
-          points: initFields.points ?? null,
-          eloRating: initFields.eloRating ?? null,
-          lastMatchAt: null,
-        }
-      })
-      rankingEntryRepo.insertMany(entries)
-      entriesCreated += entries.length
-    }
+    const memberById = new Map(matching.map((m) => [m.id, m]))
+    const entries = orderedIds.map((memberId, idx) => {
+      const member = memberById.get(memberId)!
+      const initFields = strategy.initialEntryFields(member)
+      return {
+        rankingId: rankingRow.id,
+        memberId,
+        position: idx + 1,
+        points: initFields.points ?? null,
+        eloRating: initFields.eloRating ?? null,
+        lastMatchAt: null,
+      }
+    })
+    rankingEntryRepo.insertMany(entries)
+    entriesCreated += entries.length
   }
 
   return { rankingsCreated, entriesCreated }
 }
 
-function variantsForGenderRule(rule: AgeGroupDto['genderRule']): RankingVariant[] {
-  switch (rule) {
-    case 'mixed':
-      return ['offen']
-    case 'separate':
-      return ['herren', 'damen']
-    case 'both':
-      return ['herren', 'damen', 'offen']
-  }
-}
-
 function fitsInRanking(
   member: MemberDto,
   ageGroup: AgeGroupDto,
-  variant: RankingVariant,
   ageYear: number,
 ): boolean {
   // Geschlechts-Match
-  if (variant === 'herren' && member.gender !== 'm') return false
-  if (variant === 'damen' && member.gender !== 'w') return false
-  // variant === 'offen' nimmt alle Geschlechter
+  if (ageGroup.gender === 'm' && member.gender !== 'm') return false
+  if (ageGroup.gender === 'w' && member.gender !== 'w') return false
+  // 'mixed' nimmt alle Geschlechter
 
   // Alters-Match
   const age = ageYear - member.birthYear

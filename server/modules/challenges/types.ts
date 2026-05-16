@@ -5,7 +5,7 @@ import type {
   DeclineReason,
 } from '../../db/schema/challenge'
 import type { MemberId } from '../members'
-import type { RankingId, RankingVariant } from '../rankings'
+import type { RankingId } from '../rankings'
 
 export type { ChallengeId, ChallengeStatus, DeclineReason }
 
@@ -41,8 +41,7 @@ export type ChallengeDto = {
 export type ChallengeListItemDto = ChallengeDto & {
   challengerName: string
   challengedName: string
-  rankingName: string // z. B. "Aktive · Herren"
-  rankingVariant: RankingVariant
+  rankingName: string // z. B. "Herren 40"
 }
 
 export class ChallengeNotFoundError extends Error {
