@@ -24,7 +24,7 @@ const form = reactive<Required<UpdateOwnProfileInput>>({
     singlesFriendly: true,
     doublesFriendly: false,
     mixedFriendly: false,
-    seniorsFriendly: false,
+    ageGroupFriendly: false,
   },
 })
 
@@ -129,7 +129,7 @@ async function save() {
             <UCheckbox v-model="form.preferences.singlesFriendly" label="Einzel-Freundschaftsspiele" />
             <UCheckbox v-model="form.preferences.doublesFriendly" label="Doppel-Freundschaftsspiele" />
             <UCheckbox v-model="form.preferences.mixedFriendly" label="Mixed-Freundschaftsspiele" />
-            <UCheckbox v-model="form.preferences.seniorsFriendly" label="Senioren-Freundschaftsspiele" />
+            <UCheckbox v-model="form.preferences.ageGroupFriendly" label="Altersklassen-Freundschaftsspiele" />
           </div>
         </UFormField>
 

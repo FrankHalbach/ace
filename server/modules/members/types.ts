@@ -9,7 +9,7 @@ export const matchPreferencesSchema = z.object({
   singlesFriendly: z.boolean(),
   doublesFriendly: z.boolean(),
   mixedFriendly: z.boolean(),
-  seniorsFriendly: z.boolean(),
+  ageGroupFriendly: z.boolean(),
 })
 
 export const updateOwnProfileInput = z

@@ -20,7 +20,7 @@ Teil dieses Features — die kommen mit `challenges` und `results`.
 | FR-ID         | Kurzbeschreibung                                              | Abgedeckt durch                                |
 |---------------|---------------------------------------------------------------|------------------------------------------------|
 | FR-2          | Auto-Zuordnung anhand Geburtsjahr, Mehrfach-Zugehörigkeit     | `assignMember`-Service                          |
-| FR-2e         | Senioren automatisch in jüngere Senioren + Aktive             | DTB-Logik im Service                            |
+| FR-2e         | Spieler ab Mindestalter steht in seiner + allen jüngeren Altersklassen sowie bei den Aktiven | DTB-Logik im Service                            |
 | FR-2f         | Auto-Aufnahme konfigurierbar (Auto vs. Opt-in)                | `Season.config.autoAssign` (Default: auto)      |
 | FR-3          | Spieler in mehreren Ranglisten gleichzeitig                   | mehrfache `RankingEntry`-Zeilen pro Member      |
 | FR-10         | Pro Erwachsenen-AgeGroup drei Ranglisten (Herren/Damen/Offen) | Rangliste-Generierung beim Saison-Start         |
@@ -172,7 +172,7 @@ Beim Übergang `PLANNED → ACTIVE` (`POST /api/seasons/:id/start`):
    - genderRule `separate` → 2 Ranglisten (`herren`, `damen`)
    - genderRule `both` → 3 Ranglisten (`herren`, `damen`, `offen`)
 2. Pro Rangliste: `mode` aus Season.config oder Default (Pyramide für Aktive,
-   Punkte-Tabelle für Jugend/Senioren — siehe ADR-006)
+   Punkte-Tabelle für Jugend/Altersklassen — siehe ADR-006)
 3. Pro Rangliste: alle passenden Mitglieder eintragen
    (Geschlecht + Alter aus Geburtsjahr + AgeGroup-Bereich)
 4. Initial-Reihenfolge via `strategy.getInitialOrder(...)`
@@ -322,7 +322,7 @@ Keine offenen Fragen. Defaults:
 - Default-Modus pro Altersgruppe wie in ADR-006:
   - Jugend (`mixed`-AgeGroups) → Punkte-Tabelle
   - Aktive → Pyramide
-  - Senioren → Punkte-Tabelle
+  - Altersklassen (Über 40 / 50 / 60 …) → Punkte-Tabelle
 - Initial-LK 25.0 (siehe `members`-Feature)
 - ELO-Initial-Rating 1500, K-Faktor 32
 - Pyramide max-Jump-Up 3

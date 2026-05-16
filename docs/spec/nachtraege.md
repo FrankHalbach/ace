@@ -169,8 +169,8 @@ und nicht serverseitig gespeichert — kein Schema-Change, keine API-
 
 ## N-03 · Altersgruppen-Naming bleibt vereinsspezifisch
 
-**Status**: vorgeschlagen
-**Datum**: 2026-05-15
+**Status**: umgesetzt
+**Datum**: 2026-05-15 (erweitert 2026-05-16)
 **Quelle**: Produktentscheidung TuS Neureut
 **Berührte FR-IDs**: FR-2d, FR-2j
 
@@ -186,15 +186,19 @@ Konkrete Konsequenzen:
 
 - **Seed/Demo-Daten** verwenden „Über 50" statt „Senior 50+".
 - **Spec-Beispiele** sind als Beispiele zu verstehen, keine Vorgaben.
-- **Schema-Feld `seniorsFriendly`** in `MatchPreferences` (sowie das
-  zugehörige UI-Label „Senioren-Freundschaftsspiele") sollten in einer
-  späteren Iteration in einen vereinsneutraleren Begriff umbenannt werden,
-  z. B. `over50Friendly`. Schema-Migration und UI-Anpassung sind
-  überschaubar; aktuell bewusst nicht sofort, weil die Bedeutung der
-  Präferenz noch geschärft werden muss („gegen ältere Spieler bereit zu
-  spielen" vs. „in der Altersklasse 50+ ranking-spielen").
+- **Schema-Feld `MatchPreferences.seniorsFriendly`** wurde nach
+  `ageGroupFriendly` umbenannt, UI-Label nach „Altersklassen-
+  Freundschaftsspiele". Vor dem Mitglieder-Launch gibt es keine
+  Production-Daten — der lokale Dev-Stand wird per `db:reset` neu
+  geseedet (`DEFAULT_PREFERENCES` schreibt direkt den neuen Key); keine
+  Migration nötig. Mutable Feature-Docs (`core-auth-members`,
+  `friendlies`, `rankings`, `seasons`) verwenden „Altersklassen" als
+  vereinsneutralen Sammelbegriff.
 
 ### Out of Scope dieses Nachtrags
 
-- Konkrete Umbenennung von `MatchPreferences.seniorsFriendly` — separate Iteration
-- Anpassung der Spec v1.0 — kommt in v1.1
+- Anpassung von `docs/spec/spec-v1.0.html` — kommt in Spec v1.1; bis
+  dahin gilt N-03 als verbindliche Ergänzung
+- Anpassung von ADR `006-wertungssystem.md` — ADRs sind nach Akzeptanz
+  unveränderlich (CLAUDE.md); die Default-Mode-Tabelle dort verwendet
+  noch „Senioren", inhaltlich gemeint sind die Altersklassen

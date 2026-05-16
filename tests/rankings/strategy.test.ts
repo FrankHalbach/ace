@@ -18,7 +18,7 @@ function makeMember(id: number, dtbLk: number, gender: 'm' | 'w' = 'm'): MemberD
       singlesFriendly: true,
       doublesFriendly: false,
       mixedFriendly: false,
-      seniorsFriendly: false,
+      ageGroupFriendly: false,
     },
   }
 }
