@@ -244,3 +244,70 @@ describe('Set-Score-Validation ist verdrahtet (#26/#27/#28)', () => {
     ).toThrow(/Match-Tie-Break/i)
   })
 })
+
+describe('Walk-Over / Aufgabe-Flow (#29 #30)', () => {
+  it('Walk-Over: report ohne Sätze, Sieger explizit, persistent gespeichert', () => {
+    const { memberIds, rankingId } = setupSeasonWithMembers()
+    const c = challengesService.create(memberIds[3], { challengedId: memberIds[1], rankingId })
+    challengesService.accept(c.id, memberIds[1])
+    const r = resultsService.report(c.id, memberIds[3], {
+      winnerId: memberIds[3],
+      sets: [],
+      matchMode: 'best-of-3-champions',
+      outcome: 'walkover',
+      outcomeNote: 'Gegner kam nicht',
+    })
+    expect(r.outcome).toBe('walkover')
+    expect(r.sets).toEqual([])
+    expect(r.outcomeNote).toBe('Gegner kam nicht')
+  })
+
+  it('Walk-Over: confirm wendet Positions-Tausch wie regulär an (Pyramide)', () => {
+    const { memberIds, rankingId } = setupSeasonWithMembers()
+    // Position 4 (memberIds[3]) fordert Position 2 (memberIds[1])
+    const c = challengesService.create(memberIds[3], { challengedId: memberIds[1], rankingId })
+    challengesService.accept(c.id, memberIds[1])
+    const r = resultsService.report(c.id, memberIds[3], {
+      winnerId: memberIds[3],
+      sets: [],
+      matchMode: 'best-of-3-champions',
+      outcome: 'walkover',
+    })
+    resultsService.confirm(r.id, memberIds[1])
+
+    const detail = rankingReadService.getDetail(rankingId)
+    const positions = new Map(detail.entries.map((e) => [e.memberId, e.position]))
+    expect(positions.get(memberIds[3])).toBe(2)
+    expect(positions.get(memberIds[1])).toBe(3)
+  })
+
+  it('Walk-Over mit nicht-leerem sets-Array wird abgelehnt', () => {
+    const { memberIds, rankingId } = setupSeasonWithMembers()
+    const c = challengesService.create(memberIds[3], { challengedId: memberIds[1], rankingId })
+    challengesService.accept(c.id, memberIds[1])
+    expect(() =>
+      resultsService.report(c.id, memberIds[3], {
+        winnerId: memberIds[3],
+        sets: [{ a: 6, b: 0 }, { a: 6, b: 0 }],
+        matchMode: 'best-of-3-champions',
+        outcome: 'walkover',
+      }),
+    ).toThrow(/Walk-Over/i)
+  })
+
+  it('Aufgabe: Teilscore wird akzeptiert, Sieger explizit gegen Score-Mehrheit', () => {
+    const { memberIds, rankingId } = setupSeasonWithMembers()
+    const c = challengesService.create(memberIds[3], { challengedId: memberIds[1], rankingId })
+    challengesService.accept(c.id, memberIds[1])
+    // Im Spielfeld stand 6:2, 3:1 für den Aufgebenden (Challenger),
+    // aber der Challenger bricht ab → Challenged ist Sieger.
+    const r = resultsService.report(c.id, memberIds[3], {
+      winnerId: memberIds[1], // Challenged ist Sieger trotz Teilscore-Führung
+      sets: [{ a: 6, b: 2 }, { a: 3, b: 1 }],
+      matchMode: 'best-of-3-champions',
+      outcome: 'retirement',
+    })
+    expect(r.outcome).toBe('retirement')
+    expect(r.winnerId).toBe(memberIds[1])
+  })
+})

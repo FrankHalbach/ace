@@ -85,14 +85,21 @@ export const pointsTableStrategy: RankingStrategy = {
    *   - MatchPointsAward-Einträge werden für Audit/Historie erzeugt
    */
   applyResult(input: ApplyResultInput): RankingMutation[] {
-    const { winnerId, loserId, challengerEntry, challengedEntry, allEntries, config, now } = input
+    const { winnerId, loserId, challengerEntry, challengedEntry, allEntries, config, now, outcome } = input
     const pv = config.pointValues ?? DEFAULT_POINT_VALUES
 
     const winnerEntry = winnerId === challengerEntry.memberId ? challengerEntry : challengedEntry
     const loserEntry = loserId === challengerEntry.memberId ? challengerEntry : challengedEntry
 
-    const newWinnerPoints = (winnerEntry.points ?? 0) + pv.challengeWin
-    const newLoserPoints = (loserEntry.points ?? 0) + pv.challengeLoss
+    // Walk-Over: Sieger bekommt walkoverWin, Verlierer bekommt nichts (war
+    // nicht da). Aufgabe: voller challengeWin/challengeLoss (beide waren da).
+    const isWalkover = outcome === 'walkover'
+    const winnerGain = isWalkover ? pv.walkoverWin : pv.challengeWin
+    const loserGain = isWalkover ? 0 : pv.challengeLoss
+    const winnerReason: 'walkover-win' | 'challenge-win' = isWalkover ? 'walkover-win' : 'challenge-win'
+
+    const newWinnerPoints = (winnerEntry.points ?? 0) + winnerGain
+    const newLoserPoints = (loserEntry.points ?? 0) + loserGain
 
     const mutations: RankingMutation[] = [
       { kind: 'set-points', entryId: winnerEntry.id, points: newWinnerPoints },
@@ -103,17 +110,19 @@ export const pointsTableStrategy: RankingStrategy = {
         kind: 'award-points',
         memberId: winnerEntry.memberId,
         rankingEntryId: winnerEntry.id,
-        points: pv.challengeWin,
-        reason: 'challenge-win',
+        points: winnerGain,
+        reason: winnerReason,
       },
-      {
+    ]
+    if (loserGain > 0) {
+      mutations.push({
         kind: 'award-points',
         memberId: loserEntry.memberId,
         rankingEntryId: loserEntry.id,
-        points: pv.challengeLoss,
+        points: loserGain,
         reason: 'challenge-loss',
-      },
-    ]
+      })
+    }
 
     // Positionen neu berechnen — nach Punkten absteigend, ID als Tiebreaker
     const newPoints = new Map<number, number>()

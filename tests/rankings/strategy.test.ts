@@ -215,4 +215,157 @@ describe('PointsTableStrategy', () => {
     expect(positionFor(10)).toMatchObject({ position: 1 })
     expect(positionFor(20)).toMatchObject({ position: 2 })
   })
+
+  it('applyResult: Walk-Over gibt Sieger walkoverWin, Verlierer null Punkte', () => {
+    const challengerEntry = makeEntry({ id: 10, memberId: 1, position: 2, points: 0, memberLk: 12 })
+    const challengedEntry = makeEntry({ id: 20, memberId: 2, position: 1, points: 0, memberLk: 8 })
+
+    const mutations = strategy.applyResult({
+      winnerId: 1 as MemberId,
+      loserId: 2 as MemberId,
+      challengerEntry,
+      challengedEntry,
+      allEntries: [challengerEntry, challengedEntry],
+      config: strategy.defaultConfig(),
+      now: new Date(),
+      outcome: 'walkover',
+    })
+
+    // walkoverWin Default = 2 (N-01)
+    const setPoints = mutations.filter((m) => m.kind === 'set-points')
+    const pointsFor = (entryId: number) =>
+      setPoints.find((m) => m.kind === 'set-points' && m.entryId === entryId)
+    expect(pointsFor(10)).toMatchObject({ points: 2 }) // Sieger
+    expect(pointsFor(20)).toMatchObject({ points: 0 }) // Verlierer: nichts
+
+    // award-points: einer für walkover-win, keiner für loss (kein "Erscheinungspunkt")
+    const awards = mutations.filter((m) => m.kind === 'award-points')
+    expect(awards).toHaveLength(1)
+    expect(awards[0]).toMatchObject({ memberId: 1, reason: 'walkover-win', points: 2 })
+  })
+
+  it('applyResult: Aufgabe gibt regulären challengeWin/challengeLoss', () => {
+    const challengerEntry = makeEntry({ id: 10, memberId: 1, position: 2, points: 0, memberLk: 12 })
+    const challengedEntry = makeEntry({ id: 20, memberId: 2, position: 1, points: 0, memberLk: 8 })
+
+    const mutations = strategy.applyResult({
+      winnerId: 1 as MemberId,
+      loserId: 2 as MemberId,
+      challengerEntry,
+      challengedEntry,
+      allEntries: [challengerEntry, challengedEntry],
+      config: strategy.defaultConfig(),
+      now: new Date(),
+      outcome: 'retirement',
+    })
+
+    // Defaults: challengeWin=3, challengeLoss=1
+    const setPoints = mutations.filter((m) => m.kind === 'set-points')
+    const pointsFor = (entryId: number) =>
+      setPoints.find((m) => m.kind === 'set-points' && m.entryId === entryId)
+    expect(pointsFor(10)).toMatchObject({ points: 3 })
+    expect(pointsFor(20)).toMatchObject({ points: 1 })
+
+    // Beide bekommen einen Award (challenge-win + challenge-loss)
+    const awards = mutations.filter((m) => m.kind === 'award-points')
+    expect(awards).toHaveLength(2)
+    expect(awards.find((a) => a.kind === 'award-points' && a.memberId === 1)).toMatchObject({
+      reason: 'challenge-win',
+    })
+  })
+})
+
+describe('Walk-Over / Aufgabe in ELO und Hybrid (#29 #30)', () => {
+  it('ELO: kein Rating-Update bei Walk-Over', () => {
+    const strategy = strategyFor('elo')
+    const challengerEntry = makeEntry({ id: 10, memberId: 1, position: 2, points: 0, memberLk: 12 })
+    challengerEntry.eloRating = 1500
+    const challengedEntry = makeEntry({ id: 20, memberId: 2, position: 1, points: 0, memberLk: 8 })
+    challengedEntry.eloRating = 1500
+
+    const mutations = strategy.applyResult({
+      winnerId: 1 as MemberId,
+      loserId: 2 as MemberId,
+      challengerEntry,
+      challengedEntry,
+      allEntries: [challengerEntry, challengedEntry],
+      config: strategy.defaultConfig(),
+      now: new Date(),
+      outcome: 'walkover',
+    })
+
+    // Keine set-elo-Mutation, keine set-position-Mutation — nur lastMatch
+    expect(mutations.some((m) => m.kind === 'set-elo')).toBe(false)
+    expect(mutations.some((m) => m.kind === 'set-position')).toBe(false)
+    expect(mutations.filter((m) => m.kind === 'set-last-match')).toHaveLength(2)
+  })
+
+  it('ELO: kein Rating-Update bei Aufgabe', () => {
+    const strategy = strategyFor('elo')
+    const challengerEntry = makeEntry({ id: 10, memberId: 1, position: 2, points: 0, memberLk: 12 })
+    challengerEntry.eloRating = 1500
+    const challengedEntry = makeEntry({ id: 20, memberId: 2, position: 1, points: 0, memberLk: 8 })
+    challengedEntry.eloRating = 1500
+
+    const mutations = strategy.applyResult({
+      winnerId: 1 as MemberId,
+      loserId: 2 as MemberId,
+      challengerEntry,
+      challengedEntry,
+      allEntries: [challengerEntry, challengedEntry],
+      config: strategy.defaultConfig(),
+      now: new Date(),
+      outcome: 'retirement',
+    })
+
+    expect(mutations.some((m) => m.kind === 'set-elo')).toBe(false)
+  })
+
+  it('Hybrid: kein Rating-Update bei Walk-Over (delegiert an ELO)', () => {
+    const strategy = strategyFor('hybrid')
+    const challengerEntry = makeEntry({ id: 10, memberId: 1, position: 2, points: 0, memberLk: 12 })
+    challengerEntry.eloRating = 1500
+    const challengedEntry = makeEntry({ id: 20, memberId: 2, position: 1, points: 0, memberLk: 8 })
+    challengedEntry.eloRating = 1500
+
+    const mutations = strategy.applyResult({
+      winnerId: 1 as MemberId,
+      loserId: 2 as MemberId,
+      challengerEntry,
+      challengedEntry,
+      allEntries: [challengerEntry, challengedEntry],
+      config: strategy.defaultConfig(),
+      now: new Date(),
+      outcome: 'walkover',
+    })
+
+    expect(mutations.some((m) => m.kind === 'set-elo')).toBe(false)
+  })
+})
+
+describe('Walk-Over in Pyramide (#29)', () => {
+  it('Pyramide: Walk-Over für Challenger führt zum Positions-Tausch wie regulär', () => {
+    const strategy = strategyFor('pyramid')
+    // Challenger Position 4 fordert Challenged Position 2
+    const challengerEntry = makeEntry({ id: 10, memberId: 1, position: 4, points: 0, memberLk: 12 })
+    const challengedEntry = makeEntry({ id: 20, memberId: 2, position: 2, points: 0, memberLk: 8 })
+    const between = makeEntry({ id: 30, memberId: 3, position: 3, points: 0, memberLk: 10 })
+
+    const mutations = strategy.applyResult({
+      winnerId: 1 as MemberId,
+      loserId: 2 as MemberId,
+      challengerEntry,
+      challengedEntry,
+      allEntries: [challengerEntry, challengedEntry, between],
+      config: strategy.defaultConfig(),
+      now: new Date(),
+      outcome: 'walkover',
+    })
+
+    const positionFor = (entryId: number) =>
+      mutations.find((m) => m.kind === 'set-position' && m.entryId === entryId)
+    expect(positionFor(10)).toMatchObject({ position: 2 }) // Challenger nimmt Challenged-Position
+    expect(positionFor(20)).toMatchObject({ position: 3 }) // Challenged rutscht
+    expect(positionFor(30)).toMatchObject({ position: 4 }) // dazwischen rutscht
+  })
 })

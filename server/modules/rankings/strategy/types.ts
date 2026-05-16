@@ -64,6 +64,16 @@ export type RankingMutation =
  */
 export type EntryWithLk = RankingEntryRow & { memberLk: number }
 
+/**
+ * Wie das Match endete — Strategy-spezifisches Verhalten:
+ *   - regular:    voller Score, alle Strategien wenden normale Logik an
+ *   - walkover:   Pyramide tauscht Positionen, ELO/Hybrid skippen Rating,
+ *                 Points-Table nutzt `walkoverWin` für Sieger
+ *   - retirement: Pyramide/Points-Table verhalten sich wie regulär (gespielt
+ *                 wurde, nur nicht zu Ende); ELO/Hybrid skippen Rating
+ */
+export type MatchOutcome = 'regular' | 'walkover' | 'retirement'
+
 export type ApplyResultInput = {
   winnerId: MemberId
   loserId: MemberId
@@ -72,6 +82,8 @@ export type ApplyResultInput = {
   allEntries: EntryWithLk[]
   config: RankingConfig
   now: Date
+  /** Default `regular`. */
+  outcome?: MatchOutcome
 }
 
 export interface RankingStrategy {

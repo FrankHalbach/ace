@@ -51,6 +51,8 @@ function toDto(row: MatchResultRow): MatchResultDto {
     confirmedAt: row.confirmedAt,
     disputedAt: row.disputedAt,
     disputeNote: row.disputeNote,
+    outcome: row.outcome,
+    outcomeNote: row.outcomeNote,
     applied: row.applied,
     appliedAt: row.appliedAt,
   }
@@ -91,9 +93,14 @@ export const resultsService = {
 
     // Modus aus Input oder Default
     const matchMode: MatchMode = input.matchMode ?? DEFAULT_MATCH_MODE
+    const outcome = input.outcome ?? 'regular'
     const proSetLength = proSetLengthForRanking(challenge.rankingId)
-    validateSetsForMode(matchMode, input.sets, { proSetLength })
-    verifyWinnerConsistency(input.sets, winnerId === challenge.challengerId)
+    validateSetsForMode(matchMode, input.sets, { proSetLength, outcome })
+    if (outcome === 'regular') {
+      verifyWinnerConsistency(input.sets, winnerId === challenge.challengerId)
+    }
+    // walkover/retirement: Sieger ist explizit gemeldet (Anwesenheits-Sieg
+    // bzw. der Nicht-Aufgebende). Keine Score-Konsistenz-Prüfung.
 
     const existing = matchResultRepo.findByChallenge(challengeId)
     if (existing) {
@@ -109,6 +116,8 @@ export const resultsService = {
       reportedAt: now,
       reportedBy: reporterId,
       confirmationStatus: 'pending',
+      outcome,
+      outcomeNote: input.outcomeNote ?? null,
     })
     return toDto(row)
   },
@@ -153,6 +162,7 @@ export const resultsService = {
       allEntries: entries,
       config: meta.config,
       now,
+      outcome: row.outcome,
     })
 
     // Mutationen anwenden + MatchResult + Challenge updaten
@@ -227,6 +237,7 @@ export const resultsService = {
       allEntries: entries,
       config: meta.config,
       now,
+      outcome: row.outcome,
     })
 
     applyMutations(mutations, id)

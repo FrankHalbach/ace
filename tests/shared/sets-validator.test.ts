@@ -214,6 +214,92 @@ describe('validateSetsForMode — Pro-Set (A3)', () => {
   })
 })
 
+describe('validateSetsForMode — Walk-Over (#29)', () => {
+  it('akzeptiert leere sets bei outcome=walkover', () => {
+    expect(() =>
+      validateSetsForMode('best-of-3-champions', [], { outcome: 'walkover' }),
+    ).not.toThrow()
+  })
+
+  it('lehnt nicht-leere sets bei outcome=walkover ab', () => {
+    expect(() =>
+      validateSetsForMode('best-of-3-champions', [{ a: 6, b: 4 }, { a: 6, b: 2 }], {
+        outcome: 'walkover',
+      }),
+    ).toThrow(/Walk-Over/i)
+  })
+
+  it('walkover funktioniert auch bei pro-set', () => {
+    expect(() => validateSetsForMode('pro-set', [], { outcome: 'walkover' })).not.toThrow()
+  })
+})
+
+describe('validateSetsForMode — Aufgabe (#30)', () => {
+  it('akzeptiert unvollständigen letzten Satz bei outcome=retirement', () => {
+    expect(() =>
+      validateSetsForMode('best-of-3-champions', [{ a: 6, b: 2 }, { a: 3, b: 1 }], {
+        outcome: 'retirement',
+      }),
+    ).not.toThrow()
+  })
+
+  it('akzeptiert auch einen einzigen unvollständigen Satz', () => {
+    expect(() =>
+      validateSetsForMode('best-of-3-champions', [{ a: 2, b: 1 }], {
+        outcome: 'retirement',
+      }),
+    ).not.toThrow()
+  })
+
+  it('verlangt mindestens einen angespielten Satz bei retirement', () => {
+    expect(() =>
+      validateSetsForMode('best-of-3-champions', [], { outcome: 'retirement' }),
+    ).toThrow(/Mindestens ein Satz/i)
+  })
+
+  it('lehnt unvollständigen Satz NICHT-am-Ende auch bei retirement ab', () => {
+    // Satz 1 muss regulär sein, nur der letzte darf unvollständig sein
+    expect(() =>
+      validateSetsForMode('best-of-3-champions', [{ a: 3, b: 1 }, { a: 6, b: 2 }], {
+        outcome: 'retirement',
+      }),
+    ).toThrow(InvalidSetsError)
+  })
+
+  it('vollständiger letzter Satz bei retirement ist auch ok', () => {
+    expect(() =>
+      validateSetsForMode('best-of-3-champions', [{ a: 6, b: 2 }, { a: 4, b: 6 }], {
+        outcome: 'retirement',
+      }),
+    ).not.toThrow()
+  })
+
+  it('Unentschieden im letzten Satz ist trotzdem verboten', () => {
+    expect(() =>
+      validateSetsForMode('best-of-3-champions', [{ a: 6, b: 2 }, { a: 2, b: 2 }], {
+        outcome: 'retirement',
+      }),
+    ).toThrow(/Unentschieden/i)
+  })
+
+  it('short-sets-tiebreak: letzter Satz darf < 4 sein', () => {
+    expect(() =>
+      validateSetsForMode('short-sets-tiebreak', [{ a: 4, b: 1 }, { a: 2, b: 1 }], {
+        outcome: 'retirement',
+      }),
+    ).not.toThrow()
+  })
+
+  it('pro-set: letzter Satz darf < proSetLength sein', () => {
+    expect(() =>
+      validateSetsForMode('pro-set', [{ a: 5, b: 3 }], {
+        outcome: 'retirement',
+        proSetLength: 8,
+      }),
+    ).not.toThrow()
+  })
+})
+
 describe('verifyWinnerConsistency', () => {
   it('akzeptiert konsistenten Sieger', () => {
     expect(() =>

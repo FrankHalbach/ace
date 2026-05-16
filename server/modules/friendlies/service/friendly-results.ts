@@ -37,6 +37,8 @@ function toDto(row: FriendlyResultRow): FriendlyResultDto {
     confirmedBy: row.confirmedBy,
     disputedAt: row.disputedAt,
     disputeNote: row.disputeNote,
+    outcome: row.outcome,
+    outcomeNote: row.outcomeNote,
   }
 }
 
@@ -114,9 +116,12 @@ export const friendlyResultsService = {
     }
 
     // Friendlies haben kein Saison-Kontext — Pro-Set-Länge nutzt den Default (8).
-    validateSetsForMode(friendlyRow.matchMode, input.sets)
-    // Konvention: Spielfeld-Seite A entspricht dem Initiator-Team.
-    verifyWinnerConsistency(input.sets, winnerIsInitiatorTeam, { winnerSubject: 'team' })
+    const outcome = input.outcome ?? 'regular'
+    validateSetsForMode(friendlyRow.matchMode, input.sets, { outcome })
+    if (outcome === 'regular') {
+      // Konvention: Spielfeld-Seite A entspricht dem Initiator-Team.
+      verifyWinnerConsistency(input.sets, winnerIsInitiatorTeam, { winnerSubject: 'team' })
+    }
 
     if (friendlyResultRepo.findByFriendly(friendlyId)) {
       throw new AlreadyConfirmedError()
@@ -130,6 +135,8 @@ export const friendlyResultsService = {
       reportedAt: now,
       reportedBy: reporterId,
       confirmationStatus: 'pending',
+      outcome,
+      outcomeNote: input.outcomeNote ?? null,
     })
     return toDto(row)
   },

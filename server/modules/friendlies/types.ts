@@ -13,6 +13,7 @@ import type {
 import type {
   ConfirmationStatus,
   FriendlyResultId,
+  MatchOutcome,
   SetScore,
 } from '../../db/schema/friendly-result'
 import type { MemberId } from '../members'
@@ -27,6 +28,7 @@ export type {
   FriendlyMatchMode,
   FriendlyResultId,
   FriendlyStatus,
+  MatchOutcome,
   SetScore,
 }
 
@@ -67,7 +69,9 @@ const setScoreSchema = z.object({
 
 export const reportFriendlyResultInput = z.object({
   winnerMemberIds: z.array(z.number().int().positive()).min(1).max(2),
-  sets: z.array(setScoreSchema).min(1).max(5),
+  sets: z.array(setScoreSchema).max(5),
+  outcome: z.enum(['regular', 'walkover', 'retirement']).optional(),
+  outcomeNote: z.string().max(500).optional(),
 })
 export type ReportFriendlyResultInput = z.infer<typeof reportFriendlyResultInput>
 
@@ -120,6 +124,8 @@ export type FriendlyResultDto = {
   confirmedBy: MemberId | null
   disputedAt: Date | null
   disputeNote: string | null
+  outcome: MatchOutcome
+  outcomeNote: string | null
 }
 
 // ─── Errors ───────────────────────────────────────────────────────────────
