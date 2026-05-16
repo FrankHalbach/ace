@@ -51,6 +51,28 @@ function formatSets(sets: { a: number; b: number }[] | null): string {
   if (!sets || sets.length === 0) return '—'
   return sets.map((s) => `${s.a}:${s.b}`).join(', ')
 }
+
+// ─── Sortierung der Aktivitäts-Tabelle ──────────────────────────────────────
+// Bewusst nur zwei Modi — die Trainer-Use-Cases sind „wen anstupsen" und
+// „wer ist gerade aktiv". Alles andere wäre Tabellen-Spielerei ohne Mehrwert.
+type ActivitySort = 'inactive-first' | 'most-active'
+const activitySort = ref<ActivitySort>('inactive-first')
+
+const sortedActivity = computed(() => {
+  const rows = [...(activity.value ?? [])]
+  if (activitySort.value === 'most-active') {
+    rows.sort((a, b) => b.matchesLast4Weeks - a.matchesLast4Weeks)
+    return rows
+  }
+  // inactive-first: NULL zuerst, dann ältestes lastMatchAt
+  rows.sort((a, b) => {
+    if (a.lastMatchAt === null && b.lastMatchAt === null) return 0
+    if (a.lastMatchAt === null) return -1
+    if (b.lastMatchAt === null) return 1
+    return new Date(a.lastMatchAt).getTime() - new Date(b.lastMatchAt).getTime()
+  })
+  return rows
+})
 </script>
 
 <template>
@@ -147,15 +169,34 @@ function formatSets(sets: { a: number; b: number }[] | null): string {
     </section>
 
     <section>
-      <h2 class="text-lg font-semibold mb-3">Aktivitäts-Übersicht</h2>
+      <div class="flex items-center justify-between mb-3 flex-wrap gap-3">
+        <h2 class="text-lg font-semibold">Aktivitäts-Übersicht</h2>
+        <div class="flex gap-1">
+          <UButton
+            size="xs"
+            :variant="activitySort === 'inactive-first' ? 'solid' : 'ghost'"
+            color="neutral"
+            @click="activitySort = 'inactive-first'"
+          >
+            Inaktive zuerst
+          </UButton>
+          <UButton
+            size="xs"
+            :variant="activitySort === 'most-active' ? 'solid' : 'ghost'"
+            color="neutral"
+            @click="activitySort = 'most-active'"
+          >
+            Aktivste zuerst
+          </UButton>
+        </div>
+      </div>
       <p class="text-xs text-muted mb-3">
-        Sortiert nach Inaktivität — wer am wenigsten gespielt hat, steht oben.
-        Zähler bezieht sich auf die letzten 4 Wochen.
+        Match-Anzahl bezieht sich auf die letzten 4 Wochen.
       </p>
 
       <div class="divide-y divide-default border border-default rounded-lg overflow-hidden">
         <NuxtLink
-          v-for="row in activity"
+          v-for="row in sortedActivity"
           :key="row.memberId"
           :to="`/spieler/${row.memberId}`"
           class="block px-4 py-3 flex items-center justify-between gap-3 hover:bg-elevated transition"
