@@ -34,17 +34,17 @@ function setupSeasonWithMembers() {
 
   const season = seasonsService.create({ name: 'Test 2026' })
   seasonsService.addAgeGroup(season.id, {
-    name: 'Aktive',
+    name: 'Herren',
     minAge: 18,
     maxAge: null,
-    genderRule: 'separate',
+    gender: 'm',
     active: true,
   })
   seasonsService.start(season.id)
   generateForSeason(season.id)
 
   const rankings = rankingReadService.list({ seasonId: season.id })
-  const herren = rankings.find((r) => r.variant === 'herren')!
+  const herren = rankings[0]!
   return { memberIds, rankingId: herren.id as RankingId }
 }
 

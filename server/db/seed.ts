@@ -69,25 +69,34 @@ export function runSeed(): void {
     console.log(`  Saison "${DEMO_SEASON_NAME}" existiert bereits — übersprungen.`)
   } else {
     const season = seasonsService.create({ name: DEMO_SEASON_NAME })
+    // Aktive: Herren + Damen als eigenständige Konkurrenzen (vereinsrealistisch).
     seasonsService.addAgeGroup(season.id, {
-      name: 'Aktive',
+      name: 'Herren',
       minAge: 18,
       maxAge: 49,
-      genderRule: 'separate',
+      gender: 'm',
       active: true,
     })
     seasonsService.addAgeGroup(season.id, {
-      name: 'Über 50',
-      minAge: 50,
-      maxAge: null,
-      genderRule: 'separate',
+      name: 'Damen',
+      minAge: 18,
+      maxAge: 49,
+      gender: 'w',
       active: true,
     })
+    seasonsService.addAgeGroup(season.id, {
+      name: 'Herren 50',
+      minAge: 50,
+      maxAge: null,
+      gender: 'm',
+      active: true,
+    })
+    // Jugend: geschlechtsoffen, eine gemeinsame Rangliste.
     seasonsService.addAgeGroup(season.id, {
       name: 'U18',
       minAge: 14,
       maxAge: 17,
-      genderRule: 'separate',
+      gender: 'mixed',
       active: true,
     })
     seasonsService.start(season.id)

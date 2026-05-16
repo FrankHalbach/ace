@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { CreateAgeGroupInput, GenderRule, SeasonDetailDto } from '~~/server/modules/seasons'
+import type { AgeGroupGender, CreateAgeGroupInput, SeasonDetailDto } from '~~/server/modules/seasons'
 
 definePageMeta({
   layout: 'admin',
@@ -55,7 +55,7 @@ const newAg = reactive<CreateAgeGroupInput>({
   name: '',
   minAge: null,
   maxAge: null,
-  genderRule: 'both',
+  gender: 'm',
   active: true,
 })
 const adding = ref(false)
@@ -68,7 +68,7 @@ async function addAgeGroup() {
       body: { ...newAg, name: newAg.name.trim() },
     })
     showAdd.value = false
-    Object.assign(newAg, { name: '', minAge: null, maxAge: null, genderRule: 'both' as GenderRule, active: true })
+    Object.assign(newAg, { name: '', minAge: null, maxAge: null, gender: 'm' as AgeGroupGender, active: true })
     await refresh()
     toast.add({ title: 'Altersgruppe hinzugefügt', color: 'primary' })
   } catch {
@@ -89,10 +89,10 @@ async function deleteAgeGroup(agId: number) {
   }
 }
 
-const genderRuleLabel: Record<GenderRule, string> = {
-  mixed: 'Offen (mixed)',
-  separate: 'Herren + Damen',
-  both: 'Herren + Damen + Offen',
+const genderLabel: Record<AgeGroupGender, string> = {
+  m: 'Herren',
+  w: 'Damen',
+  mixed: 'Gemischt',
 }
 
 function ageRange(min: number | null, max: number | null): string {
@@ -156,15 +156,15 @@ function ageRange(min: number | null, max: number | null): string {
         <form class="space-y-3" @submit.prevent="addAgeGroup">
           <div class="grid grid-cols-2 gap-3">
             <UFormField label="Name">
-              <UInput v-model="newAg.name" placeholder="z. B. U18" class="w-full" autofocus />
+              <UInput v-model="newAg.name" placeholder="z. B. Herren 40, Juniorinnen U15" class="w-full" autofocus />
             </UFormField>
-            <UFormField label="Geschlechtsregel">
+            <UFormField label="Geschlecht">
               <USelect
-                v-model="newAg.genderRule"
+                v-model="newAg.gender"
                 :items="[
-                  { label: 'Offen (mixed)', value: 'mixed' },
-                  { label: 'Herren + Damen', value: 'separate' },
-                  { label: 'Herren + Damen + Offen', value: 'both' },
+                  { label: 'Herren', value: 'm' },
+                  { label: 'Damen', value: 'w' },
+                  { label: 'Gemischt (Offen)', value: 'mixed' },
                 ]"
               />
             </UFormField>
@@ -195,7 +195,7 @@ function ageRange(min: number | null, max: number | null): string {
           <div>
             <div class="font-medium">{{ ag.name }}</div>
             <div class="text-xs text-muted">
-              {{ ageRange(ag.minAge, ag.maxAge) }} · {{ genderRuleLabel[ag.genderRule] }}
+              {{ ageRange(ag.minAge, ag.maxAge) }} · {{ genderLabel[ag.gender] }}
               <span v-if="!ag.active" class="ml-1 text-orange-600 dark:text-orange-400">(inaktiv)</span>
             </div>
           </div>

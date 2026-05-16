@@ -14,12 +14,6 @@ useHead({
   title: () => (profile.value ? `${profile.value.firstName} ${profile.value.lastName}` : 'Spieler'),
 })
 
-const variantLabel: Record<'herren' | 'damen' | 'offen', string> = {
-  herren: 'Herren',
-  damen: 'Damen',
-  offen: 'Offen',
-}
-
 const modeLabel: Record<string, string> = {
   pyramid: 'Pyramide',
   elo: 'ELO',
@@ -84,7 +78,7 @@ function formatDate(d: Date | string): string {
         >
           <NuxtLink :to="`/ranglisten/${r.rankingId}`" class="hover:text-primary transition">
             <div class="font-medium">
-              {{ r.ageGroupName }} · {{ variantLabel[r.variant] }}
+              {{ r.ageGroupName }}
             </div>
             <div class="text-xs text-muted">
               {{ r.seasonName }} · {{ modeLabel[r.mode] ?? r.mode }}

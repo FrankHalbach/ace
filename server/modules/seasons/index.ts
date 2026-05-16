@@ -16,10 +16,10 @@ export {
 } from './types'
 export type {
   AgeGroupDto,
+  AgeGroupGender,
   AgeGroupId,
   CreateAgeGroupInput,
   CreateSeasonInput,
-  GenderRule,
   SeasonConfig,
   SeasonDetailDto,
   SeasonDto,

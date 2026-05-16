@@ -13,6 +13,8 @@ export type {
   ValidationResult,
 } from './strategy/types'
 export type {
+  AgeGroupId,
+  MemberId,
   MemberRankingStandingDto,
   RankingConfig,
   RankingDetailDto,
@@ -21,6 +23,6 @@ export type {
   RankingId,
   RankingMode,
   RankingSummaryDto,
-  RankingVariant,
+  SeasonId,
 } from './types'
 export type { RankingFilter } from './service/read'

@@ -5,12 +5,15 @@ import { season, type SeasonId } from './season'
 export type AgeGroupId = Brand<number, 'AgeGroupId'>
 
 /**
- * Geschlechtsregel je Altersgruppe (FR-2j, FR-10, FR-10b):
- *   - mixed:    nur Offene Rangliste — typischerweise Jugend
- *   - separate: nur Herren + Damen — selten, aber möglich
- *   - both:     Herren + Damen + Offen — Default für Erwachsene
+ * Geschlecht der Konkurrenz (FR-2j, FR-10, FR-10b):
+ *   - 'm':     nur Herren in dieser Konkurrenz
+ *   - 'w':     nur Damen
+ *   - 'mixed': geschlechtsoffen — typischerweise Jugend, oder eine
+ *              vereinsinterne „Offen"-Konkurrenz
+ *
+ * Eine AgeGroup entspricht genau einer Rangliste, kein Cross-Product.
  */
-export type GenderRule = 'mixed' | 'separate' | 'both'
+export type AgeGroupGender = 'm' | 'w' | 'mixed'
 
 export const ageGroup = sqliteTable(
   'age_group',
@@ -23,7 +26,7 @@ export const ageGroup = sqliteTable(
     name: text('name').notNull(),
     minAge: integer('min_age'),
     maxAge: integer('max_age'),
-    genderRule: text('gender_rule', { enum: ['mixed', 'separate', 'both'] }).notNull(),
+    gender: text('gender', { enum: ['m', 'w', 'mixed'] }).notNull(),
     active: integer('active', { mode: 'boolean' }).notNull().default(true),
   },
   (t) => [uniqueIndex('age_group_season_name_idx').on(t.seasonId, t.name)],

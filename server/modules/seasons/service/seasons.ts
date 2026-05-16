@@ -41,7 +41,7 @@ function ageGroupToDto(row: AgeGroupRow): AgeGroupDto {
     name: row.name,
     minAge: row.minAge,
     maxAge: row.maxAge,
-    genderRule: row.genderRule,
+    gender: row.gender,
     active: row.active,
   }
 }
@@ -131,7 +131,7 @@ export const seasonsService = {
       name: input.name,
       minAge: input.minAge,
       maxAge: input.maxAge,
-      genderRule: input.genderRule,
+      gender: input.gender,
       active: input.active,
     })
     return ageGroupToDto(inserted)

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { RankingDetailDto, RankingVariant } from '~~/server/modules/rankings'
+import type { RankingDetailDto } from '~~/server/modules/rankings'
 
 definePageMeta({ middleware: 'auth' })
 
@@ -11,12 +11,6 @@ const url = computed(() => `/api/rankings/${id.value}?onlyActive=${onlyActive.va
 
 const { data: ranking, refresh } = await useFetch<RankingDetailDto>(url, { watch: [url] })
 
-const variantLabel: Record<RankingVariant, string> = {
-  herren: 'Herren',
-  damen: 'Damen',
-  offen: 'Offen',
-}
-
 const modeLabel: Record<string, string> = {
   pyramid: 'Pyramide',
   elo: 'ELO',
@@ -25,8 +19,7 @@ const modeLabel: Record<string, string> = {
 }
 
 useHead({
-  title: () =>
-    ranking.value ? `${ranking.value.ageGroupName} · ${variantLabel[ranking.value.variant]}` : 'Rangliste',
+  title: () => ranking.value?.ageGroupName ?? 'Rangliste',
 })
 
 const { user } = useUserSession()
@@ -85,7 +78,7 @@ function canChallenge(targetMemberId: number, targetStatus: string): boolean {
       <div class="flex items-start justify-between gap-3 mt-2 flex-wrap">
         <div class="min-w-0">
           <h1 class="text-3xl font-semibold tracking-tight">
-            {{ ranking.ageGroupName }} · {{ variantLabel[ranking.variant] }}
+            {{ ranking.ageGroupName }}
           </h1>
           <p class="text-sm text-muted mt-1">
             {{ ranking.seasonName }}

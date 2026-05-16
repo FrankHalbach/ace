@@ -1,6 +1,6 @@
 import type { AgeGroupId } from '../../db/schema/age-group'
 import type { MemberId } from '../../db/schema/member'
-import type { RankingConfig, RankingId, RankingMode, RankingVariant } from '../../db/schema/ranking'
+import type { RankingConfig, RankingId, RankingMode } from '../../db/schema/ranking'
 import type { RankingEntryId } from '../../db/schema/ranking-entry'
 import type { SeasonId } from '../../db/schema/season'
 
@@ -11,7 +11,6 @@ export type {
   RankingEntryId,
   RankingId,
   RankingMode,
-  RankingVariant,
   SeasonId,
 }
 
@@ -19,7 +18,6 @@ export type RankingDto = {
   id: RankingId
   seasonId: SeasonId
   ageGroupId: AgeGroupId
-  variant: RankingVariant
   mode: RankingMode
   config: RankingConfig
   createdAt: Date
@@ -63,7 +61,6 @@ export type MemberRankingStandingDto = {
   seasonId: SeasonId
   seasonName: string
   ageGroupName: string
-  variant: RankingVariant
   mode: RankingMode
   position: number
   points: number | null

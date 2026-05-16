@@ -15,12 +15,6 @@ const COOLDOWN_MS = 14 * 24 * 60 * 60 * 1000 // FR-26: 14 Tage
 const INACTIVE_THRESHOLD_MS = 28 * 24 * 60 * 60 * 1000 // 4 Wochen (siehe Trainer-Activity)
 const TOP_N = 5
 
-const VARIANT_LABEL: Record<'herren' | 'damen' | 'offen', string> = {
-  herren: 'Herren',
-  damen: 'Damen',
-  offen: 'Offen',
-}
-
 export const suggestionsService = {
   /**
    * Berechnet On-Demand bis zu 5 Spielpartner-Vorschläge für `viewerId`.
@@ -203,7 +197,7 @@ function pickChallengeRanking(
     candidates.push({
       rankingId: vs.rankingId,
       positionDiff: Math.abs(viewerEntry.position - candidateEntry.position),
-      rankingName: `${vs.ageGroupName} · ${VARIANT_LABEL[vs.variant]}`,
+      rankingName: vs.ageGroupName,
     })
   }
 

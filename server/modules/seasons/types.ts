@@ -1,8 +1,8 @@
 import { z } from 'zod'
-import type { GenderRule, AgeGroupId } from '../../db/schema/age-group'
+import type { AgeGroupGender, AgeGroupId } from '../../db/schema/age-group'
 import type { SeasonConfig, SeasonId, SeasonStatus } from '../../db/schema/season'
 
-export type { AgeGroupId, GenderRule, SeasonId, SeasonStatus, SeasonConfig }
+export type { AgeGroupGender, AgeGroupId, SeasonId, SeasonStatus, SeasonConfig }
 
 // -- Zod-Schemas ---------------------------------------------------------------
 
@@ -25,7 +25,7 @@ export const createAgeGroupInput = z
     name: z.string().min(1).max(40),
     minAge: ageRange,
     maxAge: ageRange,
-    genderRule: z.enum(['mixed', 'separate', 'both']),
+    gender: z.enum(['m', 'w', 'mixed']),
     active: z.boolean().default(true),
   })
   .refine(
@@ -38,7 +38,7 @@ export const updateAgeGroupInput = z
     name: z.string().min(1).max(40),
     minAge: ageRange,
     maxAge: ageRange,
-    genderRule: z.enum(['mixed', 'separate', 'both']),
+    gender: z.enum(['m', 'w', 'mixed']),
     active: z.boolean(),
   })
   .partial()
@@ -66,7 +66,7 @@ export type AgeGroupDto = {
   name: string
   minAge: number | null
   maxAge: number | null
-  genderRule: GenderRule
+  gender: AgeGroupGender
   active: boolean
 }
 

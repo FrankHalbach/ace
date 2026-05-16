@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { RankingSummaryDto, RankingVariant } from '~~/server/modules/rankings'
+import type { RankingSummaryDto } from '~~/server/modules/rankings'
 import type { SeasonDto } from '~~/server/modules/seasons'
 
 definePageMeta({ middleware: 'auth' })
@@ -8,7 +8,6 @@ useHead({ title: 'Ranglisten' })
 const { data: seasons } = await useFetch<SeasonDto[]>('/api/seasons', { default: () => [] })
 
 const selectedSeasonId = ref<number | null>(null)
-const selectedVariant = ref<RankingVariant | 'alle'>('alle')
 
 // Default-Saison setzen, sobald die Liste da ist
 watchEffect(() => {
@@ -19,21 +18,13 @@ watchEffect(() => {
   selectedSeasonId.value = active.id
 })
 
-// Stabile Items-Computeds — USelect mag keine neu-erzeugten Arrays pro Render
 const seasonItems = computed(() =>
   (seasons.value ?? []).map((s) => ({ label: `${s.name} (${s.status})`, value: s.id })),
 )
-const variantItems = [
-  { label: 'Alle Varianten', value: 'alle' as const },
-  { label: 'Herren', value: 'herren' as const },
-  { label: 'Damen', value: 'damen' as const },
-  { label: 'Offen', value: 'offen' as const },
-]
 
 const rankingsUrl = computed(() => {
   if (!selectedSeasonId.value) return null
   const params = new URLSearchParams({ seasonId: String(selectedSeasonId.value) })
-  if (selectedVariant.value !== 'alle') params.set('variant', selectedVariant.value)
   return `/api/rankings?${params.toString()}`
 })
 
@@ -41,12 +32,6 @@ const { data: rankings } = await useFetch<RankingSummaryDto[]>(rankingsUrl, {
   watch: [rankingsUrl],
   default: () => [],
 })
-
-const variantLabel: Record<RankingVariant, string> = {
-  herren: 'Herren',
-  damen: 'Damen',
-  offen: 'Offen',
-}
 
 const modeLabel: Record<string, string> = {
   pyramid: 'Pyramide',
@@ -65,11 +50,6 @@ const modeLabel: Record<string, string> = {
         v-model="selectedSeasonId"
         :items="seasonItems"
         class="min-w-[200px]"
-      />
-      <USelect
-        v-model="selectedVariant"
-        :items="variantItems"
-        class="min-w-[180px]"
       />
     </div>
 
@@ -90,7 +70,7 @@ const modeLabel: Record<string, string> = {
       >
         <div class="flex items-center justify-between">
           <div>
-            <div class="font-medium">{{ r.ageGroupName }} · {{ variantLabel[r.variant] }}</div>
+            <div class="font-medium">{{ r.ageGroupName }}</div>
             <div class="text-xs text-muted">
               {{ modeLabel[r.mode] }} · {{ r.entryCount }} Spieler
             </div>

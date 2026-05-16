@@ -6,8 +6,6 @@ import { season, type SeasonId } from './season'
 
 export type RankingId = Brand<number, 'RankingId'>
 
-export type RankingVariant = 'herren' | 'damen' | 'offen'
-
 export type RankingMode = 'pyramid' | 'elo' | 'hybrid' | 'points-table'
 
 /**
@@ -41,14 +39,13 @@ export const ranking = sqliteTable(
       .notNull()
       .references(() => ageGroup.id, { onDelete: 'cascade' })
       .$type<AgeGroupId>(),
-    variant: text('variant', { enum: ['herren', 'damen', 'offen'] }).notNull(),
     mode: text('mode', { enum: ['pyramid', 'elo', 'hybrid', 'points-table'] }).notNull(),
     config: text('config', { mode: 'json' }).$type<RankingConfig>().notNull().default({}),
     createdAt: integer('created_at', { mode: 'timestamp' })
       .notNull()
       .default(sql`(unixepoch())`),
   },
-  (t) => [uniqueIndex('ranking_unique_idx').on(t.seasonId, t.ageGroupId, t.variant)],
+  (t) => [uniqueIndex('ranking_unique_idx').on(t.seasonId, t.ageGroupId)],
 )
 
 export type RankingRow = typeof ranking.$inferSelect

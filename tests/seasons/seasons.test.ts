@@ -55,7 +55,7 @@ describe('seasonsService', () => {
         name: 'Aktive',
         minAge: 18,
         maxAge: null,
-        genderRule: 'both',
+        gender: 'm',
         active: true,
       })
       seasonsService.delete(s.id)
@@ -104,35 +104,35 @@ describe('seasonsService', () => {
         name: 'U15',
         minAge: 13,
         maxAge: 14,
-        genderRule: 'mixed',
+        gender: 'mixed',
         active: true,
       })
       expect(ag.name).toBe('U15')
-      expect(ag.genderRule).toBe('mixed')
+      expect(ag.gender).toBe('mixed')
     })
 
     it('AgeGroup-Listing über getDetail', () => {
       const s = seasonsService.create({ name: 'Sommer 2026' })
-      seasonsService.addAgeGroup(s.id, { name: 'U15', minAge: 13, maxAge: 14, genderRule: 'mixed', active: true })
-      seasonsService.addAgeGroup(s.id, { name: 'Aktive', minAge: 18, maxAge: null, genderRule: 'both', active: true })
+      seasonsService.addAgeGroup(s.id, { name: 'U15', minAge: 13, maxAge: 14, gender: 'mixed', active: true })
+      seasonsService.addAgeGroup(s.id, { name: 'Aktive', minAge: 18, maxAge: null, gender: 'm', active: true })
       const detail = seasonsService.getDetail(s.id)
       expect(detail.ageGroups).toHaveLength(2)
     })
 
     it('verhindert doppelten Namen innerhalb derselben Saison', () => {
       const s = seasonsService.create({ name: 'Sommer 2026' })
-      seasonsService.addAgeGroup(s.id, { name: 'U15', minAge: 13, maxAge: 14, genderRule: 'mixed', active: true })
+      seasonsService.addAgeGroup(s.id, { name: 'U15', minAge: 13, maxAge: 14, gender: 'mixed', active: true })
       expect(() =>
-        seasonsService.addAgeGroup(s.id, { name: 'U15', minAge: 13, maxAge: 14, genderRule: 'mixed', active: true }),
+        seasonsService.addAgeGroup(s.id, { name: 'U15', minAge: 13, maxAge: 14, gender: 'mixed', active: true }),
       ).toThrow(AgeGroupNameTakenError)
     })
 
     it('erlaubt gleichen Namen in unterschiedlichen Saisons', () => {
       const a = seasonsService.create({ name: 'Sommer 2025' })
       const b = seasonsService.create({ name: 'Sommer 2026' })
-      seasonsService.addAgeGroup(a.id, { name: 'U15', minAge: 13, maxAge: 14, genderRule: 'mixed', active: true })
+      seasonsService.addAgeGroup(a.id, { name: 'U15', minAge: 13, maxAge: 14, gender: 'mixed', active: true })
       expect(() =>
-        seasonsService.addAgeGroup(b.id, { name: 'U15', minAge: 13, maxAge: 14, genderRule: 'mixed', active: true }),
+        seasonsService.addAgeGroup(b.id, { name: 'U15', minAge: 13, maxAge: 14, gender: 'mixed', active: true }),
       ).not.toThrow()
     })
 
@@ -142,7 +142,7 @@ describe('seasonsService', () => {
         name: 'U15',
         minAge: 13,
         maxAge: 14,
-        genderRule: 'mixed',
+        gender: 'mixed',
         active: true,
       })
       seasonsService.start(s.id)
@@ -159,7 +159,7 @@ describe('seasonsService', () => {
       const s = seasonsService.create({ name: 'Sommer 2026' })
       seasonsService.start(s.id)
       expect(() =>
-        seasonsService.addAgeGroup(s.id, { name: 'U15', minAge: 13, maxAge: 14, genderRule: 'mixed', active: true }),
+        seasonsService.addAgeGroup(s.id, { name: 'U15', minAge: 13, maxAge: 14, gender: 'mixed', active: true }),
       ).toThrow(SeasonFrozenError)
     })
   })
