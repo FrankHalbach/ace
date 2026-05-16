@@ -1,0 +1,93 @@
+/* =========================================================================
+   ace · TuS Neureut · Design Tokens
+   Source of truth: docs/design-system.md
+   Sync-Origin: design bundle "ace-tus-neureut-design-system" (Claude Design),
+   colors_and_type.css. When you change a value here, also update the spec
+   doc — see CLAUDE.md § Design.
+   ========================================================================= */
+
+/* Fonts are loaded in main.css (must precede all other @imports per CSS spec).
+   See main.css for the Google-Fonts CDN substitution + production-handover note. */
+
+:root {
+  /* -- Brand ----------------------------------------------------------- */
+  --primary:        #2d5841;   /* tennis-court green: primary button, win   */
+  --primary-soft:   #e8efe8;   /* primary background tint                   */
+  --primary-strong: #1f3e2d;   /* hover / pressed                           */
+  --accent:         #b85c38;   /* court-clay orange: secondary, "new!"      */
+  --accent-soft:    #f5e6dd;   /* accent background tint                    */
+  --tennis-ball:    #dceb6b;   /* sparing accent for "new activity" dots    */
+
+  /* -- Surfaces -------------------------------------------------------- */
+  --bg:        #fafaf7;        /* app background — cooler than Fraunces doc */
+  --bg-soft:   #f3f1e9;        /* card backgrounds, list rails              */
+  --surface:   #ffffff;        /* inputs, modals, raised cards              */
+  --rule:      #e0dcd0;        /* dividers, card borders                    */
+  --elevated:  #f3f1e9;        /* hover-elevated row (Nuxt UI `elevated`)   */
+
+  /* -- Ink ------------------------------------------------------------- */
+  --ink:        #1a1a1a;
+  --ink-muted:  #5a5a55;
+  --ink-soft:   #8b8a82;
+  --on-primary: #fafaf7;
+  --on-accent:  #fafaf7;
+
+  /* -- Status (semantic) ---------------------------------------------- */
+  --success:        #2d5841;   --success-soft: #e8efe8;
+  --info:           #4a6b8a;   --info-soft:    #e6ecf3;
+  --warning:        #8a6d2c;   --warning-soft: #f4ecd5;
+  --danger:         #a13c2a;   --danger-soft:  #f4dcd5;
+  --neutral:        #8b8a82;   --neutral-soft: #ecebe5;
+
+  /* -- Type ------------------------------------------------------------ */
+  --font-sans:  "Source Sans 3", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono:  "JetBrains Mono", "SF Mono", Consolas, monospace;
+
+  --text-xs:   0.75rem;
+  --text-sm:   0.875rem;
+  --text-base: 1rem;
+  --text-lg:   1.125rem;
+  --text-xl:   1.375rem;
+  --text-2xl:  1.75rem;
+  --text-3xl:  2.25rem;
+
+  --lh-body:     1.5;
+  --lh-headings: 1.2;
+
+  --fw-regular:  400;
+  --fw-medium:   500;
+  --fw-semibold: 600;
+  --fw-bold:     700;
+
+  /* -- Spacing & sizing ----------------------------------------------- */
+  --touch-min: 44px;     /* WCAG AAA + Apple HIG */
+  --list-row:  48px;     /* min interactive list-item height */
+
+  /* -- Radii ----------------------------------------------------------- */
+  --radius-sm:   0.25rem;
+  --radius-md:   0.5rem;
+  --radius-lg:   0.75rem;
+  --radius-full: 9999px;
+
+  /* -- Shadow ---------------------------------------------------------- */
+  --shadow-sm: 0 1px 2px rgba(26, 26, 26, 0.04), 0 1px 1px rgba(26, 26, 26, 0.03);
+  --shadow-md: 0 4px 12px rgba(26, 26, 26, 0.06), 0 2px 4px rgba(26, 26, 26, 0.04);
+  --shadow-lg: 0 12px 32px rgba(26, 26, 26, 0.10), 0 4px 8px rgba(26, 26, 26, 0.06);
+
+  /* -- Motion ---------------------------------------------------------- */
+  --transition: 150ms ease;
+}
+
+/* =========================================================================
+   Body defaults — match the design spec's font stack
+   ========================================================================= */
+body {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+code, .mono, .tabular {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}

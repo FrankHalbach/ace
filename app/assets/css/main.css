@@ -1,2 +1,63 @@
 @import "tailwindcss";
 @import "@nuxt/ui";
+@import "./tokens.css";
+
+/* Fonts are loaded via <link> tags injected from nuxt.config.ts app.head.
+   CSS @import url() doesn't work cleanly here because Vite/PostCSS inlines
+   the tailwindcss + nuxt-ui imports first, pushing any font @import below
+   other rules and violating the CSS spec. For production-grade offline
+   delivery, drop .woff2 files into app/assets/fonts/ and swap to @font-face. */
+
+/* =========================================================================
+   Tailwind 4 @theme — custom brand palettes anchored on tokens.css.
+   These names are referenced from app/app.config.ts via Nuxt UI's
+   `ui.colors.primary` etc. — so utilities like `bg-tennis-green-500`,
+   `text-court-clay-700` also work in templates.
+
+   Palette stops are interpolated. Anchors (verified-correct):
+     tennis-green-500 = --primary
+     tennis-green-700 = --primary-strong
+     tennis-green-50  ≈ --primary-soft (slight lift for Tailwind ramp)
+     court-clay-500   = --accent
+     court-clay-50    ≈ --accent-soft
+     warm-stone-500   = --ink-soft / --neutral
+     warm-stone-700   = --ink-muted
+     warm-stone-950   = --ink
+   ========================================================================= */
+@theme static {
+  --color-tennis-green-50:  #eef4ee;
+  --color-tennis-green-100: #d4e3d7;
+  --color-tennis-green-200: #aac6b1;
+  --color-tennis-green-300: #7ea38a;
+  --color-tennis-green-400: #547a64;
+  --color-tennis-green-500: #2d5841;
+  --color-tennis-green-600: #244838;
+  --color-tennis-green-700: #1f3e2d;
+  --color-tennis-green-800: #182f23;
+  --color-tennis-green-900: #11211a;
+  --color-tennis-green-950: #0a160f;
+
+  --color-court-clay-50:  #faf0eb;
+  --color-court-clay-100: #f4ddd0;
+  --color-court-clay-200: #e8b8a0;
+  --color-court-clay-300: #d99373;
+  --color-court-clay-400: #c97552;
+  --color-court-clay-500: #b85c38;
+  --color-court-clay-600: #9c4d2e;
+  --color-court-clay-700: #803e26;
+  --color-court-clay-800: #5f2e1d;
+  --color-court-clay-900: #401f14;
+  --color-court-clay-950: #28140d;
+
+  --color-warm-stone-50:  #f5f5f3;
+  --color-warm-stone-100: #ecebe5;
+  --color-warm-stone-200: #d4d3cb;
+  --color-warm-stone-300: #b8b7af;
+  --color-warm-stone-400: #a09f96;
+  --color-warm-stone-500: #8b8a82;
+  --color-warm-stone-600: #6f6e67;
+  --color-warm-stone-700: #5a5a55;
+  --color-warm-stone-800: #424240;
+  --color-warm-stone-900: #2a2a29;
+  --color-warm-stone-950: #1a1a1a;
+}
