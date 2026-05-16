@@ -2,22 +2,27 @@ import { eq } from 'drizzle-orm'
 import { useDb } from '../../../db'
 import { ageGroup } from '../../../db/schema/age-group'
 import { matchPointsAward } from '../../../db/schema/match-points-award'
+import { member } from '../../../db/schema/member'
 import { ranking, type RankingId } from '../../../db/schema/ranking'
-import { rankingEntry, type RankingEntryRow } from '../../../db/schema/ranking-entry'
+import { rankingEntry } from '../../../db/schema/ranking-entry'
 import { season } from '../../../db/schema/season'
-import type { RankingMutation } from '../strategy/types'
+import type { EntryWithLk, RankingMutation } from '../strategy/types'
 import type { MatchResultId } from '../../../db/schema/match-result'
 
 /**
  * Liefert alle Einträge einer Rangliste — Snapshot für Strategy-Calls.
+ * LK wird mit-geladen, damit die `points-table`-Strategy LK als Tiebreaker
+ * verwenden kann (N-01).
  */
-export function getRankingEntries(rankingId: RankingId): RankingEntryRow[] {
-  return useDb()
-    .select()
+export function getRankingEntries(rankingId: RankingId): EntryWithLk[] {
+  const rows = useDb()
+    .select({ entry: rankingEntry, memberLk: member.dtbLk })
     .from(rankingEntry)
+    .innerJoin(member, eq(rankingEntry.memberId, member.id))
     .where(eq(rankingEntry.rankingId, rankingId))
     .orderBy(rankingEntry.position)
     .all()
+  return rows.map((r) => ({ ...r.entry, memberLk: r.memberLk }))
 }
 
 /**

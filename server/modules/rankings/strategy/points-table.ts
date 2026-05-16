@@ -77,11 +77,11 @@ export const pointsTableStrategy: RankingStrategy = {
   },
 
   /**
-   * Punkte-Tabelle:
+   * Punkte-Tabelle (N-01):
    *   - Sieger bekommt `challengeWin` Punkte
    *   - Verlierer bekommt `challengeLoss` Punkte
-   *   - Positionen werden neu vergeben nach (Punkte absteigend, LK aufsteigend
-   *     als Tiebreaker — hier vereinfacht: ID als zweiter Tiebreaker)
+   *   - Positionen werden neu vergeben nach Punkte absteigend, LK aufsteigend
+   *     als Tiebreaker, ID aufsteigend als letzter Tiebreaker
    *   - MatchPointsAward-Einträge werden für Audit/Historie erzeugt
    */
   applyResult(input: ApplyResultInput): RankingMutation[] {
@@ -125,6 +125,7 @@ export const pointsTableStrategy: RankingStrategy = {
       const pa = newPoints.get(a.id)!
       const pb = newPoints.get(b.id)!
       if (pa !== pb) return pb - pa
+      if (a.memberLk !== b.memberLk) return a.memberLk - b.memberLk
       return a.id - b.id
     })
 
