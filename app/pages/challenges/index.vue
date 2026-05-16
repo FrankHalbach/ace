@@ -108,7 +108,7 @@ function otherParty(c: ChallengeDto): number {
     </section>
 
     <section v-if="active.length > 0" class="mb-8">
-      <h2 class="text-lg font-semibold mb-3">🎾 Aktive Matches ({{ active.length }})</h2>
+      <h2 class="text-lg font-semibold mb-3">🎾 Aktive Spiele ({{ active.length }})</h2>
       <div class="space-y-2">
         <NuxtLink
           v-for="c in active"

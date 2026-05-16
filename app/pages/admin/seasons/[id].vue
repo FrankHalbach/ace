@@ -212,7 +212,7 @@ function ageRange(min: number | null, max: number | null): string {
     </section>
 
     <section class="border-t border-default pt-6">
-      <h2 class="text-lg font-semibold mb-3">Lifecycle</h2>
+      <h2 class="text-lg font-semibold mb-3">Saison-Status</h2>
 
       <div v-if="season.status === 'PLANNED'" class="space-y-2">
         <p class="text-sm text-muted">

@@ -14,7 +14,7 @@ const errorMessage = computed(() => {
   if (submitError.value) return submitError.value
   switch (errorParam.value) {
     case 'expired':
-      return 'Der Login-Link ist abgelaufen. Bitte erneut anfordern.'
+      return 'Der Anmelde-Link ist abgelaufen. Bitte erneut anfordern.'
     case 'consumed':
       return 'Dieser Link wurde bereits benutzt. Bitte erneut anfordern.'
     case 'unknown':
@@ -39,7 +39,7 @@ async function submit() {
     if (status === 429) {
       submitError.value = 'Zu viele Versuche. Bitte in einer Stunde erneut probieren.'
     } else if (status === 400) {
-      submitError.value = 'Bitte gib eine gültige Email-Adresse ein.'
+      submitError.value = 'Bitte gib eine gültige E-Mail-Adresse ein.'
     } else {
       submitError.value = 'Unerwarteter Fehler. Bitte später erneut versuchen.'
     }
@@ -53,12 +53,12 @@ async function submit() {
   <UContainer class="py-16 max-w-md">
     <h1 class="text-3xl font-semibold mb-2">Anmelden bei ace</h1>
     <p class="text-muted mb-8">
-      Wir schicken dir einen einmaligen Login-Link per Email. Kein Passwort, keine Apps.
+      Wir schicken dir einen einmaligen Anmelde-Link per E-Mail. Kein Passwort, keine Apps.
     </p>
 
     <UCard>
       <form class="space-y-4" @submit.prevent="submit">
-        <UFormField label="Email-Adresse" :error="errorMessage ?? undefined">
+        <UFormField label="E-Mail-Adresse" :error="errorMessage ?? undefined">
           <UInput
             v-model="email"
             type="email"
@@ -79,7 +79,7 @@ async function submit() {
           :loading="submitting"
           :disabled="!email"
         >
-          Magic-Link senden
+          Anmelde-Link senden
         </UButton>
       </form>
     </UCard>

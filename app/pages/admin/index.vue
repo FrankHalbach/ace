@@ -20,7 +20,7 @@ useHead({ title: 'Admin' })
         class="block p-4 border border-default rounded-lg hover:border-primary hover:bg-elevated transition"
       >
         <div class="font-medium text-default">Saisons &amp; Altersgruppen</div>
-        <div class="text-sm text-muted">Saisons anlegen, Lifecycle steuern, Altersgruppen pflegen</div>
+        <div class="text-sm text-muted">Saisons anlegen, Status steuern, Altersgruppen pflegen</div>
       </NuxtLink>
 
       <div class="block p-4 border border-default rounded-lg opacity-50">

@@ -96,7 +96,7 @@ const topRanking = computed<RankingStanding | null>(() => {
         </p>
       </div>
       <div class="min-w-0 sm:border-l sm:border-default sm:pl-8">
-        <p class="text-xs text-muted font-medium tracking-wide mb-1">Matches</p>
+        <p class="text-xs text-muted font-medium tracking-wide mb-1">Spiele</p>
         <p class="text-2xl font-semibold font-mono tabular-nums leading-none">
           {{ profile.matchesLast4Weeks }}
         </p>
@@ -192,14 +192,14 @@ const topRanking = computed<RankingStanding | null>(() => {
           class="flex flex-col items-center gap-2 p-4 rounded-lg border border-default bg-default transition-colors hover:border-primary hover:bg-elevated/30"
         >
           <UIcon name="i-lucide-handshake" class="size-6 text-primary" />
-          <span class="text-sm font-medium">Friendlies</span>
+          <span class="text-sm font-medium">Freundschaftsspiele</span>
         </NuxtLink>
       </div>
     </section>
 
     <!-- FOOTER NOTE -->
     <p class="text-xs text-dimmed mt-16 text-center">
-      In Entwicklung · Profilfoto · Email-Versand der Match-Vorschläge · Trainingsgruppen
+      In Entwicklung · Profilfoto · E-Mail-Versand der Match-Vorschläge · Trainingsgruppen
     </p>
   </UContainer>
 </template>
