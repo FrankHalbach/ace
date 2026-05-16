@@ -11,7 +11,7 @@ export type MatchPreferences = {
   singlesFriendly: boolean
   doublesFriendly: boolean
   mixedFriendly: boolean
-  seniorsFriendly: boolean
+  ageGroupFriendly: boolean
 }
 
 export const DEFAULT_PREFERENCES: MatchPreferences = {
@@ -19,7 +19,7 @@ export const DEFAULT_PREFERENCES: MatchPreferences = {
   singlesFriendly: true,
   doublesFriendly: false,
   mixedFriendly: false,
-  seniorsFriendly: false,
+  ageGroupFriendly: false,
 }
 
 export const member = sqliteTable(

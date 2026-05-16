@@ -16,7 +16,7 @@ Damit existiert die organisatorische Klammer, auf der spätere Features
 
 | FR-ID  | Kurzbeschreibung                                       | Abgedeckt durch                                    |
 |--------|--------------------------------------------------------|----------------------------------------------------|
-| FR-2d  | Senioren-Klassen unterstützt                           | Admin kann beliebige Altersgruppen anlegen         |
+| FR-2d  | Altersklassen unterstützt (z. B. Über 40, Über 50)     | Admin kann beliebige Altersgruppen anlegen         |
 | FR-2j  | Admin definiert Altersgruppen pro Saison frei          | `AgeGroup`-Tabelle + Admin-API                     |
 | FR-15c | Nach Saison-Start sind Regeln eingefroren              | `PATCH` nur im Status `PLANNED` erlaubt            |
 | FR-15b | Historie aller Saisons bleibt einsehbar                | `GET /api/seasons` liefert alle, inkl. ARCHIVED    |
@@ -27,7 +27,7 @@ Damit existiert die organisatorische Klammer, auf der spätere Features
 
 - FR-15, FR-15a (Saison-Übergangs-Strategien) → `rankings`-Feature, weil
   dort die End-Reihenfolge der Vorgängersaison gebraucht wird
-- FR-2e, FR-2f (automatische Aufnahme in Senioren/Aktive) → `rankings`
+- FR-2e, FR-2f (automatische Aufnahme in Altersklassen/Aktive) → `rankings`
 - Eigentliche Challenge-Regelwerk-Werte (Pyramide-Sprungweite, Cooldown etc.)
   → `challenges`-Feature setzt Defaults und liest aus `Season.config`
 - Auswahl des Wertungs-Modus pro Rangliste (N-01) → `rankings`-Feature
@@ -101,7 +101,7 @@ PLANNED ──start──► ACTIVE ──close──► CLOSED ──archive─
 - **Parallele aktive Saisons sind erlaubt** (Spec § 4.3 erwähnt Sommer und
   Winter — können sich am Jahresende überlappen). Konsistenz-Regeln dafür
   kommen mit `rankings`.
-- Sechs Senioren-Klassen (H40, H50, H60, D40, D50) müssen NICHT zwingend
+- Altersklassen (Über 40, Über 50, Über 60 etc.) müssen NICHT zwingend
   angelegt werden — Admin entscheidet pro Saison
 
 ## API-Endpoints

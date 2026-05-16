@@ -66,7 +66,7 @@ export const member = sqliteTable('member', {
       singlesFriendly: true,
       doublesFriendly: false,
       mixedFriendly: false,
-      seniorsFriendly: false,
+      ageGroupFriendly: false,
     }),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().$default(() => new Date()),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().$default(() => new Date()),
@@ -262,7 +262,7 @@ via Nitro experimental tasks. Idempotent — löscht nur Tokens mit
 │  ☑ Einzel-Freundschaftsspiele          │
 │  ☐ Doppel-Freundschaftsspiele          │
 │  ☐ Mixed-Freundschaftsspiele           │
-│  ☐ Senioren-Freundschaftsspiele        │
+│  ☐ Altersklassen-Freundschaftsspiele   │
 │                                        │
 │         [    Speichern    ]            │
 └────────────────────────────────────────┘

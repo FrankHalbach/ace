@@ -67,7 +67,7 @@ describe('profileService', () => {
           singlesFriendly: true,
           doublesFriendly: false,
           mixedFriendly: false,
-          seniorsFriendly: false,
+          ageGroupFriendly: false,
         },
       })
       expect(result.success).toBe(true)

@@ -46,7 +46,7 @@ Freundschaftsspiel").
   ungeklärt, welcher Rangliste die Punkte gutgeschrieben werden, wenn ein
   Friendly mehrere Ranglisten desselben Spielers berührt. Vorerst keine
   Punkte-Vergabe für Friendlies. Vor dem nächsten Iterationsschritt klären.
-- Mixed-/Senioren-Filter beim Spieler-Auswahl — Präferenzen werden nur als
+- Mixed-/Altersklassen-Filter beim Spieler-Auswahl — Präferenzen werden nur als
   Soft-Warning ausgewertet, kein eigener Filter
 - Auto-Markierung als `PLAYED` per Cron nach Termin — manuell durch
   Teilnehmer („wir haben gespielt, kein Ergebnis"). Cron-Variante kommt mit
@@ -420,7 +420,7 @@ Rate-Limit (analog FR-110):
   vor dem Iteration-Schritt klären.
 - **Doppel-Confirmation**: First-wins ist einfach, aber ein Verlierer-Team-
   Mitglied könnte ohne Wissen des anderen bestätigen. Akzeptabel für v1?
-- **Mixed-/Senioren-Match-Erkennung**: brauchen wir die für die Statistik
+- **Mixed-/Altersklassen-Match-Erkennung**: brauchen wir die für die Statistik
   schon jetzt, oder erst mit Aktivitäts-Reports?
 - **Termin-Konflikt-Warnung**: hilfreich oder nervig? Vorschlag: zunächst
   weglassen, im Betrieb beobachten.
@@ -445,6 +445,6 @@ Rate-Limit (analog FR-110):
 - FR-34 Walk-over-Endpoint
 - N-01 Punkte-Tabelle-Auswirkung
 - FR-43 / FR-53 Trainer-Match-Empfehlungen
-- Doppel-Mixed-Filter und Senioren-Filter beim Spieler-Auswahl
+- Doppel-Mixed-Filter und Altersklassen-Filter beim Spieler-Auswahl
 - Termin-Konflikt-Warnung
 - Cron-basierte automatische Markierung als `PLAYED` nach Termin-Ablauf
