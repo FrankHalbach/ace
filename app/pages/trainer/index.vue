@@ -153,11 +153,12 @@ function formatSets(sets: { a: number; b: number }[] | null): string {
         Zähler bezieht sich auf die letzten 4 Wochen.
       </p>
 
-      <ul class="divide-y divide-default border border-default rounded-lg overflow-hidden">
-        <li
+      <div class="divide-y divide-default border border-default rounded-lg overflow-hidden">
+        <NuxtLink
           v-for="row in activity"
           :key="row.memberId"
-          class="px-4 py-3 flex items-center justify-between gap-3"
+          :to="`/spieler/${row.memberId}`"
+          class="block px-4 py-3 flex items-center justify-between gap-3 hover:bg-elevated transition"
         >
           <div>
             <div class="font-medium">
@@ -174,8 +175,8 @@ function formatSets(sets: { a: number; b: number }[] | null): string {
             <div class="font-mono text-sm">{{ row.matchesLast4Weeks }}</div>
             <div class="text-xs text-dimmed">4 Wochen</div>
           </div>
-        </li>
-      </ul>
+        </NuxtLink>
+      </div>
     </section>
   </UContainer>
 </template>
