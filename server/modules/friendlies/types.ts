@@ -184,9 +184,4 @@ export class AlreadyConfirmedError extends Error {
   }
 }
 
-export class InvalidSetsError extends Error {
-  readonly code = 'friendly.invalid-set-shape' as const
-  constructor(message: string) {
-    super(message)
-  }
-}
+export { InvalidSetsError } from '../../shared/match-scoring'

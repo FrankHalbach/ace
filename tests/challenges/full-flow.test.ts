@@ -204,3 +204,43 @@ describe('Dispute-Flow', () => {
     expect(challenge.status).toBe('DISPUTED')
   })
 })
+
+describe('Set-Score-Validation ist verdrahtet (#26/#27/#28)', () => {
+  it('lehnt unzulässige reguläre Set-Scores ab', () => {
+    const { memberIds, rankingId } = setupSeasonWithMembers()
+    const c = challengesService.create(memberIds[3], { challengedId: memberIds[1], rankingId })
+    challengesService.accept(c.id, memberIds[1])
+    expect(() =>
+      resultsService.report(c.id, memberIds[3], {
+        winnerId: memberIds[3],
+        sets: [{ a: 8, b: 6 }, { a: 6, b: 4 }],
+        matchMode: 'best-of-3-champions',
+      }),
+    ).toThrow(/8:6/)
+  })
+
+  it('akzeptiert Match-TB im 3. Satz bei best-of-3-champions', () => {
+    const { memberIds, rankingId } = setupSeasonWithMembers()
+    const c = challengesService.create(memberIds[3], { challengedId: memberIds[1], rankingId })
+    challengesService.accept(c.id, memberIds[1])
+    const r = resultsService.report(c.id, memberIds[3], {
+      winnerId: memberIds[3],
+      sets: [{ a: 6, b: 4 }, { a: 2, b: 6 }, { a: 10, b: 8 }],
+      matchMode: 'best-of-3-champions',
+    })
+    expect(r.confirmationStatus).toBe('pending')
+  })
+
+  it('lehnt 7:5 als Match-TB im 3. Satz ab', () => {
+    const { memberIds, rankingId } = setupSeasonWithMembers()
+    const c = challengesService.create(memberIds[3], { challengedId: memberIds[1], rankingId })
+    challengesService.accept(c.id, memberIds[1])
+    expect(() =>
+      resultsService.report(c.id, memberIds[3], {
+        winnerId: memberIds[3],
+        sets: [{ a: 6, b: 4 }, { a: 2, b: 6 }, { a: 7, b: 5 }],
+        matchMode: 'best-of-3-champions',
+      }),
+    ).toThrow(/Match-Tie-Break/i)
+  })
+})

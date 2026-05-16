@@ -94,6 +94,7 @@ export function getRankingMeta(rankingId: RankingId) {
       mode: ranking.mode,
       config: ranking.config,
       seasonStatus: season.status,
+      seasonConfig: season.config,
     })
     .from(ranking)
     .innerJoin(ageGroup, eq(ranking.ageGroupId, ageGroup.id))

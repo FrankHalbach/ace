@@ -101,6 +101,33 @@ function ageRange(min: number | null, max: number | null): string {
   if (min === null && max !== null) return `bis ${max}`
   return `${min}–${max}`
 }
+
+// --- Saison-Regeln (config) ---
+const proSetLength = ref<8 | 9>(8)
+const savingProSet = ref(false)
+watchEffect(() => {
+  if (season.value) {
+    const raw = (season.value.config as { proSetLength?: number } | undefined)?.proSetLength
+    proSetLength.value = raw === 9 ? 9 : 8
+  }
+})
+async function saveProSetLength(value: 8 | 9) {
+  if (!season.value) return
+  savingProSet.value = true
+  try {
+    const mergedConfig = { ...(season.value.config ?? {}), proSetLength: value }
+    await $fetch(`/api/seasons/${id.value}`, {
+      method: 'PATCH',
+      body: { config: mergedConfig },
+    })
+    await refresh()
+    toast.add({ title: 'Saison-Regeln aktualisiert', color: 'primary' })
+  } catch {
+    toast.add({ title: 'Speichern fehlgeschlagen', color: 'error' })
+  } finally {
+    savingProSet.value = false
+  }
+}
 </script>
 
 <template>
@@ -209,6 +236,25 @@ function ageRange(min: number | null, max: number | null): string {
           />
         </li>
       </ul>
+    </section>
+
+    <section class="mb-6 border-t border-default pt-6">
+      <h2 class="text-lg font-semibold mb-3">Saison-Regeln</h2>
+      <UFormField label="Pro-Set-Länge">
+        <USelect
+          v-model="proSetLength"
+          :disabled="!isPlanned || savingProSet"
+          :items="[
+            { label: '8 Spiele (Tie-Break bei 8:8 → 9:8)', value: 8 },
+            { label: '9 Spiele (Tie-Break bei 9:9 → 10:9)', value: 9 },
+          ]"
+          @update:model-value="(v) => saveProSetLength(Number(v) === 9 ? 9 : 8)"
+        />
+      </UFormField>
+      <p class="text-xs text-muted mt-2">
+        Greift in allen Forderungen dieser Saison im Modus „Pro-Set".
+        <span v-if="!isPlanned">Nur im Status „Geplant" änderbar.</span>
+      </p>
     </section>
 
     <section class="border-t border-default pt-6">
