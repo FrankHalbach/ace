@@ -7,6 +7,22 @@ export default defineNuxtConfig({
 
   css: ['~/assets/css/main.css'],
 
+  app: {
+    head: {
+      link: [
+        // Brand fonts per docs/design-system.md §4.1.
+        // Source Sans 3: body + headings · JetBrains Mono: IDs, LK, scores.
+        // Fraunces deliberately not loaded (reserved for marketing).
+        { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
+        { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
+        {
+          rel: 'stylesheet',
+          href: 'https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap',
+        },
+      ],
+    },
+  },
+
   typescript: {
     strict: true,
     typeCheck: false,

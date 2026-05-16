@@ -147,6 +147,18 @@ Sobald ein ADR akzeptiert ist, wird er nicht mehr geändert — Änderungen erfo
 - Feature-Branches: `feat/<feature-name>`
 - Bei einfachen Änderungen direkt auf `master`
 
+## Design
+
+Visuelle Sprache, Tokens und UI-Patterns leben an drei Stellen — in dieser Reihenfolge konsultieren:
+
+1. **`app/assets/css/tokens.css`** — Single Source of Truth im Code für Brand-, Surface-, Status- und Type-Tokens als CSS-Variablen (`--primary`, `--ink-muted`, `--font-mono` …)
+2. **`docs/design-system.md`** — verbindlicher Spec-Text (Status-Mapping, Touch-Regeln, Mobile-First-Direktiven)
+3. **`app/assets/css/main.css`** (`@theme`-Block) — Tailwind-4-Paletten `tennis-green`, `court-clay`, `warm-stone`, verankert auf den Token-Hexes. Aus diesen leitet sich [`app/app.config.ts`](app/app.config.ts) ab (`ui.colors.primary: 'tennis-green'` etc.)
+
+Bei Token-Änderung **immer alle drei** synchron halten. Status-Farben (success/info/warning/error) hängen heute auf Tailwind-Stock-Paletten — eigene Paletten erst, wenn die Stock-Farben den Status-Pill-Look nicht treffen.
+
+Zusätzliche Design-Referenz (nicht im Repo): ein Claude-Design-Bundle mit Preview-Cards, UI-Kit und Brand-Voice-Guide lebt unter `https://api.anthropic.com/v1/design/h/OUCieZQIaumDGKHCST1saA`. Bei Bedarf fetchen — oder bewusst nach `.claude/skills/ace-design/` installieren, um es als Agent-Skill verfügbar zu machen.
+
 ## Sicherheits-Grundregeln
 
 - **Niemals echte Mitgliedsdaten** in Beispielen, Tests oder Commits
