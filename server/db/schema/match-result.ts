@@ -18,6 +18,14 @@ export type SetScore = { a: number; b: number }
 
 export type ConfirmationStatus = 'pending' | 'confirmed' | 'disputed'
 
+/**
+ * Wie das Match endete (Issues #29 / #30):
+ *   - regular:    vollständig durchgespielt, regulärer Score
+ *   - walkover:   Spieler erschien nicht / zog zurück (kein Score)
+ *   - retirement: Spieler brach während des Matches ab (Teilscore möglich)
+ */
+export type MatchOutcome = 'regular' | 'walkover' | 'retirement'
+
 export const matchResult = sqliteTable(
   'match_result',
   {
@@ -59,6 +67,11 @@ export const matchResult = sqliteTable(
     confirmedAt: integer('confirmed_at', { mode: 'timestamp' }),
     disputedAt: integer('disputed_at', { mode: 'timestamp' }),
     disputeNote: text('dispute_note'),
+
+    outcome: text('outcome', { enum: ['regular', 'walkover', 'retirement'] })
+      .notNull()
+      .default('regular'),
+    outcomeNote: text('outcome_note'),
 
     applied: integer('applied', { mode: 'boolean' }).notNull().default(false),
     appliedAt: integer('applied_at', { mode: 'timestamp' }),

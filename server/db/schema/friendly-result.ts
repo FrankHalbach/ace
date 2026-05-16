@@ -3,11 +3,11 @@ import { integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core
 import type { Brand } from '../../shared/branded'
 import { friendly, type FriendlyId } from './friendly'
 import { member, type MemberId } from './member'
-import type { ConfirmationStatus, MatchMode, SetScore } from './match-result'
+import type { ConfirmationStatus, MatchMode, MatchOutcome, SetScore } from './match-result'
 
 export type FriendlyResultId = Brand<number, 'FriendlyResultId'>
 
-export type { ConfirmationStatus, MatchMode, SetScore }
+export type { ConfirmationStatus, MatchMode, MatchOutcome, SetScore }
 
 export const friendlyResult = sqliteTable(
   'friendly_result',
@@ -54,6 +54,11 @@ export const friendlyResult = sqliteTable(
       .$type<MemberId>(),
     disputedAt: integer('disputed_at', { mode: 'timestamp' }),
     disputeNote: text('dispute_note'),
+
+    outcome: text('outcome', { enum: ['regular', 'walkover', 'retirement'] })
+      .notNull()
+      .default('regular'),
+    outcomeNote: text('outcome_note'),
   },
   (t) => [uniqueIndex('friendly_result_friendly_idx').on(t.friendlyId)],
 )

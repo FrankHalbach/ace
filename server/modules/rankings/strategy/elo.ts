@@ -65,7 +65,20 @@ export const eloStrategy: RankingStrategy = {
  * Hybrid-Strategy genutzt, daher hier als wiederverwendbare Funktion.
  */
 export function applyEloResult(input: ApplyResultInput, defaultK: number): RankingMutation[] {
-  const { winnerId, loserId, challengerEntry, challengedEntry, allEntries, config, now } = input
+  const { winnerId, loserId, challengerEntry, challengedEntry, allEntries, config, now, outcome } = input
+
+  // Walk-Over / Aufgabe: kein Skill-Signal → ELO unverändert, nur lastMatchAt
+  // setzen, damit Aktivitäts-Anzeigen aktuell bleiben. Folgearbeit (eigenes
+  // Issue) könnte hier einen reduzierten K-Faktor erlauben.
+  if (outcome === 'walkover' || outcome === 'retirement') {
+    const winnerEntry = winnerId === challengerEntry.memberId ? challengerEntry : challengedEntry
+    const loserEntry = loserId === challengerEntry.memberId ? challengerEntry : challengedEntry
+    return [
+      { kind: 'set-last-match', entryId: winnerEntry.id, at: now },
+      { kind: 'set-last-match', entryId: loserEntry.id, at: now },
+    ]
+  }
+
   const k = config.kFactor ?? defaultK
 
   const winnerEntry = winnerId === challengerEntry.memberId ? challengerEntry : challengedEntry

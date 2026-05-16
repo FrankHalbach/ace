@@ -1,10 +1,16 @@
 import { z } from 'zod'
 import type { ChallengeId } from '../challenges'
 import type { MemberId } from '../members'
-import type { ConfirmationStatus, MatchMode, MatchResultId, SetScore } from '../../db/schema/match-result'
+import type {
+  ConfirmationStatus,
+  MatchMode,
+  MatchOutcome,
+  MatchResultId,
+  SetScore,
+} from '../../db/schema/match-result'
 
 export { InvalidSetsError } from '../../shared/match-scoring'
-export type { ChallengeId, ConfirmationStatus, MatchMode, MatchResultId, SetScore }
+export type { ChallengeId, ConfirmationStatus, MatchMode, MatchOutcome, MatchResultId, SetScore }
 
 const setScoreSchema = z.object({
   a: z.number().int().min(0).max(20),
@@ -13,7 +19,7 @@ const setScoreSchema = z.object({
 
 export const reportResultInput = z.object({
   winnerId: z.number().int().positive(),
-  sets: z.array(setScoreSchema).min(1).max(5),
+  sets: z.array(setScoreSchema).max(5),
   matchMode: z
     .enum([
       'two-sets-match-tiebreak',
@@ -24,6 +30,8 @@ export const reportResultInput = z.object({
       'pro-set',
     ])
     .optional(),
+  outcome: z.enum(['regular', 'walkover', 'retirement']).optional(),
+  outcomeNote: z.string().max(500).optional(),
 })
 export type ReportResultInput = z.infer<typeof reportResultInput>
 
@@ -44,6 +52,8 @@ export type MatchResultDto = {
   confirmedAt: Date | null
   disputedAt: Date | null
   disputeNote: string | null
+  outcome: MatchOutcome
+  outcomeNote: string | null
   applied: boolean
   appliedAt: Date | null
 }

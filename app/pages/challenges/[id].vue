@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { ChallengeDto, ChallengeStatus, DeclineReason } from '~~/server/modules/challenges'
-import type { MatchResultDto, SetScore } from '~~/server/modules/results'
+import type { MatchOutcome, MatchResultDto, SetScore } from '~~/server/modules/results'
 
 definePageMeta({ middleware: 'auth' })
 
@@ -72,6 +72,8 @@ async function decline() {
 const showReport = ref(false)
 const winnerIsMe = ref<boolean | null>(null)
 const sets = ref<SetScore[]>([{ a: 0, b: 0 }, { a: 0, b: 0 }])
+const outcome = ref<MatchOutcome>('regular')
+const outcomeNote = ref('')
 
 function addSet() {
   if (sets.value.length < 3) sets.value.push({ a: 0, b: 0 })
@@ -88,16 +90,25 @@ async function reportResult() {
       ? challenge.value.challengedId
       : challenge.value.challengerId
 
-  // a = challenger, b = challenged — Reporter ggf. spiegeln
-  const orientedSets = isChallenger.value
-    ? sets.value
-    : sets.value.map((s) => ({ a: s.b, b: s.a }))
+  // Walk-Over → keine Sätze. Sonst: a = challenger, b = challenged.
+  const orientedSets: SetScore[] =
+    outcome.value === 'walkover'
+      ? []
+      : isChallenger.value
+        ? sets.value
+        : sets.value.map((s: SetScore) => ({ a: s.b, b: s.a }))
 
   submitting.value = true
   try {
     await $fetch(`/api/challenges/${id.value}/result`, {
       method: 'POST',
-      body: { winnerId, sets: orientedSets, matchMode: 'best-of-3-champions' },
+      body: {
+        winnerId,
+        sets: orientedSets,
+        matchMode: 'best-of-3-champions',
+        outcome: outcome.value,
+        outcomeNote: outcomeNote.value.trim() || undefined,
+      },
     })
     toast.add({ title: 'Ergebnis gemeldet — wartet auf Bestätigung', color: 'primary' })
     showReport.value = false
@@ -226,6 +237,16 @@ const isLoser = computed(() => {
         <UButton color="primary" @click="showReport = true">Ergebnis eintragen</UButton>
       </div>
       <form v-else class="space-y-4" @submit.prevent="reportResult">
+        <UFormField label="Match-Ausgang">
+          <URadioGroup
+            v-model="outcome"
+            :items="[
+              { label: 'Reguläres Match', value: 'regular' },
+              { label: 'Aufgabe (ret.) — letzter Satz darf unvollständig sein', value: 'retirement' },
+              { label: 'Walk-Over (w.o.) — Gegner nicht angetreten', value: 'walkover' },
+            ]"
+          />
+        </UFormField>
         <UFormField label="Sieger">
           <URadioGroup
             v-model="winnerIsMe"
@@ -235,20 +256,28 @@ const isLoser = computed(() => {
             ]"
           />
         </UFormField>
-        <div v-for="(set, i) in sets" :key="i" class="flex items-center gap-2">
-          <span class="text-sm text-muted w-14">Satz {{ i + 1 }}</span>
-          <UInput v-model.number="set.a" type="number" min="0" max="20" class="w-20" />
-          <span class="text-dimmed">:</span>
-          <UInput v-model.number="set.b" type="number" min="0" max="20" class="w-20" />
-          <UButton
-            v-if="sets.length > 1"
-            icon="i-lucide-x"
-            variant="ghost"
-            size="xs"
-            @click="removeSet(i)"
-          />
-        </div>
-        <UButton v-if="sets.length < 3" variant="soft" size="sm" @click="addSet">+ Satz hinzufügen</UButton>
+        <template v-if="outcome !== 'walkover'">
+          <div v-for="(set, i) in sets" :key="i" class="flex items-center gap-2">
+            <span class="text-sm text-muted w-14">Satz {{ i + 1 }}</span>
+            <UInput v-model.number="set.a" type="number" min="0" max="20" class="w-20" />
+            <span class="text-dimmed">:</span>
+            <UInput v-model.number="set.b" type="number" min="0" max="20" class="w-20" />
+            <UButton
+              v-if="sets.length > 1"
+              icon="i-lucide-x"
+              variant="ghost"
+              size="xs"
+              @click="removeSet(i)"
+            />
+          </div>
+          <UButton v-if="sets.length < 3" variant="soft" size="sm" @click="addSet">+ Satz hinzufügen</UButton>
+        </template>
+        <p v-else class="text-sm text-muted italic">
+          Kein Score erfasst — Walk-Over wird ohne Satz-Eingabe gemeldet.
+        </p>
+        <UFormField v-if="outcome !== 'regular'" label="Notiz (optional)">
+          <UInput v-model="outcomeNote" placeholder="z. B. Verletzung Knie" class="w-full" />
+        </UFormField>
         <div class="flex gap-2 pt-2">
           <UButton type="submit" color="primary" :loading="submitting" :disabled="winnerIsMe === null">
             Melden
@@ -262,11 +291,22 @@ const isLoser = computed(() => {
     <UCard v-if="result && result.confirmationStatus === 'pending'" class="mb-6">
       <h2 class="font-semibold mb-3">Gemeldetes Ergebnis</h2>
       <div class="text-sm mb-3">
-        Sieger: <strong>{{ memberName(result.winnerId) }}</strong><br>
-        Sätze:
-        <span v-for="(s, i) in result.sets" :key="i" class="font-mono ml-1">
-          {{ s.a }}:{{ s.b }}<span v-if="i < result.sets.length - 1">,</span>
-        </span>
+        Sieger: <strong>{{ memberName(result.winnerId) }}</strong>
+        <span v-if="result.outcome === 'walkover'" class="ml-1 font-mono text-muted">w.o.</span>
+        <br>
+        <template v-if="result.outcome === 'walkover'">
+          <span class="text-muted italic">kein Score</span>
+        </template>
+        <template v-else>
+          Sätze:
+          <span v-for="(s, i) in result.sets" :key="i" class="font-mono ml-1">
+            {{ s.a }}:{{ s.b }}<span v-if="i < result.sets.length - 1">,</span>
+          </span>
+          <span v-if="result.outcome === 'retirement'" class="ml-1 font-mono text-muted">ret.</span>
+        </template>
+        <p v-if="result.outcomeNote" class="text-xs text-muted mt-1">
+          {{ result.outcomeNote }}
+        </p>
       </div>
       <div v-if="isLoser && !showDispute" class="flex gap-2">
         <UButton color="primary" :loading="submitting" @click="confirmResult">Bestätigen</UButton>
@@ -290,11 +330,22 @@ const isLoser = computed(() => {
     <UCard v-if="result && result.confirmationStatus === 'confirmed'">
       <h2 class="font-semibold mb-3">Bestätigtes Ergebnis</h2>
       <div class="text-sm">
-        Sieger: <strong>{{ memberName(result.winnerId) }}</strong><br>
-        Sätze:
-        <span v-for="(s, i) in result.sets" :key="i" class="font-mono ml-1">
-          {{ s.a }}:{{ s.b }}<span v-if="i < result.sets.length - 1">,</span>
-        </span>
+        Sieger: <strong>{{ memberName(result.winnerId) }}</strong>
+        <span v-if="result.outcome === 'walkover'" class="ml-1 font-mono text-muted">w.o.</span>
+        <br>
+        <template v-if="result.outcome === 'walkover'">
+          <span class="text-muted italic">kein Score</span>
+        </template>
+        <template v-else>
+          Sätze:
+          <span v-for="(s, i) in result.sets" :key="i" class="font-mono ml-1">
+            {{ s.a }}:{{ s.b }}<span v-if="i < result.sets.length - 1">,</span>
+          </span>
+          <span v-if="result.outcome === 'retirement'" class="ml-1 font-mono text-muted">ret.</span>
+        </template>
+        <p v-if="result.outcomeNote" class="text-xs text-muted mt-1">
+          {{ result.outcomeNote }}
+        </p>
       </div>
     </UCard>
 

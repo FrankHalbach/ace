@@ -32,11 +32,22 @@ export type ScoringMode =
 
 export type ProSetLength = 8 | 9
 
+/**
+ * Wie das Match endete. Steuert die Validierung mit (Issues #29 / #30):
+ *   - regular:    strikt — vollständige, plausible Sätze pro Modus
+ *   - walkover:   `sets` muss leer sein, sonst keine Score-Validierung
+ *   - retirement: alle Sätze bis auf den letzten regulär; letzter Satz
+ *                 darf unvollständig sein (beide Werte unter Sieg-Schwelle)
+ */
+export type MatchOutcome = 'regular' | 'walkover' | 'retirement'
+
 export type ValidateOptions = {
   /** Default 8 — wird aus `Season.config.proSetLength` durchgereicht. */
   proSetLength?: ProSetLength
   /** Subjekt in Fehlermeldungen — "Sieger" (Challenge) vs "Sieger-Team" (Friendly). */
   winnerSubject?: 'player' | 'team'
+  /** Default `regular`. */
+  outcome?: MatchOutcome
 }
 
 export class InvalidSetsError extends Error {
@@ -84,6 +95,34 @@ function proSetHint(length: ProSetLength): string {
   return `${length}:0..${length}:${length - 2} oder ${length + 1}:${length}`
 }
 
+/**
+ * Sieg-Schwelle pro Modus + Position — der Wert, bei dem ein Satz zu Ende
+ * ist. Beide Werte eines `retirement`-Teilsatzes müssen darunter liegen.
+ */
+function winnerThreshold(
+  mode: ScoringMode,
+  isDecider: boolean,
+  proSetLength: ProSetLength,
+): number {
+  if (isDecider && (mode === 'two-sets-match-tiebreak' || mode === 'best-of-3-champions')) {
+    return 10
+  }
+  if (mode === 'short-sets-tiebreak') return 4
+  if (mode === 'pro-set') return proSetLength
+  return 6
+}
+
+function isPartialLastSet(
+  set: SetScore,
+  mode: ScoringMode,
+  isDecider: boolean,
+  proSetLength: ProSetLength,
+): boolean {
+  if (set.a === set.b) return false
+  const threshold = winnerThreshold(mode, isDecider, proSetLength)
+  return set.a < threshold && set.b < threshold
+}
+
 function fmt(set: SetScore): string {
   return `${set.a}:${set.b}`
 }
@@ -93,11 +132,25 @@ export function validateSetsForMode(
   sets: SetScore[],
   options: ValidateOptions = {},
 ): void {
+  const outcome: MatchOutcome = options.outcome ?? 'regular'
+  const proSetLength: ProSetLength = options.proSetLength ?? 8
+
+  // Walk-Over: kein Score
+  if (outcome === 'walkover') {
+    if (sets.length !== 0) {
+      throw new InvalidSetsError('Walk-Over: kein Score erlaubt — `sets` muss leer sein.')
+    }
+    return
+  }
+
   if (sets.length === 0) {
     throw new InvalidSetsError('Mindestens ein Satz erforderlich.')
   }
 
-  // Anzahl der Sätze pro Modus
+  // Anzahl der Sätze pro Modus. Bei retirement bleibt die untere Grenze
+  // bestehen (mindestens 1 Satz angespielt sein), oberhalb erlaubt; die
+  // Modus-spezifische Obergrenze (2/3 bei Best-of-3) gilt weiter, denn
+  // mehr Sätze als regulär möglich gibt es auch bei Aufgabe nicht.
   switch (mode) {
     case 'pro-set':
       if (sets.length !== 1) throw new InvalidSetsError('Pro-Set: genau ein Satz.')
@@ -107,24 +160,39 @@ export function validateSetsForMode(
     case 'best-of-3-full':
     case 'best-of-3-champions':
     case 'short-sets-tiebreak':
-      if (sets.length < 2 || sets.length > 3) {
-        throw new InvalidSetsError('2 oder 3 Sätze erforderlich.')
+      if (outcome === 'retirement') {
+        if (sets.length < 1 || sets.length > 3) {
+          throw new InvalidSetsError('Aufgabe: 1 bis 3 Sätze erforderlich.')
+        }
+      } else {
+        if (sets.length < 2 || sets.length > 3) {
+          throw new InvalidSetsError('2 oder 3 Sätze erforderlich.')
+        }
       }
       break
-  }
-
-  // Unentschieden ausschließen
-  for (const [i, set] of sets.entries()) {
-    if (set.a === set.b) {
-      throw new InvalidSetsError(`Satz ${i + 1}: Unentschieden nicht erlaubt.`)
-    }
   }
 
   // Format-Check pro Satz, abhängig von Modus und Position
   for (const [i, set] of sets.entries()) {
     const isDecider = i === 2 // dritter Satz, falls vorhanden
+    const isLast = i === sets.length - 1
     const expectMatchTb =
       isDecider && (mode === 'two-sets-match-tiebreak' || mode === 'best-of-3-champions')
+
+    // Bei retirement darf der ALLERLETZTE Satz unvollständig sein.
+    if (outcome === 'retirement' && isLast) {
+      if (set.a === set.b) {
+        throw new InvalidSetsError(
+          `Satz ${i + 1}: Unentschieden nicht erlaubt (auch bei Aufgabe).`,
+        )
+      }
+      if (isPartialLastSet(set, mode, isDecider, proSetLength)) {
+        continue // unvollständig, aber zulässig
+      }
+      // sonst: muss regulär valide sein (fällt durch zu den Standard-Checks)
+    } else if (set.a === set.b) {
+      throw new InvalidSetsError(`Satz ${i + 1}: Unentschieden nicht erlaubt.`)
+    }
 
     if (expectMatchTb) {
       if (!isMatchTiebreak(set)) {
@@ -145,10 +213,9 @@ export function validateSetsForMode(
     }
 
     if (mode === 'pro-set') {
-      const length = options.proSetLength ?? 8
-      if (!isProSet(set, length)) {
+      if (!isProSet(set, proSetLength)) {
         throw new InvalidSetsError(
-          `Pro-Set: ${fmt(set)} ist kein gültiger Score — erwartet ${proSetHint(length)} (Länge ${length}).`,
+          `Pro-Set: ${fmt(set)} ist kein gültiger Score — erwartet ${proSetHint(proSetLength)} (Länge ${proSetLength}).`,
         )
       }
       continue
