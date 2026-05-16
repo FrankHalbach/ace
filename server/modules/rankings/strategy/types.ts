@@ -57,12 +57,19 @@ export type RankingMutation =
       reason: PointsAwardReason
     }
 
+/**
+ * Rangliste-Eintrag mit der LK des Mitglieds — für Tiebreaker in der
+ * Punkte-Tabelle (N-01: LK aufsteigend als zweiter Tiebreaker bei
+ * Punktegleichheit).
+ */
+export type EntryWithLk = RankingEntryRow & { memberLk: number }
+
 export type ApplyResultInput = {
   winnerId: MemberId
   loserId: MemberId
   challengerEntry: RankingEntryRow
   challengedEntry: RankingEntryRow
-  allEntries: RankingEntryRow[]
+  allEntries: EntryWithLk[]
   config: RankingConfig
   now: Date
 }
