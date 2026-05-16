@@ -42,8 +42,14 @@ pnpm-debug.log*
 .DS_Store
 Thumbs.db
 
-# Claude Code (lokale Konfiguration, nicht ins Repo)
-.claude/
+# Claude Code: persönliches lokal, geteiltes shared
+# Geteilt:  settings.json, skills/, commands/, agents/
+# Lokal:    settings.local.json, plans/, projects/, sonstige Session-Dateien
+.claude/*
+!.claude/settings.json
+!.claude/skills/
+!.claude/commands/
+!.claude/agents/
 
 # Testing
 coverage/
