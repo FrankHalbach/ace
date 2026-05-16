@@ -202,3 +202,56 @@ Konkrete Konsequenzen:
 - Anpassung von ADR `006-wertungssystem.md` — ADRs sind nach Akzeptanz
   unveränderlich (CLAUDE.md); die Default-Mode-Tabelle dort verwendet
   noch „Senioren", inhaltlich gemeint sind die Altersklassen
+
+---
+
+## N-04 · Termin-Konflikt-Vermeidung bei Friendlies
+
+**Status**: umgesetzt
+**Datum**: 2026-05-16
+**Quelle**: Produktentscheidung — vermeidet peinliche Doppel-Buchungen unmittelbar
+nach Mitglieder-Launch.
+**Berührte FR-IDs**: keine direkt; ergänzt FR-91 / FR-92
+
+### Anforderung
+
+Spec § 9 (Friendlies) definiert Termin (`scheduledAt`) als Pflichtfeld, sagt aber
+nichts darüber, ob ein Spieler zur gleichen Zeit mehrere Matches haben darf.
+Real-world: ein Spieler kann nicht zur gleichen Zeit auf zwei Plätzen spielen,
+und ein Match „pflanzt" eine Anreise+Aufwärmen+Spiel-Dauer von ~2 Stunden.
+
+**Regel**: Beim Anlegen eines neuen Friendlies darf weder der Initiator noch
+einer der Eingeladenen innerhalb eines Fensters von **±2 Stunden** um den
+geplanten Termin in einem anderen aktiven Friendly stehen
+(Status `PROPOSED` oder `CONFIRMED`). Dasselbe gilt beim Akzeptieren einer
+Einladung (`POST /api/friendlies/:id/accept`) — der akzeptierende Spieler
+darf zur Slot-Zeit nicht bereits anderweitig gebucht sein.
+
+Verletzung → HTTP 409 mit Code `friendly.schedule-conflict` und einer
+deutschsprachigen Begründung („{Name} hat bereits ein Match am {Datum, Uhrzeit}").
+
+### Konkret in dieser Iteration umgesetzt
+
+- Repo-Query [`friendlyRepo.findConflictForMembers`](../../server/modules/friendlies/repository/friendly-repo.ts)
+  prüft einen Member-Set + Zeitfenster gegen `friendly` (als Initiator) und
+  `friendly_invitee` (als Eingeladener). Status-Filter `PROPOSED|CONFIRMED`.
+- Service-Schritt 7 in [`friendliesService.create`](../../server/modules/friendlies/service/friendlies.ts)
+  prüft den vollen Teilnehmer-Set; `friendliesService.accept` prüft nur den
+  akzeptierenden Spieler und klammert das aktuelle Friendly aus.
+- Konstante `SCHEDULE_CONFLICT_WINDOW_MS = 2 * 60 * 60 * 1000` — bewusst im
+  Code, nicht in Saison-Config, weil Real-world-Tennis-Match-Dauer und
+  Erholungs-Bedarf konstant sind und nicht je Saison schwanken.
+- Tests in [`tests/friendlies/schedule-conflict.test.ts`](../../tests/friendlies/schedule-conflict.test.ts)
+  decken: Initiator-Konflikt, Invitee-Konflikt, außerhalb-Fenster erlaubt,
+  DECLINED-Friendly blockt nicht, Accept-Block, Self-Accept-Pass.
+
+### Out of Scope dieses Nachtrags
+
+- **Challenges**: haben heute kein `scheduledAt`-Feld. Wenn Challenges einen
+  Termin bekommen (Backlog), gilt N-04 sinngemäß; bis dahin blockt der
+  Friendly-Check nur Friendly↔Friendly-Konflikte.
+- **Soft-Warning statt Hard-Block**: aktuell hard-blocked. Ein UI-seitiges
+  „du hast schon ein Match — trotzdem anlegen?" wäre denkbar, ist aber
+  v2-Spielraum.
+- **Konfigurierbares Fenster pro Saison/AgeGroup**: nicht im Scope; ±2h
+  passt für alle aktuellen Match-Modi.
