@@ -1,10 +1,10 @@
 import { getMemberProfile, MemberNotFoundError, type MemberId } from '../../../modules/members'
-import { requireIntParam } from '../../../shared/require-role'
+import { requirePublicIdParam } from '../../../shared/public-id'
 
 /** GET /api/members/:id/profile — voll aggregiertes Spieler-Profil */
 export default defineEventHandler(async (event) => {
   const { user } = await requireUserSession(event)
-  const id = requireIntParam(event, 'id') as MemberId
+  const id = requirePublicIdParam<MemberId>(event, 'id')
   try {
     return getMemberProfile(id, user.memberId)
   } catch (err) {

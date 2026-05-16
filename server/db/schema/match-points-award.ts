@@ -18,7 +18,7 @@ export const matchPointsAward = sqliteTable(
       .notNull()
       .references(() => rankingEntry.id, { onDelete: 'cascade' })
       .$type<RankingEntryId>(),
-    memberId: integer('member_id')
+    memberId: text('member_id')
       .notNull()
       .references(() => member.id, { onDelete: 'cascade' })
       .$type<MemberId>(),

@@ -18,7 +18,7 @@ const setScoreSchema = z.object({
 })
 
 export const reportResultInput = z.object({
-  winnerId: z.number().int().positive(),
+  winnerId: z.string().nanoid(),
   sets: z.array(setScoreSchema).max(5),
   matchMode: z
     .enum([

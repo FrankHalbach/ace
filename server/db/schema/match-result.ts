@@ -35,7 +35,7 @@ export const matchResult = sqliteTable(
       .references(() => challenge.id, { onDelete: 'cascade' })
       .$type<ChallengeId>(),
 
-    winnerId: integer('winner_id')
+    winnerId: text('winner_id')
       .notNull()
       .references(() => member.id, { onDelete: 'cascade' })
       .$type<MemberId>(),
@@ -54,7 +54,7 @@ export const matchResult = sqliteTable(
     reportedAt: integer('reported_at', { mode: 'timestamp' })
       .notNull()
       .default(sql`(unixepoch())`),
-    reportedBy: integer('reported_by')
+    reportedBy: text('reported_by')
       .notNull()
       .references(() => member.id, { onDelete: 'cascade' })
       .$type<MemberId>(),

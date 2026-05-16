@@ -35,7 +35,7 @@ export const eloStrategy: RankingStrategy = {
     return [...input.members]
       .sort((a, b) => {
         if (a.dtbLk !== b.dtbLk) return a.dtbLk - b.dtbLk
-        return a.id - b.id
+        return a.id < b.id ? -1 : a.id > b.id ? 1 : 0
       })
       .map((m) => m.id)
   },

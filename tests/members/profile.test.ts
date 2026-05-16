@@ -41,7 +41,7 @@ describe('profileService', () => {
   })
 
   it('getOwnProfile wirft bei unbekannter ID', () => {
-    expect(() => profileService.getOwnProfile(999 as MemberId)).toThrow(MemberNotFoundError)
+    expect(() => profileService.getOwnProfile('999' as MemberId)).toThrow(MemberNotFoundError)
   })
 
   it('updateOwnProfile aktualisiert nur die übergebenen Felder', () => {

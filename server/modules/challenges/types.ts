@@ -10,7 +10,7 @@ import type { RankingId } from '../rankings'
 export type { ChallengeId, ChallengeStatus, DeclineReason }
 
 export const createChallengeInput = z.object({
-  challengedId: z.number().int().positive(),
+  challengedId: z.string().nanoid(),
   rankingId: z.number().int().positive(),
 })
 export type CreateChallengeInput = z.infer<typeof createChallengeInput>

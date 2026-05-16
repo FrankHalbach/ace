@@ -21,11 +21,11 @@ export const challenge = sqliteTable(
   'challenge',
   {
     id: integer('id').primaryKey({ autoIncrement: true }).$type<ChallengeId>(),
-    challengerId: integer('challenger_id')
+    challengerId: text('challenger_id')
       .notNull()
       .references(() => member.id, { onDelete: 'cascade' })
       .$type<MemberId>(),
-    challengedId: integer('challenged_id')
+    challengedId: text('challenged_id')
       .notNull()
       .references(() => member.id, { onDelete: 'cascade' })
       .$type<MemberId>(),

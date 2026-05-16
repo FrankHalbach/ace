@@ -28,7 +28,7 @@ export const friendly = sqliteTable(
   'friendly',
   {
     id: integer('id').primaryKey({ autoIncrement: true }).$type<FriendlyId>(),
-    initiatorId: integer('initiator_id')
+    initiatorId: text('initiator_id')
       .notNull()
       .references(() => member.id, { onDelete: 'cascade' })
       .$type<MemberId>(),

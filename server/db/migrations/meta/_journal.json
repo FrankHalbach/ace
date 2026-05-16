@@ -57,6 +57,13 @@
       "when": 1779148800000,
       "tag": "0007_match_outcome",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1779216000000,
+      "tag": "0008_member_public_ids",
+      "breakpoints": true
     }
   ]
 }

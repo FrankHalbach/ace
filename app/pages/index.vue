@@ -41,7 +41,7 @@ const reasonIcon: Record<SuggestionReason, string> = {
   'similar-strength': 'i-lucide-scale',
 }
 
-const challenging = ref<number | null>(null)
+const challenging = ref<string | null>(null)
 
 async function sendChallenge(s: SuggestionDto) {
   if (s.rankingId === null) return
