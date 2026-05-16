@@ -101,7 +101,7 @@ function formatDate(d: Date | string): string {
     <section>
       <h2 class="text-lg font-semibold mb-3">Match-Historie</h2>
       <p v-if="profile.matches.length === 0" class="text-muted italic">
-        Noch keine Matches.
+        Noch keine Spiele.
       </p>
 
       <ul v-else class="divide-y divide-default border border-default rounded-lg overflow-hidden">
@@ -113,7 +113,7 @@ function formatDate(d: Date | string): string {
           <div v-if="m.kind === 'challenge'" class="flex items-center justify-between gap-3">
             <NuxtLink :to="`/challenges/${m.challengeId}`" class="flex-1 min-w-0 hover:text-primary transition">
               <div class="font-medium truncate">
-                Challenge gegen {{ m.opponentName }}
+                Forderung gegen {{ m.opponentName }}
                 <span
                   class="ml-2 text-xs font-mono"
                   :class="m.result === 'win' ? 'text-emerald-700 dark:text-emerald-400' : 'text-stone-500 dark:text-stone-400'"

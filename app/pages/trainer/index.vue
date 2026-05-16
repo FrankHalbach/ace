@@ -102,7 +102,7 @@ const filteredActivity = computed<ActivityOverviewRow[]>(() => {
           <div class="text-sm">
             <div class="font-medium mb-1">
               <span v-if="d.kind === 'challenge'">
-                Challenge #{{ d.challengeId }} · Rangliste #{{ d.rankingId }}
+                Forderung #{{ d.challengeId }} · Rangliste #{{ d.rankingId }}
               </span>
               <span v-else>
                 {{ d.format === 'singles' ? 'Einzel' : 'Doppel' }}-Friendly #{{ d.friendlyId }}

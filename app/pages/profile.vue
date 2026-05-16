@@ -117,15 +117,15 @@ async function save() {
           <URadioGroup
             v-model="form.status"
             :items="[
-              { label: 'Aktiv — challengebar', value: 'aktiv' },
-              { label: 'Pausiert — keine neuen Challenges', value: 'pausiert' },
+              { label: 'Aktiv — forderbar', value: 'aktiv' },
+              { label: 'Pausiert — keine neuen Forderungen', value: 'pausiert' },
             ]"
           />
         </UFormField>
 
         <UFormField label="Spielarten">
           <div class="space-y-2">
-            <UCheckbox v-model="form.preferences.singlesChallenges" label="Einzel-Challenges" />
+            <UCheckbox v-model="form.preferences.singlesChallenges" label="Einzel-Forderungen" />
             <UCheckbox v-model="form.preferences.singlesFriendly" label="Einzel-Freundschaftsspiele" />
             <UCheckbox v-model="form.preferences.doublesFriendly" label="Doppel-Freundschaftsspiele" />
             <UCheckbox v-model="form.preferences.mixedFriendly" label="Mixed-Freundschaftsspiele" />

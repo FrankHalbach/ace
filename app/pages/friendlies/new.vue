@@ -111,7 +111,7 @@ async function submit() {
       method: 'POST',
       body,
     })
-    toast.add({ title: 'Eingeladen — Eingeladene erhalten eine Email', color: 'primary' })
+    toast.add({ title: 'Eingeladen — Eingeladene erhalten eine E-Mail', color: 'primary' })
     await router.push(`/friendlies/${created.id}`)
   } catch (err: unknown) {
     toast.add({

@@ -2,7 +2,7 @@
 import type { ChallengeDto, ChallengeStatus } from '~~/server/modules/challenges'
 
 definePageMeta({ middleware: 'auth' })
-useHead({ title: 'Challenges' })
+useHead({ title: 'Forderungen' })
 
 const { user } = useUserSession()
 const { name: memberName } = await useMemberLookup()
@@ -54,7 +54,7 @@ function otherParty(c: ChallengeDto): number {
 
 <template>
   <UContainer class="py-6 max-w-3xl">
-    <h1 class="text-2xl font-semibold mb-6">Challenges</h1>
+    <h1 class="text-2xl font-semibold mb-6">Forderungen</h1>
 
     <section v-if="incoming.length > 0" class="mb-8">
       <h2 class="text-lg font-semibold mb-3">📥 Eingehend ({{ incoming.length }})</h2>
@@ -108,7 +108,7 @@ function otherParty(c: ChallengeDto): number {
     </section>
 
     <section v-if="active.length > 0" class="mb-8">
-      <h2 class="text-lg font-semibold mb-3">🎾 Aktive Matches ({{ active.length }})</h2>
+      <h2 class="text-lg font-semibold mb-3">🎾 Aktive Spiele ({{ active.length }})</h2>
       <div class="space-y-2">
         <NuxtLink
           v-for="c in active"
@@ -160,7 +160,7 @@ function otherParty(c: ChallengeDto): number {
       v-if="incoming.length === 0 && outgoing.length === 0 && active.length === 0 && history.length === 0"
       class="text-muted italic"
     >
-      Du hast noch keine Challenges. Gehe zu einer Rangliste und fordere jemanden heraus.
+      Du hast noch keine Forderungen. Gehe zu einer Rangliste und fordere jemanden heraus.
     </p>
   </UContainer>
 </template>

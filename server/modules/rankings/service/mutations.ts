@@ -1,8 +1,10 @@
 import { eq } from 'drizzle-orm'
 import { useDb } from '../../../db'
+import { ageGroup } from '../../../db/schema/age-group'
 import { matchPointsAward } from '../../../db/schema/match-points-award'
 import { ranking, type RankingId } from '../../../db/schema/ranking'
 import { rankingEntry, type RankingEntryRow } from '../../../db/schema/ranking-entry'
+import { season } from '../../../db/schema/season'
 import type { RankingMutation } from '../strategy/types'
 import type { MatchResultId } from '../../../db/schema/match-result'
 
@@ -77,12 +79,20 @@ export function applyMutations(mutations: RankingMutation[], matchResultId?: Mat
 
 /**
  * Lookup für den Modus + Config einer Rangliste — wird von challenges/results
- * für Strategy-Calls gebraucht.
+ * für Strategy-Calls gebraucht. `seasonStatus` hängt mit, damit Aufrufer
+ * (z. B. Forderungs-Create) prüfen können, ob die Saison noch aktiv ist.
  */
 export function getRankingMeta(rankingId: RankingId) {
   return useDb()
-    .select({ id: ranking.id, mode: ranking.mode, config: ranking.config })
+    .select({
+      id: ranking.id,
+      mode: ranking.mode,
+      config: ranking.config,
+      seasonStatus: season.status,
+    })
     .from(ranking)
+    .innerJoin(ageGroup, eq(ranking.ageGroupId, ageGroup.id))
+    .innerJoin(season, eq(ageGroup.seasonId, season.id))
     .where(eq(ranking.id, rankingId))
     .get()
 }

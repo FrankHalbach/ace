@@ -4,16 +4,16 @@ definePageMeta({ layout: false })
 const route = useRoute()
 const email = computed(() => (typeof route.query.email === 'string' ? route.query.email : null))
 
-useHead({ title: 'Email-Bestätigung' })
+useHead({ title: 'E-Mail-Bestätigung' })
 </script>
 
 <template>
   <UContainer class="py-16 max-w-md">
-    <h1 class="text-3xl font-semibold mb-4">Check deine Email</h1>
+    <h1 class="text-3xl font-semibold mb-4">Prüfe dein Postfach</h1>
 
     <UCard>
       <p class="mb-4">
-        Wir haben dir einen Login-Link
+        Wir haben dir einen Anmelde-Link
         <template v-if="email">
           an <strong class="font-mono text-sm">{{ email }}</strong>
         </template>
@@ -23,7 +23,7 @@ useHead({ title: 'Email-Bestätigung' })
         Der Link ist 15 Minuten gültig und kann nur einmal verwendet werden.
       </p>
       <p class="text-sm text-muted">
-        Keine Email bekommen? Schau in den Spam-Ordner oder
+        Keine E-Mail bekommen? Schau in den Spam-Ordner oder
         <NuxtLink to="/login" class="text-primary underline underline-offset-2">
           fordere einen neuen Link an
         </NuxtLink>.

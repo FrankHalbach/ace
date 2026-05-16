@@ -41,12 +41,12 @@ async function challenge(targetMemberId: number) {
       method: 'POST',
       body: { challengedId: targetMemberId, rankingId: ranking.value.id },
     })
-    toast.add({ title: 'Challenge versendet', color: 'primary' })
+    toast.add({ title: 'Forderung versendet', color: 'primary' })
     await refresh()
   } catch (err: unknown) {
     const status = (err as { statusCode?: number; statusMessage?: string })
     toast.add({
-      title: 'Challenge fehlgeschlagen',
+      title: 'Forderung fehlgeschlagen',
       description: status.statusMessage ?? 'Unbekannter Fehler',
       color: 'error',
     })

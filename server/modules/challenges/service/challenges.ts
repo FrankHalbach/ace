@@ -143,6 +143,13 @@ export const challengesService = {
     if (!meta) {
       throw new ChallengeValidationError('challenge.not-in-ranking', 'Rangliste nicht gefunden.')
     }
+    // 8a. Saison muss aktiv sein — keine neuen Forderungen in PLANNED/CLOSED/ARCHIVED.
+    if (meta.seasonStatus !== 'ACTIVE') {
+      throw new ChallengeValidationError(
+        'challenge.season-not-active',
+        'Die Saison ist nicht aktiv — keine neuen Forderungen möglich.',
+      )
+    }
     const strategy = strategyFor(meta.mode)
     const validation = strategy.validateChallenge({
       challengerEntry,
