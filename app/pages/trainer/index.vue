@@ -57,6 +57,7 @@ function formatSets(sets: { a: number; b: number }[] | null): string {
 // „wer ist gerade aktiv". Alles andere wäre Tabellen-Spielerei ohne Mehrwert.
 type ActivitySort = 'inactive-first' | 'most-active'
 const activitySort = ref<ActivitySort>('inactive-first')
+const activitySearch = ref('')
 
 const sortedActivity = computed(() => {
   const rows = [...(activity.value ?? [])]
@@ -72,6 +73,14 @@ const sortedActivity = computed(() => {
     return new Date(a.lastMatchAt).getTime() - new Date(b.lastMatchAt).getTime()
   })
   return rows
+})
+
+const filteredActivity = computed<ActivityOverviewRow[]>(() => {
+  const q = activitySearch.value.trim().toLowerCase()
+  if (!q) return sortedActivity.value
+  return sortedActivity.value.filter((row: ActivityOverviewRow) =>
+    `${row.firstName} ${row.lastName}`.toLowerCase().includes(q),
+  )
 })
 </script>
 
@@ -190,13 +199,27 @@ const sortedActivity = computed(() => {
           </UButton>
         </div>
       </div>
+      <UInput
+        v-model="activitySearch"
+        icon="i-lucide-search"
+        placeholder="Spieler suchen…"
+        class="w-full mb-3"
+      />
+
       <p class="text-xs text-muted mb-3">
         Match-Anzahl bezieht sich auf die letzten 4 Wochen.
+        <span v-if="activitySearch.trim()" class="ml-1">
+          · {{ filteredActivity.length }} von {{ sortedActivity.length }} Spielern
+        </span>
       </p>
 
-      <div class="divide-y divide-default border border-default rounded-lg overflow-hidden">
+      <p v-if="filteredActivity.length === 0" class="text-sm text-muted italic">
+        Kein Treffer für „{{ activitySearch }}".
+      </p>
+
+      <div v-else class="divide-y divide-default border border-default rounded-lg overflow-hidden">
         <NuxtLink
-          v-for="row in sortedActivity"
+          v-for="row in filteredActivity"
           :key="row.memberId"
           :to="`/spieler/${row.memberId}`"
           class="block px-4 py-3 flex items-center justify-between gap-3 hover:bg-elevated transition"
