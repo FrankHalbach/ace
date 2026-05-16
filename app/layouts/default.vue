@@ -49,7 +49,7 @@ const activePath = computed(() => route.path)
       v-if="loggedIn"
       class="sticky top-0 z-30 border-b border-default bg-default/90 backdrop-blur supports-[backdrop-filter]:bg-default/75"
     >
-      <UContainer class="flex items-center justify-between gap-3 py-3 max-w-3xl">
+      <UContainer class="flex items-center justify-between gap-3 py-3 max-w-3xl md:max-w-4xl">
         <!-- Brand lockup: ace · (tennis-ball dot) · TuS Neureut -->
         <NuxtLink
           to="/"
