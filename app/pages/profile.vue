@@ -102,11 +102,7 @@ async function save() {
     toast.add({ title: 'Profil aktualisiert', color: 'primary' })
     await refresh()
   } catch (err: unknown) {
-    toast.add({
-      title: 'Speichern fehlgeschlagen',
-      description: (err as { statusMessage?: string }).statusMessage ?? 'Unbekannter Fehler',
-      color: 'error',
-    })
+    toast.add({ title: 'Speichern fehlgeschlagen', description: apiError(err), color: 'error' })
   } finally {
     saving.value = false
   }

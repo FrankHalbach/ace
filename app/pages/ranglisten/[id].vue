@@ -37,12 +37,7 @@ async function challenge(targetMemberId: string) {
     toast.add({ title: 'Forderung versendet', color: 'primary' })
     await refresh()
   } catch (err: unknown) {
-    const status = (err as { statusCode?: number; statusMessage?: string })
-    toast.add({
-      title: 'Forderung fehlgeschlagen',
-      description: status.statusMessage ?? 'Unbekannter Fehler',
-      color: 'error',
-    })
+    toast.add({ title: 'Forderung fehlgeschlagen', description: apiError(err), color: 'error' })
   } finally {
     challenging.value = null
   }

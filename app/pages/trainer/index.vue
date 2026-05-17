@@ -29,11 +29,7 @@ async function action(path: string, key: string, successMsg: string) {
     await refreshDisputes()
     await refreshActivity()
   } catch (err: unknown) {
-    toast.add({
-      title: 'Fehler',
-      description: (err as { statusMessage?: string }).statusMessage ?? '',
-      color: 'error',
-    })
+    toast.add({ title: 'Fehler', description: apiError(err), color: 'error' })
   } finally {
     submitting.value = null
   }

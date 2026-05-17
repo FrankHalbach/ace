@@ -28,12 +28,7 @@ async function createSeason() {
     await refresh()
     toast.add({ title: 'Saison angelegt', color: 'primary' })
   } catch (err: unknown) {
-    const status = (err as { statusCode?: number; statusMessage?: string }).statusCode
-    if (status === 409) {
-      toast.add({ title: 'Name bereits vergeben', color: 'error' })
-    } else {
-      toast.add({ title: 'Fehler beim Anlegen', color: 'error' })
-    }
+    toast.add({ title: 'Fehler beim Anlegen', description: apiError(err), color: 'error' })
   } finally {
     creating.value = false
   }

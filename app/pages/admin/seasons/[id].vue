@@ -31,8 +31,8 @@ async function saveName() {
     })
     await refresh()
     toast.add({ title: 'Saison aktualisiert', color: 'primary' })
-  } catch {
-    toast.add({ title: 'Speichern fehlgeschlagen', color: 'error' })
+  } catch (err) {
+    toast.add({ title: 'Speichern fehlgeschlagen', description: apiError(err), color: 'error' })
   } finally {
     savingName.value = false
   }
@@ -44,8 +44,8 @@ async function transition(action: 'start' | 'close' | 'archive') {
     await $fetch(`/api/seasons/${id.value}/${action}`, { method: 'POST' })
     await refresh()
     toast.add({ title: 'Status geändert', color: 'primary' })
-  } catch {
-    toast.add({ title: 'Übergang fehlgeschlagen', color: 'error' })
+  } catch (err) {
+    toast.add({ title: 'Übergang fehlgeschlagen', description: apiError(err), color: 'error' })
   }
 }
 
@@ -71,8 +71,8 @@ async function addAgeGroup() {
     Object.assign(newAg, { name: '', minAge: null, maxAge: null, gender: 'm' as AgeGroupGender, active: true })
     await refresh()
     toast.add({ title: 'Altersgruppe hinzugefügt', color: 'primary' })
-  } catch {
-    toast.add({ title: 'Konnte nicht hinzugefügt werden', color: 'error' })
+  } catch (err) {
+    toast.add({ title: 'Konnte nicht hinzugefügt werden', description: apiError(err), color: 'error' })
   } finally {
     adding.value = false
   }
@@ -84,8 +84,8 @@ async function deleteAgeGroup(agId: number) {
     await $fetch(`/api/age-groups/${agId}`, { method: 'DELETE' })
     await refresh()
     toast.add({ title: 'Altersgruppe gelöscht', color: 'primary' })
-  } catch {
-    toast.add({ title: 'Löschen fehlgeschlagen', color: 'error' })
+  } catch (err) {
+    toast.add({ title: 'Löschen fehlgeschlagen', description: apiError(err), color: 'error' })
   }
 }
 
@@ -122,8 +122,8 @@ async function saveProSetLength(value: 8 | 9) {
     })
     await refresh()
     toast.add({ title: 'Saison-Regeln aktualisiert', color: 'primary' })
-  } catch {
-    toast.add({ title: 'Speichern fehlgeschlagen', color: 'error' })
+  } catch (err) {
+    toast.add({ title: 'Speichern fehlgeschlagen', description: apiError(err), color: 'error' })
   } finally {
     savingProSet.value = false
   }
