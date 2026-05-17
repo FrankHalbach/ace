@@ -146,7 +146,7 @@ export function getMemberProfile(id: MemberId, viewerId: MemberId): PlayerProfil
 
 function rankingNameFromStanding(
   rankings: PlayerProfileDto['rankings'],
-  rankingId: number,
+  rankingId: string,
 ): string {
   const r = rankings.find((x) => x.rankingId === rankingId)
   if (!r) return `#${rankingId}`

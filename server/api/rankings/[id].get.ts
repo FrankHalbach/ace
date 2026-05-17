@@ -1,12 +1,12 @@
 import { RankingNotFoundError, rankingReadService, type RankingId } from '../../modules/rankings'
-import { requireIntParam } from '../../shared/require-role'
+import { requirePublicIdParam } from '../../shared/public-id'
 
 /**
  * GET /api/rankings/:id — Detail inkl. Einträge.
  * Query: onlyActive=true filtert pausierte Spieler raus (FR-13).
  */
 export default defineEventHandler((event) => {
-  const id = requireIntParam(event, 'id') as RankingId
+  const id = requirePublicIdParam<RankingId>(event, 'id')
   const onlyActive = getQuery(event).onlyActive === 'true'
   try {
     return rankingReadService.getDetail(id, { onlyActive })
