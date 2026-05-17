@@ -11,11 +11,17 @@ import {
   type FriendlyDto,
   type FriendlyId,
   type FriendlyInviteeDto,
-  type FriendlyInviteeStatus,
   type FriendlyStatus,
 } from '../types'
 import type { FriendlyRow } from '../../../db/schema/friendly'
 import type { FriendlyInviteeRow } from '../../../db/schema/friendly-invitee'
+import {
+  AcceptedFriendly,
+  DisputedFriendly,
+  ProposedFriendly,
+  type Actor,
+} from '../../../../shared/domain/friendly'
+import { applyFriendlyMutation, loadFriendlyMatch } from './match-adapter'
 
 const SCHEDULED_TOLERANCE_MS = 60 * 60 * 1000 // 1 Stunde Vergangenheit toleriert
 const MAX_NEW_PER_DAY = 5
