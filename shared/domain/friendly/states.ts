@@ -38,6 +38,7 @@ import {
   TrainerRequiredError,
 } from './errors'
 import type { MatchOutcome, SetScore } from '../../match-scoring'
+import { validateSetsForMode, verifyWinnerConsistency } from '../../match-scoring'
 
 // ─── Hilfen, die auf allen State-Klassen gleich aussehen ─────────────────────
 
@@ -161,7 +162,7 @@ export class AcceptedFriendly {
 
   canCancel(actor: Actor): boolean { return safe(() => this.cancel(actor, new Date())) }
   canMarkPlayed(actor: Actor): boolean { return safe(() => this.markPlayed(actor, new Date())) }
-  canReportResult(actor: Actor, now: Date = new Date()): boolean {
+  canReportResult(_actor: Actor, now: Date = new Date()): boolean {
     return now.getTime() >= this.snap.row.scheduledAt.getTime()
   }
 }
@@ -204,12 +205,14 @@ export class ReportedFriendly {
   get scheduledAt(): Date { return this.snap.row.scheduledAt }
   get result(): FriendlyWithResultSnapshot['result'] { return this.snap.result }
 
-  /** Verlierer-Team bestätigt. Triggert Friendly → COMPLETED. */
+  /** Verlierer-Team bestätigt. Triggert Friendly → COMPLETED. Trainer übergeht den Loser-Check. */
   confirmResult(actor: Actor, now: Date): ConfirmResultMutation {
-    const { initiatorTeam, opponentTeam } = teams(this.snap.row, this.snap.invitees)
-    const winnerIsInitiator = arraysSame(this.snap.result.winnerMemberIds, initiatorTeam)
-    const loserTeam = winnerIsInitiator ? opponentTeam : initiatorTeam
-    if (!loserTeam.includes(actor.memberId)) throw new NotLoserError()
+    if (!actor.isTrainer) {
+      const { initiatorTeam, opponentTeam } = teams(this.snap.row, this.snap.invitees)
+      const winnerIsInitiator = arraysSame(this.snap.result.winnerMemberIds, initiatorTeam)
+      const loserTeam = winnerIsInitiator ? opponentTeam : initiatorTeam
+      if (!loserTeam.includes(actor.memberId)) throw new NotLoserError()
+    }
     return {
       kind: 'confirm-result',
       friendlyId: this.snap.row.id,
@@ -220,12 +223,14 @@ export class ReportedFriendly {
     }
   }
 
-  /** Verlierer-Team widerspricht. Triggert Friendly → DISPUTED. */
+  /** Verlierer-Team widerspricht. Triggert Friendly → DISPUTED. Trainer/Cron übergeht Loser-Check. */
   disputeResult(actor: Actor, note: string, now: Date): DisputeResultMutation {
-    const { initiatorTeam, opponentTeam } = teams(this.snap.row, this.snap.invitees)
-    const winnerIsInitiator = arraysSame(this.snap.result.winnerMemberIds, initiatorTeam)
-    const loserTeam = winnerIsInitiator ? opponentTeam : initiatorTeam
-    if (!loserTeam.includes(actor.memberId)) throw new NotLoserError()
+    if (!actor.isTrainer) {
+      const { initiatorTeam, opponentTeam } = teams(this.snap.row, this.snap.invitees)
+      const winnerIsInitiator = arraysSame(this.snap.result.winnerMemberIds, initiatorTeam)
+      const loserTeam = winnerIsInitiator ? opponentTeam : initiatorTeam
+      if (!loserTeam.includes(actor.memberId)) throw new NotLoserError()
+    }
     return {
       kind: 'dispute-result',
       friendlyId: this.snap.row.id,
@@ -328,6 +333,15 @@ function buildReportMutation(
   const isOpponentTeamWinner = arraysSame(input.winnerMemberIds, opponentTeam)
   if (!isInitiatorTeamWinner && !isOpponentTeamWinner) throw new NotWinnerError()
 
+  // Score-Plausi + Konsistenz Sieger ↔ Satzgewinne (außer bei walkover/retirement)
+  const outcome = input.outcome ?? 'regular'
+  validateSetsForMode(row.matchMode, input.sets, { outcome })
+  if (outcome === 'regular') {
+    // Spielfeld-Seite A entspricht dem Initiator-Team — wenn Initiator-Team
+    // Sieger ist, muss A die Sätze gewinnen.
+    verifyWinnerConsistency(input.sets, isInitiatorTeamWinner, { winnerSubject: 'team' })
+  }
+
   return {
     kind: 'report-result',
     friendlyId: row.id,
@@ -339,7 +353,7 @@ function buildReportMutation(
       reportedAt: now,
       reportedBy: actor.memberId,
       confirmationStatus: 'pending' as const,
-      outcome: input.outcome ?? 'regular',
+      outcome,
       outcomeNote: input.outcomeNote ?? null,
     },
   }

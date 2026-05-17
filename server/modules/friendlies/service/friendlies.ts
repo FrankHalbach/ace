@@ -18,10 +18,18 @@ import type { FriendlyInviteeRow } from '../../../db/schema/friendly-invitee'
 import {
   AcceptedFriendly,
   DisputedFriendly,
+  PlayedFriendly,
   ProposedFriendly,
   type Actor,
 } from '../../../../shared/domain/friendly'
 import { applyFriendlyMutation, loadFriendlyMatch } from './match-adapter'
+
+/** Helper für „Detail erneut frisch laden" nach Mutation. */
+function reloadDetail(id: FriendlyId): FriendlyDetailDto {
+  const row = friendlyRepo.findById(id)!
+  const invitees = friendlyInviteeRepo.listByFriendly(id)
+  return { ...toDto(row), invitees: invitees.map(toInviteeDto) }
+}
 
 const SCHEDULED_TOLERANCE_MS = 60 * 60 * 1000 // 1 Stunde Vergangenheit toleriert
 const MAX_NEW_PER_DAY = 5
@@ -73,14 +81,6 @@ function toInviteeDto(row: FriendlyInviteeRow): FriendlyInviteeDto {
 function isParticipant(row: FriendlyRow, invitees: FriendlyInviteeRow[], memberId: MemberId): boolean {
   if (row.initiatorId === memberId) return true
   return invitees.some((i) => i.memberId === memberId)
-}
-
-/**
- * Liefert für ein Friendly **alle** Teilnehmer-IDs (Initiator + Eingeladene).
- * Das Initiator-Team enthält bei Doubles zusätzlich den Partner.
- */
-function allParticipantIds(row: FriendlyRow, invitees: FriendlyInviteeRow[]): MemberId[] {
-  return [row.initiatorId, ...invitees.map((i) => i.memberId)]
 }
 
 export const friendliesService = {
@@ -259,27 +259,52 @@ export const friendliesService = {
   // ───────────────────────────────────────────────────────────────────────
 
   accept(id: FriendlyId, memberId: MemberId, now: Date = new Date()): FriendlyDetailDto {
-    // Termin-Konflikt-Check für den akzeptierenden Eingeladenen — andere
-    // Teilnehmer wurden bei Create geprüft, ihre eventuelle Doppel-Buchung
-    // ist nicht unser Problem. Das aktuelle Friendly aus der Suche ausklammern
-    // (sonst kollidiert es mit sich selbst).
-    const current = friendlyRepo.findById(id)
-    if (current) {
-      const slotStart = new Date(current.scheduledAt.getTime() - SCHEDULE_CONFLICT_WINDOW_MS)
-      const slotEnd = new Date(current.scheduledAt.getTime() + SCHEDULE_CONFLICT_WINDOW_MS)
-      const conflict = friendlyRepo.findConflictForMembers([memberId], slotStart, slotEnd, id)
-      if (conflict) {
-        throw new FriendlyValidationError(
-          'friendly.schedule-conflict',
-          `Du hast bereits ein Match am ${germanDateTime.format(conflict.scheduledAt)}.`,
-        )
-      }
+    const match = loadFriendlyMatch(id)
+    if (!(match instanceof ProposedFriendly)) {
+      throw new FriendlyInvalidTransitionError(match._state as FriendlyStatus, 'CONFIRMED')
     }
-    return setInviteeStatusAndRecompute(id, memberId, 'accepted', now)
+    // Cross-Aggregate-Check: Schedule-Konflikt für den Akzeptierenden.
+    // Bleibt in Service-Schicht, weil Domain nur _diesen_ Friendly kennt.
+    const slotStart = new Date(match.scheduledAt.getTime() - SCHEDULE_CONFLICT_WINDOW_MS)
+    const slotEnd = new Date(match.scheduledAt.getTime() + SCHEDULE_CONFLICT_WINDOW_MS)
+    const conflict = friendlyRepo.findConflictForMembers([memberId], slotStart, slotEnd, id)
+    if (conflict) {
+      throw new FriendlyValidationError(
+        'friendly.schedule-conflict',
+        `Du hast bereits ein Match am ${germanDateTime.format(conflict.scheduledAt)}.`,
+      )
+    }
+    const actor: Actor = { memberId, isTrainer: false }
+    try {
+      applyFriendlyMutation(match.accept(actor, now))
+    } catch (err) {
+      const code = err instanceof Error ? (err as { code?: string }).code : undefined
+      if (code === 'friendly.not-invitee') throw new FriendlyNotParticipantError()
+      if (code === 'friendly.already-responded') {
+        throw new FriendlyInvalidTransitionError(match._state as FriendlyStatus, 'CONFIRMED')
+      }
+      throw err
+    }
+    return reloadDetail(id)
   },
 
   decline(id: FriendlyId, memberId: MemberId, now: Date = new Date()): FriendlyDetailDto {
-    return setInviteeStatusAndRecompute(id, memberId, 'declined', now)
+    const match = loadFriendlyMatch(id)
+    if (!(match instanceof ProposedFriendly)) {
+      throw new FriendlyInvalidTransitionError(match._state as FriendlyStatus, 'DECLINED')
+    }
+    const actor: Actor = { memberId, isTrainer: false }
+    try {
+      applyFriendlyMutation(match.decline(actor, now))
+    } catch (err) {
+      const code = err instanceof Error ? (err as { code?: string }).code : undefined
+      if (code === 'friendly.not-invitee') throw new FriendlyNotParticipantError()
+      if (code === 'friendly.already-responded') {
+        throw new FriendlyInvalidTransitionError(match._state as FriendlyStatus, 'DECLINED')
+      }
+      throw err
+    }
+    return reloadDetail(id)
   },
 
   // ───────────────────────────────────────────────────────────────────────
@@ -287,20 +312,27 @@ export const friendliesService = {
   // ───────────────────────────────────────────────────────────────────────
 
   cancel(id: FriendlyId, memberId: MemberId, now: Date = new Date()): FriendlyDetailDto {
-    const row = friendlyRepo.findById(id)
-    if (!row) throw new FriendlyNotFoundError(id)
-    if (row.initiatorId !== memberId) throw new FriendlyNotParticipantError()
-    if (row.status === 'COMPLETED' || row.status === 'DISPUTED') {
-      throw new FriendlyInvalidTransitionError(row.status, 'CANCELLED')
+    const match = loadFriendlyMatch(id)
+    const actor: Actor = { memberId, isTrainer: false }
+    // ReportedFriendly hat KEIN cancel() — das ist der #48-Fix am Type-Level.
+    // PROPOSED/CONFIRMED/PLAYED dürfen, alles andere wirft InvalidTransition.
+    if (
+      match instanceof ProposedFriendly ||
+      match instanceof AcceptedFriendly ||
+      match instanceof PlayedFriendly
+    ) {
+      try {
+        applyFriendlyMutation(match.cancel(actor, now))
+      } catch (err) {
+        if (err instanceof Error && (err as { code?: string }).code === 'friendly.not-initiator') {
+          throw new FriendlyNotParticipantError()
+        }
+        throw err
+      }
+    } else {
+      throw new FriendlyInvalidTransitionError(match._state as FriendlyStatus, 'CANCELLED')
     }
-    if (row.status === 'CANCELLED' || row.status === 'DECLINED') {
-      throw new FriendlyInvalidTransitionError(row.status, 'CANCELLED')
-    }
-    const fromStates: FriendlyStatus[] = ['PROPOSED', 'CONFIRMED', 'PLAYED']
-    const updated = friendlyRepo.transition(id, fromStates, 'CANCELLED', { cancelledAt: now })
-    if (!updated) throw new FriendlyInvalidTransitionError(row.status, 'CANCELLED')
-    const invitees = friendlyInviteeRepo.listByFriendly(id)
-    return { ...toDto(updated), invitees: invitees.map(toInviteeDto) }
+    return reloadDetail(id)
   },
 
   // ───────────────────────────────────────────────────────────────────────
@@ -308,93 +340,38 @@ export const friendliesService = {
   // ───────────────────────────────────────────────────────────────────────
 
   markPlayed(id: FriendlyId, memberId: MemberId, now: Date = new Date()): FriendlyDetailDto {
-    const row = friendlyRepo.findById(id)
-    if (!row) throw new FriendlyNotFoundError(id)
-    const invitees = friendlyInviteeRepo.listByFriendly(id)
-    if (!isParticipant(row, invitees, memberId)) {
-      throw new FriendlyNotParticipantError()
+    const match = loadFriendlyMatch(id)
+    if (!(match instanceof AcceptedFriendly)) {
+      throw new FriendlyInvalidTransitionError(match._state as FriendlyStatus, 'PLAYED')
     }
-    if (row.status !== 'CONFIRMED') {
-      throw new FriendlyInvalidTransitionError(row.status, 'PLAYED')
+    const actor: Actor = { memberId, isTrainer: false }
+    try {
+      applyFriendlyMutation(match.markPlayed(actor, now))
+    } catch (err) {
+      const code = err instanceof Error ? (err as { code?: string }).code : undefined
+      if (code === 'friendly.not-participant') throw new FriendlyNotParticipantError()
+      throw err
     }
-    const updated = friendlyRepo.transition(id, 'CONFIRMED', 'PLAYED', { playedAt: now })
-    if (!updated) throw new FriendlyInvalidTransitionError(row.status, 'PLAYED')
-    profileService.setLastFriendlyAt(allParticipantIds(updated, invitees), now)
-    return { ...toDto(updated), invitees: invitees.map(toInviteeDto) }
+    return reloadDetail(id)
   },
 
   // ───────────────────────────────────────────────────────────────────────
-  // Lifecycle-Übergänge, von friendly-results-Service aufgerufen
+  // Lifecycle-Übergänge zu COMPLETED/DISPUTED werden jetzt direkt aus
+  // dem Domain (confirm-result/dispute-result-Mutation) gestaltet — keine
+  // separaten markCompleted/markDisputed-Aufrufe mehr nötig.
   // ───────────────────────────────────────────────────────────────────────
-
-  markCompleted(id: FriendlyId, now: Date = new Date()): FriendlyDto {
-    const row = friendlyRepo.findById(id)
-    if (!row) throw new FriendlyNotFoundError(id)
-    // Erlaubt aus CONFIRMED/PLAYED (Spieler-Confirm) ODER DISPUTED (Trainer-Force-Confirm).
-    const fromStates: FriendlyStatus[] = ['CONFIRMED', 'PLAYED', 'DISPUTED']
-    const updated = friendlyRepo.transition(id, fromStates, 'COMPLETED', { completedAt: now })
-    if (!updated) throw new FriendlyInvalidTransitionError(row.status, 'COMPLETED')
-    const invitees = friendlyInviteeRepo.listByFriendly(id)
-    profileService.setLastFriendlyAt(allParticipantIds(updated, invitees), now)
-    return toDto(updated)
-  },
-
-  markDisputed(id: FriendlyId, now: Date = new Date()): FriendlyDto {
-    const row = friendlyRepo.findById(id)
-    if (!row) throw new FriendlyNotFoundError(id)
-    const fromStates: FriendlyStatus[] = ['CONFIRMED', 'PLAYED']
-    const updated = friendlyRepo.transition(id, fromStates, 'DISPUTED', { disputedAt: now })
-    if (!updated) throw new FriendlyInvalidTransitionError(row.status, 'DISPUTED')
-    return toDto(updated)
-  },
 
   /** Trainer cancelt einen Streitfall — Friendly → CANCELLED, keine Rangliste-Wirkung. */
   cancelByTrainer(id: FriendlyId, now: Date = new Date()): FriendlyDto {
-    const row = friendlyRepo.findById(id)
-    if (!row) throw new FriendlyNotFoundError(id)
-    const updated = friendlyRepo.transition(id, 'DISPUTED', 'CANCELLED', { cancelledAt: now })
-    if (!updated) throw new FriendlyInvalidTransitionError(row.status, 'CANCELLED')
+    const match = loadFriendlyMatch(id)
+    if (!(match instanceof DisputedFriendly)) {
+      throw new FriendlyInvalidTransitionError(match._state as FriendlyStatus, 'CANCELLED')
+    }
+    // Service ist hier der Trainer-Endpoint — Trainer-Flag explizit setzen.
+    const actor: Actor = { memberId: '' as MemberId, isTrainer: true }
+    applyFriendlyMutation(match.trainerCancel(actor, now))
+    const updated = friendlyRepo.findById(id)!
     return toDto(updated)
   },
 }
 
-/**
- * Setzt den Invitee-Status und rechnet das Friendly-Status-Aggregat neu:
- *   - jemand declined  → Friendly DECLINED
- *   - alle accepted    → Friendly CONFIRMED
- *   - sonst            → bleibt PROPOSED
- */
-function setInviteeStatusAndRecompute(
-  id: FriendlyId,
-  memberId: MemberId,
-  desired: 'accepted' | 'declined',
-  now: Date,
-): FriendlyDetailDto {
-  const row = friendlyRepo.findById(id)
-  if (!row) throw new FriendlyNotFoundError(id)
-  if (row.status !== 'PROPOSED') {
-    throw new FriendlyInvalidTransitionError(row.status, 'CONFIRMED')
-  }
-
-  const invitee = friendlyInviteeRepo.findOne(id, memberId)
-  if (!invitee) throw new FriendlyNotParticipantError()
-  if (invitee.status !== 'pending') {
-    throw new FriendlyInvalidTransitionError(row.status, 'CONFIRMED')
-  }
-
-  const newStatus: FriendlyInviteeStatus = desired
-  friendlyInviteeRepo.setStatus(id, memberId, newStatus, now)
-
-  const invitees = friendlyInviteeRepo.listByFriendly(id)
-
-  let updatedFriendly = row
-  if (desired === 'declined') {
-    const t = friendlyRepo.transition(id, 'PROPOSED', 'DECLINED', { declinedAt: now })
-    if (t) updatedFriendly = t
-  } else if (invitees.every((i) => i.status === 'accepted')) {
-    const t = friendlyRepo.transition(id, 'PROPOSED', 'CONFIRMED', { confirmedAt: now })
-    if (t) updatedFriendly = t
-  }
-
-  return { ...toDto(updatedFriendly), invitees: invitees.map(toInviteeDto) }
-}
