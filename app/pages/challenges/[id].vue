@@ -28,6 +28,7 @@ const statusLabel: Record<ChallengeStatus, string> = {
   EXPIRED: 'Abgelaufen',
   COMPLETED: 'Abgeschlossen',
   DISPUTED: 'Strittig',
+  CANCELLED: 'Storniert',
 }
 
 const isChallenger = computed(() => challenge.value?.challengerId === user.value?.memberId)
@@ -71,7 +72,7 @@ async function decline() {
 
 // --- Result-Report-Flow ---
 const showReport = ref(false)
-const winnerIsMe = ref<boolean | null>(null)
+const winnerIsMe = ref<boolean | undefined>(undefined)
 const sets = ref<SetScore[]>([{ a: 0, b: 0 }, { a: 0, b: 0 }])
 const outcome = ref<MatchOutcome>('regular')
 const outcomeNote = ref('')
@@ -118,7 +119,7 @@ function removeSet(i: number) {
 }
 
 async function reportResult() {
-  if (!challenge.value || winnerIsMe.value === null) return
+  if (!challenge.value || winnerIsMe.value === undefined) return
   const winnerId = winnerIsMe.value
     ? user.value!.memberId
     : isChallenger.value
@@ -328,7 +329,7 @@ const isLoser = computed(() => {
             type="submit"
             color="primary"
             :loading="submitting"
-            :disabled="winnerIsMe === null || Object.keys(setErrors).length > 0"
+            :disabled="winnerIsMe === undefined || Object.keys(setErrors).length > 0"
           >
             Melden
           </UButton>

@@ -25,7 +25,7 @@ const active = computed(() =>
 )
 const history = computed(() =>
   (challenges.value ?? []).filter((c) =>
-    ['COMPLETED', 'DECLINED', 'EXPIRED', 'DISPUTED'].includes(c.status),
+    ['COMPLETED', 'DECLINED', 'EXPIRED', 'DISPUTED', 'CANCELLED'].includes(c.status),
   ),
 )
 
@@ -36,6 +36,7 @@ const statusLabel: Record<ChallengeStatus, string> = {
   EXPIRED: 'Abgelaufen',
   COMPLETED: 'Abgeschlossen',
   DISPUTED: 'Strittig',
+  CANCELLED: 'Storniert',
 }
 
 const statusColor: Record<ChallengeStatus, string> = {
@@ -45,6 +46,7 @@ const statusColor: Record<ChallengeStatus, string> = {
   EXPIRED: 'bg-stone-100 text-stone-500 dark:bg-stone-900 dark:text-stone-400',
   COMPLETED: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200',
   DISPUTED: 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200',
+  CANCELLED: 'bg-stone-100 text-stone-500 dark:bg-stone-900 dark:text-stone-400',
 }
 
 function otherParty(c: ChallengeDto): string {
