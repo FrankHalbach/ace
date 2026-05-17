@@ -5,12 +5,12 @@ import {
   challengesService,
   type ChallengeId,
 } from '../../../modules/challenges'
-import { requireIntParam } from '../../../shared/require-role'
+import { requirePublicIdParam } from '../../../shared/public-id'
 
 /** POST /api/challenges/:id/accept — nur Challenged */
 export default defineEventHandler(async (event) => {
   const { user } = await requireUserSession(event)
-  const id = requireIntParam(event, 'id') as ChallengeId
+  const id = requirePublicIdParam<ChallengeId>(event, 'id')
   try {
     return challengesService.accept(id, user.memberId)
   } catch (err) {

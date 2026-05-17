@@ -4,14 +4,14 @@ import {
   type ChallengeId,
 } from '../../../../../modules/challenges'
 import { trainerDisputesService } from '../../../../../modules/trainer'
-import { requireIntParam } from '../../../../../shared/require-role'
+import { requirePublicIdParam } from '../../../../../shared/public-id'
 import { requireTrainerOrAdmin } from '../../../../../shared/require-trainer'
 
 /** POST /api/trainer/disputes/challenge/:id/cancel — Trainer bricht Match ab */
 export default defineEventHandler(async (event) => {
   const { user } = await requireUserSession(event)
   requireTrainerOrAdmin(user)
-  const id = requireIntParam(event, 'id') as ChallengeId
+  const id = requirePublicIdParam<ChallengeId>(event, 'id')
   try {
     trainerDisputesService.cancelChallenge(id)
     return { ok: true }

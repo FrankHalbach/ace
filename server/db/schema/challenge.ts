@@ -1,10 +1,11 @@
 import { sql } from 'drizzle-orm'
 import { index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core'
 import type { Brand } from '../../shared/branded'
+import { newPublicId } from '../../shared/public-id'
 import { member, type MemberId } from './member'
 import { ranking, type RankingId } from './ranking'
 
-export type ChallengeId = Brand<number, 'ChallengeId'>
+export type ChallengeId = Brand<string, 'ChallengeId'>
 
 export type ChallengeStatus =
   | 'PROPOSED'
@@ -20,7 +21,7 @@ export type DeclineReason = 'injury' | 'vacation' | 'work' | 'other'
 export const challenge = sqliteTable(
   'challenge',
   {
-    id: integer('id').primaryKey({ autoIncrement: true }).$type<ChallengeId>(),
+    id: text('id').primaryKey().$type<ChallengeId>().$defaultFn(() => newPublicId() as ChallengeId),
     challengerId: text('challenger_id')
       .notNull()
       .references(() => member.id, { onDelete: 'cascade' })

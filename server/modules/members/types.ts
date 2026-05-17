@@ -71,7 +71,7 @@ export type PlayerProfileDto = {
   matches: Array<
     | {
         kind: 'challenge'
-        challengeId: number
+        challengeId: string
         rankingName: string
         opponentId: MemberId
         opponentName: string

@@ -7,12 +7,12 @@ import {
   resultsService,
 } from '../../../modules/results'
 import type { ChallengeId } from '../../../modules/challenges'
-import { requireIntParam } from '../../../shared/require-role'
+import { requirePublicIdParam } from '../../../shared/public-id'
 
 /** POST /api/challenges/:id/result — Sieger meldet Ergebnis */
 export default defineEventHandler(async (event) => {
   const { user } = await requireUserSession(event)
-  const id = requireIntParam(event, 'id') as ChallengeId
+  const id = requirePublicIdParam<ChallengeId>(event, 'id')
   const body = await readValidatedBody(event, reportResultInput.parse)
   try {
     return resultsService.report(id, user.memberId, body)

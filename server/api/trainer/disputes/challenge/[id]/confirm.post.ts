@@ -5,14 +5,14 @@ import {
 } from '../../../../../modules/challenges'
 import { AlreadyConfirmedError, MatchResultNotFoundError } from '../../../../../modules/results'
 import { DisputeNotFoundError, trainerDisputesService } from '../../../../../modules/trainer'
-import { requireIntParam } from '../../../../../shared/require-role'
+import { requirePublicIdParam } from '../../../../../shared/public-id'
 import { requireTrainerOrAdmin } from '../../../../../shared/require-trainer'
 
 /** POST /api/trainer/disputes/challenge/:id/confirm — Trainer bestätigt */
 export default defineEventHandler(async (event) => {
   const { user } = await requireUserSession(event)
   requireTrainerOrAdmin(user)
-  const id = requireIntParam(event, 'id') as ChallengeId
+  const id = requirePublicIdParam<ChallengeId>(event, 'id')
   try {
     trainerDisputesService.confirmChallenge(id)
     return { ok: true }
