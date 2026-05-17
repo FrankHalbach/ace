@@ -192,4 +192,4 @@ export class AlreadyConfirmedError extends Error {
   }
 }
 
-export { InvalidSetsError } from '../../shared/match-scoring'
+export { InvalidSetsError } from '../../../shared/match-scoring'

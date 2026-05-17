@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { ChallengeDto, ChallengeStatus, DeclineReason } from '~~/server/modules/challenges'
 import type { MatchOutcome, MatchResultDto, SetScore } from '~~/server/modules/results'
+import { InvalidSetsError, validateSetsForMode } from '~~/shared/match-scoring'
 
 definePageMeta({ middleware: 'auth' })
 
@@ -85,6 +86,29 @@ function isMatchTiebreakSet(setIndex: number): boolean {
       (CHALLENGE_MATCH_MODE as string) === 'two-sets-match-tiebreak')
   )
 }
+
+/**
+ * Live-Score-Validierung pro Satzposition. Greift in den shared Validator
+ * aus `server/shared/match-scoring`. Stumm, solange noch nicht alle Sätze
+ * angetippt wurden — sonst piepst die UI bei jedem Tastendruck.
+ */
+const setErrors = computed<Record<number, string | undefined>>(() => {
+  if (outcome.value === 'walkover') return {}
+  const anyUntouched = sets.value.some((s: SetScore) => s.a === 0 && s.b === 0)
+  if (anyUntouched) return {}
+  const result: Record<number, string | undefined> = {}
+  try {
+    validateSetsForMode(CHALLENGE_MATCH_MODE, sets.value, { outcome: outcome.value })
+  } catch (err) {
+    if (err instanceof InvalidSetsError) {
+      const e = err as Error
+      const match = e.message.match(/Satz (\d+)/)
+      const idx = match ? parseInt(match[1]!, 10) - 1 : 0
+      result[idx] = e.message
+    }
+  }
+  return result
+})
 
 function addSet() {
   if (sets.value.length < 3) sets.value.push({ a: 0, b: 0 })
@@ -284,7 +308,10 @@ const isLoser = computed(() => {
                 @click="removeSet(i)"
               />
             </div>
-            <p v-if="isMatchTiebreakSet(i)" class="text-xs text-muted pl-28 mt-1">
+            <p v-if="setErrors[i]" class="text-xs text-red-600 dark:text-red-400 pl-28 mt-1">
+              {{ setErrors[i] }}
+            </p>
+            <p v-else-if="isMatchTiebreakSet(i)" class="text-xs text-muted pl-28 mt-1">
               bis 10 Punkte, mindestens 2 Vorsprung (z. B. 10:8, 12:10)
             </p>
           </div>
@@ -297,7 +324,12 @@ const isLoser = computed(() => {
           <UInput v-model="outcomeNote" placeholder="z. B. Verletzung Knie" class="w-full" />
         </UFormField>
         <div class="flex gap-2 pt-2">
-          <UButton type="submit" color="primary" :loading="submitting" :disabled="winnerIsMe === null">
+          <UButton
+            type="submit"
+            color="primary"
+            :loading="submitting"
+            :disabled="winnerIsMe === null || Object.keys(setErrors).length > 0"
+          >
             Melden
           </UButton>
           <UButton variant="ghost" color="neutral" @click="showReport = false">Abbrechen</UButton>

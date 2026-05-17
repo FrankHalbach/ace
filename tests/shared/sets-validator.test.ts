@@ -3,7 +3,7 @@ import {
   InvalidSetsError,
   validateSetsForMode,
   verifyWinnerConsistency,
-} from '../../server/shared/match-scoring'
+} from '../../shared/match-scoring'
 
 describe('validateSetsForMode — Anzahl Sätze', () => {
   it('lehnt leere Set-Liste ab', () => {

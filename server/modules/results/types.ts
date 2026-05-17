@@ -9,7 +9,7 @@ import type {
   SetScore,
 } from '../../db/schema/match-result'
 
-export { InvalidSetsError } from '../../shared/match-scoring'
+export { InvalidSetsError } from '../../../shared/match-scoring'
 export type { ChallengeId, ConfirmationStatus, MatchMode, MatchOutcome, MatchResultId, SetScore }
 
 // Lockere Plausi — die strikte Modus-Validation passiert in

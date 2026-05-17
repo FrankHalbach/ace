@@ -3,7 +3,7 @@ import { friendliesService } from './friendlies'
 import { friendlyInviteeRepo } from '../repository/friendly-invitee-repo'
 import { friendlyRepo } from '../repository/friendly-repo'
 import { friendlyResultRepo } from '../repository/friendly-result-repo'
-import { validateSetsForMode, verifyWinnerConsistency } from '../../../shared/match-scoring'
+import { validateSetsForMode, verifyWinnerConsistency } from '../../../../shared/match-scoring'
 import {
   AlreadyConfirmedError,
   FriendlyInvalidTransitionError,
