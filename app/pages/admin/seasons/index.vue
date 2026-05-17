@@ -2,7 +2,6 @@
 import type { SeasonDto } from '~~/server/modules/seasons'
 
 definePageMeta({
-  layout: 'admin',
   middleware: 'admin',
 })
 
@@ -36,7 +35,7 @@ async function createSeason() {
 </script>
 
 <template>
-  <div>
+  <UContainer class="py-10 max-w-3xl md:py-14">
     <header class="flex items-center justify-between mb-6">
       <h1 class="text-2xl font-semibold">Saisons</h1>
       <UButton color="primary" @click="showCreate = true">+ Neue Saison</UButton>
@@ -80,5 +79,5 @@ async function createSeason() {
         </div>
       </NuxtLink>
     </div>
-  </div>
+  </UContainer>
 </template>

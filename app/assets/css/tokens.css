@@ -79,6 +79,45 @@
 }
 
 /* =========================================================================
+   Dark Mode — Nuxt color-mode setzt `class="dark"` aufs <html>, daher
+   `.dark` als Selector. Werte spiegeln die Light-Palette in Tonalität und
+   Bedeutung, sind aber hochgehoben für Lesbarkeit auf dunklem Grund.
+   Editoriale Wärme bleibt: BG hat Olivenote, Ink ist Cream (nicht Pure-
+   White), Brand-Grün lifted, Reversed-Contrast auf Primary-Buttons.
+   Sync-Notiz: bei Änderung auch docs/design-system.md §2.5 anpassen.
+   ========================================================================= */
+.dark {
+  /* -- Brand ----------------------------------------------------------- */
+  --primary:        #6ba17f;   /* lifted tennis-green (Light: #2d5841)    */
+  --primary-soft:   #1d2a23;   /* deep green tint für active-bg          */
+  --primary-strong: #82b894;   /* hover/pressed — brighter als primary    */
+  --accent:         #d77954;   /* lifted court-clay (Light: #b85c38)      */
+  --accent-soft:    #3a221a;   /* deep clay tint                          */
+  --tennis-ball:    #c5d65a;   /* leicht desaturiert für weniger burn     */
+
+  /* -- Surfaces -------------------------------------------------------- */
+  --bg:        #14130f;        /* warm dark, Olivenote — kein Pure-Black  */
+  --bg-soft:   #1c1b16;        /* drawer, list rails                      */
+  --surface:   #1f1e19;        /* inputs, cards, raised                   */
+  --rule:      #2d2c25;        /* dividers, hairlines                     */
+  --elevated:  #28261f;        /* hover-elevated row                      */
+
+  /* -- Ink ------------------------------------------------------------- */
+  --ink:        #ecebe2;       /* warm cream — kein pure white            */
+  --ink-muted:  #a8a59a;
+  --ink-soft:   #7a7770;
+  --on-primary: #14130f;       /* dunkler Text auf hellem Primary (revers)*/
+  --on-accent:  #14130f;       /* dunkler Text auf hellem Accent (revers) */
+
+  /* -- Status (semantic) ---------------------------------------------- */
+  --success:        #6ba17f;   --success-soft: #1d2a23;
+  --info:           #7a9bb8;   --info-soft:    #1c2530;
+  --warning:        #c4a456;   --warning-soft: #2e2814;
+  --danger:         #d6664f;   --danger-soft:  #2e1611;
+  --neutral:        #9c9a90;   --neutral-soft: #232218;
+}
+
+/* =========================================================================
    Body defaults — match the design spec's font stack
    ========================================================================= */
 body {

@@ -2,7 +2,6 @@
 import type { AgeGroupGender, CreateAgeGroupInput, SeasonDetailDto } from '~~/server/modules/seasons'
 
 definePageMeta({
-  layout: 'admin',
   middleware: 'admin',
 })
 
@@ -131,7 +130,7 @@ async function saveProSetLength(value: 8 | 9) {
 </script>
 
 <template>
-  <div v-if="season">
+  <UContainer v-if="season" class="py-10 max-w-3xl md:py-14">
     <header class="flex items-center justify-between mb-6">
       <div class="flex items-center gap-3">
         <NuxtLink to="/admin/seasons" class="text-muted hover:text-default text-sm">
@@ -283,5 +282,5 @@ async function saveProSetLength(value: 8 | 9) {
 
       <p v-else class="text-sm text-muted italic">Saison ist archiviert.</p>
     </section>
-  </div>
+  </UContainer>
 </template>

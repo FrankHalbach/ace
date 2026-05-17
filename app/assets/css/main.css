@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "@nuxt/ui";
 @import "./tokens.css";
+@import "./editorial.css";
 
 /* Fonts are loaded via <link> tags injected from nuxt.config.ts app.head.
    CSS @import url() doesn't work cleanly here because Vite/PostCSS inlines
