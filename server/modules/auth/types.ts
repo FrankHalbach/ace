@@ -6,7 +6,7 @@ export type { MemberId, Role }
 /** Inhalt des Session-Cookies (nuxt-auth-utils). */
 export type SessionUser = {
   memberId: MemberId
-  roles: Role[]
+  roles: readonly Role[]
 }
 
 export const requestLinkInput = z.object({

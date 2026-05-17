@@ -1,7 +1,7 @@
 import { eq, inArray } from 'drizzle-orm'
 import { useDb } from '../../../db'
 import { challenge } from '../../../db/schema/challenge'
-import { friendly } from '../../../db/schema/friendly'
+import { friendly, type FriendlyId } from '../../../db/schema/friendly'
 import { friendlyInvitee } from '../../../db/schema/friendly-invitee'
 import { profileService, type MemberId } from '../../members'
 import type { ActivityOverviewRow } from '../types'
@@ -61,7 +61,7 @@ export const trainerActivityService = {
 
     // Map: friendlyId → (timestamp, participants)
     const friendlyById = new Map<
-      number,
+      FriendlyId,
       { at: Date; participants: Set<MemberId> }
     >()
     for (const f of matchedFriendlies) {

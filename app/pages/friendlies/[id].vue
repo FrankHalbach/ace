@@ -107,7 +107,7 @@ async function callAction(path: string, body?: Record<string, unknown>): Promise
 
 // ─── Result-Reporting ──────────────────────────────────────────────────────
 const showReport = ref(false)
-const myTeamWon = ref<boolean | null>(null)
+const myTeamWon = ref<boolean | undefined>(undefined)
 const sets = ref<SetScore[]>([{ a: 0, b: 0 }, { a: 0, b: 0 }])
 const outcome = ref<MatchOutcome>('regular')
 const outcomeNote = ref('')
@@ -160,7 +160,7 @@ const otherTeam = computed(() =>
 )
 
 async function reportResult() {
-  if (!friendly.value || myTeamWon.value === null) return
+  if (!friendly.value || myTeamWon.value === undefined) return
   const winnerIds = myTeamWon.value ? myTeam.value : otherTeam.value
 
   // Spielfeld-Seite A entspricht dem Initiator-Team — wenn ich nicht im
@@ -382,7 +382,7 @@ async function markPlayed() {
             type="submit"
             color="primary"
             :loading="submitting"
-            :disabled="myTeamWon === null || Object.keys(setErrors).length > 0"
+            :disabled="myTeamWon === undefined || Object.keys(setErrors).length > 0"
           >
             Melden
           </UButton>

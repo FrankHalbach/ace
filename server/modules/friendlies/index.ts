@@ -33,6 +33,7 @@ export type {
   FriendlyResultDto,
   FriendlyResultId,
   FriendlyStatus,
+  MatchOutcome,
   ReportFriendlyResultInput,
   SetScore,
 } from './types'
