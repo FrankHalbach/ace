@@ -2,7 +2,7 @@ import { profileService } from '../../members'
 import { sendMagicLinkEmail } from './email'
 import { rateLimitService } from './rate-limit'
 import { tokenService } from './token'
-import type { MemberId } from '../types'
+import type { SessionUser } from '../types'
 
 /**
  * Orchestriert den Magic-Link-Request:
@@ -33,7 +33,7 @@ export async function requestMagicLink(email: string, baseUrl: string): Promise<
  * Wandelt einen gültigen Magic-Link-Token in eine Session um.
  * Wirft `InvalidTokenError`, wenn der Token nicht (mehr) gültig ist.
  */
-export function confirmMagicLink(token: string): { memberId: MemberId; roles: readonly string[] } {
+export function confirmMagicLink(token: string): SessionUser {
   const memberId = tokenService.consume(token)
   const member = profileService.findById(memberId)
   if (!member) {
