@@ -12,8 +12,11 @@ export function newPublicId(): string {
   return nanoid()
 }
 
-// 21 Zeichen aus dem URL-safen nanoid-Alphabet
-const NANOID_PATTERN = /^[A-Za-z0-9_-]{21}$/
+// URL-safes nanoid-Alphabet. 16–32 Zeichen: erlaubt 21-Zeichen-Standard
+// für neue Inserts und den 16-Hex-Migration-Backfill für Pre-Launch-
+// Dev-Daten. Sobald die DB einmal frisch geseedet ist, sind alle IDs
+// 21 Zeichen — Pattern auf {21} verschärfen ist dann eine 1-Zeilen-Änderung.
+const NANOID_PATTERN = /^[A-Za-z0-9_-]{16,32}$/
 
 /**
  * Parsed eine path-Param-Public-ID und gibt sie als gebrandeten Typ
