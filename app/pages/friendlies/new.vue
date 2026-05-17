@@ -21,12 +21,12 @@ type MemberRow = {
 const { data: members } = await useFetch<MemberRow[]>('/api/members', { default: () => [] })
 
 const format = ref<'singles' | 'doubles'>('singles')
-const partnerId = ref<string | null>(null)
-const opponentIds = ref<(string | null)[]>([null])
+const partnerId = ref<string | undefined>(undefined)
+const opponentIds = ref<(string | undefined)[]>([undefined])
 
 watch(format, (f) => {
-  partnerId.value = null
-  opponentIds.value = f === 'singles' ? [null] : [null, null]
+  partnerId.value = undefined
+  opponentIds.value = f === 'singles' ? [undefined] : [undefined, undefined]
 })
 
 // Vorausgewählter Gegner aus Query — z. B. via „Freundschaftsspiel anbieten"-Button
@@ -62,8 +62,8 @@ const selectableMembers = computed(() =>
   (members.value ?? []).filter((m) => m.id !== me.value && m.status === 'aktiv'),
 )
 
-function memberItems(excluded: (string | null)[]) {
-  const exSet = new Set(excluded.filter((x): x is string => x !== null))
+function memberItems(excluded: (string | undefined)[]) {
+  const exSet = new Set(excluded.filter((x): x is string => x !== undefined))
   return selectableMembers.value
     .filter((m) => !exSet.has(m.id))
     .map((m) => ({ label: `${m.firstName} ${m.lastName} · LK ${m.dtbLk.toFixed(1)}`, value: m.id }))
@@ -87,9 +87,9 @@ const submitting = ref(false)
 
 const canSubmit = computed(() => {
   if (format.value === 'singles') {
-    return opponentIds.value[0] !== null
+    return opponentIds.value[0] !== undefined
   }
-  return partnerId.value !== null && opponentIds.value.every((x) => x !== null)
+  return partnerId.value !== undefined && opponentIds.value.every((x) => x !== undefined)
 })
 
 async function submit() {
@@ -101,8 +101,8 @@ async function submit() {
     courtInfo: courtInfo.value || undefined,
     note: note.value || undefined,
     matchMode: matchMode.value,
-    opponentIds: opponentIds.value.filter((x): x is string => x !== null),
-    ...(format.value === 'doubles' && partnerId.value !== null
+    opponentIds: opponentIds.value.filter((x): x is string => x !== undefined),
+    ...(format.value === 'doubles' && partnerId.value !== undefined
       ? { partnerId: partnerId.value }
       : {}),
   }

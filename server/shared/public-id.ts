@@ -1,5 +1,5 @@
 import { nanoid } from 'nanoid'
-import type { H3Event } from 'h3'
+import { getRouterParam, type H3Event } from 'h3'
 
 /**
  * Public-ID-Generator: 21-Zeichen-Standard-`nanoid` aus `A-Za-z0-9_-`.

@@ -1,20 +1,21 @@
 <script setup lang="ts">
 import type { RankingSummaryDto } from '~~/server/modules/rankings'
-import type { SeasonDto } from '~~/server/modules/seasons'
+import type { SeasonDto, SeasonId } from '~~/server/modules/seasons'
 
 definePageMeta({ middleware: 'auth' })
 useHead({ title: 'Ranglisten' })
 
 const { data: seasons } = await useFetch<SeasonDto[]>('/api/seasons', { default: () => [] })
 
-const selectedSeasonId = ref<string | null>(null)
+const selectedSeasonId = ref<SeasonId | undefined>(undefined)
 
 // Default-Saison setzen, sobald die Liste da ist
 watchEffect(() => {
-  if (selectedSeasonId.value !== null) return
+  if (selectedSeasonId.value !== undefined) return
   const list = seasons.value
   if (!list || list.length === 0) return
   const active = list.find((s) => s.status === 'ACTIVE') ?? list[0]
+  if (!active) return
   selectedSeasonId.value = active.id
 })
 
@@ -22,16 +23,10 @@ const seasonItems = computed(() =>
   (seasons.value ?? []).map((s) => ({ label: `${s.name} (${s.status})`, value: s.id })),
 )
 
-const rankingsUrl = computed(() => {
-  if (!selectedSeasonId.value) return null
-  const params = new URLSearchParams({ seasonId: String(selectedSeasonId.value) })
-  return `/api/rankings?${params.toString()}`
-})
-
-const { data: rankings } = await useFetch<RankingSummaryDto[]>(rankingsUrl, {
-  watch: [rankingsUrl],
-  default: () => [],
-})
+const { data: rankings } = await useFetch<RankingSummaryDto[]>(
+  () => `/api/rankings?seasonId=${selectedSeasonId.value ?? ''}`,
+  { default: () => [] },
+)
 
 const modeLabel: Record<string, string> = {
   pyramid: 'Pyramide',
