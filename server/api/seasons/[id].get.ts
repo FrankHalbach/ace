@@ -1,11 +1,11 @@
 import { SeasonNotFoundError, seasonsService, type SeasonId } from '../../modules/seasons'
-import { requireIntParam } from '../../shared/require-role'
+import { requirePublicIdParam } from '../../shared/public-id'
 
 /**
  * GET /api/seasons/:id — Detail inkl. Altersgruppen.
  */
 export default defineEventHandler((event) => {
-  const id = requireIntParam(event, 'id') as SeasonId
+  const id = requirePublicIdParam<SeasonId>(event, 'id')
   try {
     return seasonsService.getDetail(id)
   } catch (err) {

@@ -6,13 +6,14 @@ import {
   seasonsService,
   type SeasonId,
 } from '../../../modules/seasons'
-import { requireIntParam, requireRole } from '../../../shared/require-role'
+import { requireRole } from '../../../shared/require-role'
+import { requirePublicIdParam } from '../../../shared/public-id'
 
 /** POST /api/seasons/:id/age-groups — Admin, nur im Status PLANNED */
 export default defineEventHandler(async (event) => {
   const { user } = await requireUserSession(event)
   requireRole(user, 'admin')
-  const seasonId = requireIntParam(event, 'id') as SeasonId
+  const seasonId = requirePublicIdParam<SeasonId>(event, 'id')
   const body = await readValidatedBody(event, createAgeGroupInput.parse)
 
   try {

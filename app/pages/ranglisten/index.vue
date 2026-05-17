@@ -7,7 +7,7 @@ useHead({ title: 'Ranglisten' })
 
 const { data: seasons } = await useFetch<SeasonDto[]>('/api/seasons', { default: () => [] })
 
-const selectedSeasonId = ref<number | null>(null)
+const selectedSeasonId = ref<string | null>(null)
 
 // Default-Saison setzen, sobald die Liste da ist
 watchEffect(() => {

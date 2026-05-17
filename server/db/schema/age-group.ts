@@ -19,7 +19,7 @@ export const ageGroup = sqliteTable(
   'age_group',
   {
     id: integer('id').primaryKey({ autoIncrement: true }).$type<AgeGroupId>(),
-    seasonId: integer('season_id')
+    seasonId: text('season_id')
       .notNull()
       .references(() => season.id, { onDelete: 'cascade' })
       .$type<SeasonId>(),

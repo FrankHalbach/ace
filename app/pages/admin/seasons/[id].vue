@@ -7,7 +7,7 @@ definePageMeta({
 })
 
 const route = useRoute()
-const id = computed(() => Number(route.params.id))
+const id = computed(() => String(route.params.id))
 
 const { data: season, refresh } = await useFetch<SeasonDetailDto>(() => `/api/seasons/${id.value}`)
 useHead({ title: () => season.value?.name ?? 'Saison' })

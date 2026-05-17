@@ -32,7 +32,7 @@ export const ranking = sqliteTable(
   'ranking',
   {
     id: text('id').primaryKey().$type<RankingId>().$defaultFn(() => newPublicId() as RankingId),
-    seasonId: integer('season_id')
+    seasonId: text('season_id')
       .notNull()
       .references(() => season.id, { onDelete: 'cascade' })
       .$type<SeasonId>(),

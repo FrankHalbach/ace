@@ -12,7 +12,7 @@ import type {
 export default defineEventHandler((event) => {
   const q = getQuery(event)
   const filter: RankingFilter = {}
-  if (q.seasonId) filter.seasonId = Number(q.seasonId) as SeasonId
+  if (typeof q.seasonId === 'string' && q.seasonId.length > 0) filter.seasonId = q.seasonId as SeasonId
   if (q.ageGroupId) filter.ageGroupId = Number(q.ageGroupId) as AgeGroupId
   return rankingReadService.list(filter)
 })

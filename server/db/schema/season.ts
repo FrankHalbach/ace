@@ -1,8 +1,9 @@
 import { sql } from 'drizzle-orm'
 import { integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
 import type { Brand } from '../../shared/branded'
+import { newPublicId } from '../../shared/public-id'
 
-export type SeasonId = Brand<number, 'SeasonId'>
+export type SeasonId = Brand<string, 'SeasonId'>
 
 export type SeasonStatus = 'PLANNED' | 'ACTIVE' | 'CLOSED' | 'ARCHIVED'
 
@@ -16,7 +17,7 @@ export type SeasonConfig = Record<string, unknown>
 export const season = sqliteTable(
   'season',
   {
-    id: integer('id').primaryKey({ autoIncrement: true }).$type<SeasonId>(),
+    id: text('id').primaryKey().$type<SeasonId>().$defaultFn(() => newPublicId() as SeasonId),
     name: text('name').notNull(),
     status: text('status', {
       enum: ['PLANNED', 'ACTIVE', 'CLOSED', 'ARCHIVED'],

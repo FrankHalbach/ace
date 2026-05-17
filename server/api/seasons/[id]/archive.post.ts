@@ -4,13 +4,14 @@ import {
   seasonsService,
   type SeasonId,
 } from '../../../modules/seasons'
-import { requireIntParam, requireRole } from '../../../shared/require-role'
+import { requireRole } from '../../../shared/require-role'
+import { requirePublicIdParam } from '../../../shared/public-id'
 
 /** POST /api/seasons/:id/archive — CLOSED → ARCHIVED */
 export default defineEventHandler(async (event) => {
   const { user } = await requireUserSession(event)
   requireRole(user, 'admin')
-  const id = requireIntParam(event, 'id') as SeasonId
+  const id = requirePublicIdParam<SeasonId>(event, 'id')
 
   try {
     return seasonsService.archive(id)
