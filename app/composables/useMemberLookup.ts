@@ -10,7 +10,7 @@
  *   {{ name(memberId) }}     // "Max Müller", oder "#42" wenn unbekannt
  */
 type MemberRow = {
-  id: number
+  id: string
   firstName: string
   lastName: string
   gender: 'm' | 'w'
@@ -25,18 +25,18 @@ export async function useMemberLookup() {
   })
 
   const byId = computed(() => {
-    const map = new Map<number, MemberRow>()
+    const map = new Map<string, MemberRow>()
     for (const m of members.value ?? []) map.set(m.id, m)
     return map
   })
 
-  function name(id: number | null | undefined): string {
+  function name(id: string | null | undefined): string {
     if (id == null) return '—'
     const m = byId.value.get(id)
     return m ? `${m.firstName} ${m.lastName}` : `#${id}`
   }
 
-  function short(id: number | null | undefined): string {
+  function short(id: string | null | undefined): string {
     if (id == null) return '—'
     const m = byId.value.get(id)
     return m ? `${m.firstName} ${m.lastName.charAt(0)}.` : `#${id}`

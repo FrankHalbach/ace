@@ -1,4 +1,4 @@
-import { index, integer, real, sqliteTable, uniqueIndex } from 'drizzle-orm/sqlite-core'
+import { index, integer, real, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
 import type { Brand } from '../../shared/branded'
 import { member, type MemberId } from './member'
 import { ranking, type RankingId } from './ranking'
@@ -13,7 +13,7 @@ export const rankingEntry = sqliteTable(
       .notNull()
       .references(() => ranking.id, { onDelete: 'cascade' })
       .$type<RankingId>(),
-    memberId: integer('member_id')
+    memberId: text('member_id')
       .notNull()
       .references(() => member.id, { onDelete: 'cascade' })
       .$type<MemberId>(),

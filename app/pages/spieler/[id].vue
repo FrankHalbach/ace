@@ -4,7 +4,7 @@ import type { PlayerProfileDto } from '~~/server/modules/members'
 definePageMeta({ middleware: 'auth' })
 
 const route = useRoute()
-const id = computed(() => Number(route.params.id))
+const id = computed(() => String(route.params.id))
 
 const { data: profile } = await useFetch<PlayerProfileDto>(
   () => `/api/members/${id.value}/profile`,

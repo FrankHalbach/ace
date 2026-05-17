@@ -7,7 +7,7 @@ function makeEntry(overrides: Partial<RankingEntryRow> = {}): RankingEntryRow {
   return {
     id: 1,
     rankingId: 1,
-    memberId: 1 as MemberId,
+    memberId: '1' as MemberId,
     position: 1,
     points: null,
     eloRating: null,
@@ -53,15 +53,15 @@ describe('PyramidStrategy.applyResult', () => {
 
   it('Sieger Challenger: Position-Tausch, alle dazwischen rutschen runter', () => {
     const allEntries = [
-      makeEntry({ id: 1, memberId: 10 as MemberId, position: 1 }),
-      makeEntry({ id: 2, memberId: 20 as MemberId, position: 2 }),
-      makeEntry({ id: 3, memberId: 30 as MemberId, position: 3 }), // Challenged
-      makeEntry({ id: 4, memberId: 40 as MemberId, position: 4 }),
-      makeEntry({ id: 5, memberId: 50 as MemberId, position: 5 }), // Challenger
+      makeEntry({ id: 1, memberId: '10' as MemberId, position: 1 }),
+      makeEntry({ id: 2, memberId: '20' as MemberId, position: 2 }),
+      makeEntry({ id: 3, memberId: '30' as MemberId, position: 3 }), // Challenged
+      makeEntry({ id: 4, memberId: '40' as MemberId, position: 4 }),
+      makeEntry({ id: 5, memberId: '50' as MemberId, position: 5 }), // Challenger
     ]
     const mutations = strategy.applyResult({
-      winnerId: 50 as MemberId,
-      loserId: 30 as MemberId,
+      winnerId: '50' as MemberId,
+      loserId: '30' as MemberId,
       challengerEntry: allEntries[4],
       challengedEntry: allEntries[2],
       allEntries,
@@ -82,12 +82,12 @@ describe('PyramidStrategy.applyResult', () => {
 
   it('Sieger Challenged: keine Positions-Änderung, nur lastMatchAt', () => {
     const allEntries = [
-      makeEntry({ id: 1, memberId: 10 as MemberId, position: 1 }),
-      makeEntry({ id: 2, memberId: 20 as MemberId, position: 2 }),
+      makeEntry({ id: 1, memberId: '10' as MemberId, position: 1 }),
+      makeEntry({ id: 2, memberId: '20' as MemberId, position: 2 }),
     ]
     const mutations = strategy.applyResult({
-      winnerId: 10 as MemberId,
-      loserId: 20 as MemberId,
+      winnerId: '10' as MemberId,
+      loserId: '20' as MemberId,
       challengerEntry: allEntries[1],
       challengedEntry: allEntries[0],
       allEntries,
@@ -106,12 +106,12 @@ describe('EloStrategy.applyResult', () => {
 
   it('Sieger gewinnt Rating, Verlierer verliert Rating', () => {
     const allEntries = [
-      makeEntry({ id: 1, memberId: 10 as MemberId, position: 1, eloRating: 1500 }),
-      makeEntry({ id: 2, memberId: 20 as MemberId, position: 2, eloRating: 1500 }),
+      makeEntry({ id: 1, memberId: '10' as MemberId, position: 1, eloRating: 1500 }),
+      makeEntry({ id: 2, memberId: '20' as MemberId, position: 2, eloRating: 1500 }),
     ]
     const mutations = strategy.applyResult({
-      winnerId: 20 as MemberId,
-      loserId: 10 as MemberId,
+      winnerId: '20' as MemberId,
+      loserId: '10' as MemberId,
       challengerEntry: allEntries[1],
       challengedEntry: allEntries[0],
       allEntries,
@@ -133,13 +133,13 @@ describe('PointsTableStrategy.applyResult', () => {
 
   it('Sieger bekommt mehr Punkte als Verlierer, Positionen neu sortiert', () => {
     const allEntries = [
-      makeEntry({ id: 1, memberId: 10 as MemberId, position: 1, points: 5 }),
-      makeEntry({ id: 2, memberId: 20 as MemberId, position: 2, points: 2 }),
-      makeEntry({ id: 3, memberId: 30 as MemberId, position: 3, points: 0 }),
+      makeEntry({ id: 1, memberId: '10' as MemberId, position: 1, points: 5 }),
+      makeEntry({ id: 2, memberId: '20' as MemberId, position: 2, points: 2 }),
+      makeEntry({ id: 3, memberId: '30' as MemberId, position: 3, points: 0 }),
     ]
     const mutations = strategy.applyResult({
-      winnerId: 30 as MemberId, // Niedrigster Rang gewinnt
-      loserId: 10 as MemberId,
+      winnerId: '30' as MemberId, // Niedrigster Rang gewinnt
+      loserId: '10' as MemberId,
       challengerEntry: allEntries[2], // #3 fordert #1
       challengedEntry: allEntries[0],
       allEntries,

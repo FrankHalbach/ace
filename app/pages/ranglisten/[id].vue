@@ -24,9 +24,9 @@ useHead({
 
 const { user } = useUserSession()
 const toast = useToast()
-const challenging = ref<number | null>(null)
+const challenging = ref<string | null>(null)
 
-async function challenge(targetMemberId: number) {
+async function challenge(targetMemberId: string) {
   if (!ranking.value) return
   challenging.value = targetMemberId
   try {
@@ -55,7 +55,7 @@ const viewerEntry = computed<RankingEntry | null>(() => {
   return ranking.value.entries.find((e: RankingEntry) => e.memberId === user.value!.memberId) ?? null
 })
 
-function canChallenge(targetMemberId: number, targetStatus: string): boolean {
+function canChallenge(targetMemberId: string, targetStatus: string): boolean {
   if (!user.value) return false
   if (!viewerEntry.value) return false
   if (user.value.memberId === targetMemberId) return false

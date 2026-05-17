@@ -5,9 +5,15 @@ import type { EntryWithLk } from '../../server/modules/rankings/strategy/types'
 import type { RankingEntryId } from '../../server/db/schema/ranking-entry'
 import type { RankingId } from '../../server/db/schema/ranking'
 
+// Hilfsfunktion: Tests übergeben Zahl-Literale 1, 2, 3 für Lesbarkeit;
+// MemberId ist seit Public-IDs-Refactor Brand<string>, also stringifizieren wir hier.
+function mid(n: number): MemberId {
+  return String(n) as MemberId
+}
+
 function makeMember(id: number, dtbLk: number, gender: 'm' | 'w' = 'm'): MemberDto {
   return {
-    id: id as MemberId,
+    id: mid(id),
     email: `m${id}@x.de`,
     firstName: `M${id}`,
     lastName: 'X',
@@ -36,7 +42,7 @@ function makeEntry(opts: {
   return {
     id: opts.id as RankingEntryId,
     rankingId: 1 as RankingId,
-    memberId: opts.memberId as MemberId,
+    memberId: mid(opts.memberId),
     position: opts.position,
     points: opts.points,
     eloRating: null,
@@ -55,23 +61,23 @@ describe('PyramidStrategy', () => {
   it('reset: sortiert ausschließlich nach LK aufsteigend', () => {
     const members = [makeMember(1, 12), makeMember(2, 8), makeMember(3, 15)]
     const order = strategy.getInitialOrder({ members, transition: 'reset' })
-    expect(order).toEqual([2, 1, 3])
+    expect(order).toEqual([mid(2), mid(1), mid(3)])
   })
 
   it('takeover: Vorgänger-Reihenfolge plus Newcomer ans Ende nach LK', () => {
     const members = [makeMember(1, 12), makeMember(2, 8), makeMember(3, 15)]
     const previousEntries = [
-      { memberId: 2 as MemberId, position: 1 },
-      { memberId: 1 as MemberId, position: 2 },
+      { memberId: mid(2), position: 1 },
+      { memberId: mid(1), position: 2 },
     ]
     const order = strategy.getInitialOrder({ members, transition: 'takeover', previousEntries })
-    expect(order).toEqual([2, 1, 3]) // 3 ist Newcomer
+    expect(order).toEqual([mid(2), mid(1), mid(3)]) // 3 ist Newcomer
   })
 
   it('softened: Top-5 fix, Rest nach LK', () => {
     const members = Array.from({ length: 8 }, (_, i) => makeMember(i + 1, 20 - i))
     const previousEntries = Array.from({ length: 8 }, (_, i) => ({
-      memberId: ((i + 1) % 8 + 1) as MemberId,
+      memberId: mid((i + 1) % 8 + 1),
       position: i + 1,
     }))
     const order = strategy.getInitialOrder({ members, transition: 'softened', previousEntries })
@@ -141,7 +147,7 @@ describe('PointsTableStrategy', () => {
   it('initialOrder: sortiert nach LK (Punkte starten bei 0)', () => {
     const members = [makeMember(1, 12), makeMember(2, 8), makeMember(3, 15)]
     const order = strategy.getInitialOrder({ members, transition: 'reset' })
-    expect(order).toEqual([2, 1, 3])
+    expect(order).toEqual([mid(2), mid(1), mid(3)])
   })
 
   it('applyResult: bei Punktegleichheit gewinnt der LK-Stärkere die bessere Position (N-01)', () => {
@@ -165,8 +171,8 @@ describe('PointsTableStrategy', () => {
     const challengedEntry = makeEntry({ id: 20, memberId: 2, position: 2, points: 0, memberLk: 8 })
 
     const mutations = strategy.applyResult({
-      winnerId: 1 as MemberId,
-      loserId: 2 as MemberId,
+      winnerId: mid(1),
+      loserId: mid(2),
       challengerEntry,
       challengedEntry,
       allEntries: [challengerEntry, challengedEntry],
@@ -199,8 +205,8 @@ describe('PointsTableStrategy', () => {
     const challengedEntry = makeEntry({ id: 20, memberId: 2, position: 1, points: 0, memberLk: 10 })
 
     const mutations = strategy.applyResult({
-      winnerId: 1 as MemberId,
-      loserId: 2 as MemberId,
+      winnerId: mid(1),
+      loserId: mid(2),
       challengerEntry,
       challengedEntry,
       allEntries: [challengerEntry, challengedEntry],
@@ -221,8 +227,8 @@ describe('PointsTableStrategy', () => {
     const challengedEntry = makeEntry({ id: 20, memberId: 2, position: 1, points: 0, memberLk: 8 })
 
     const mutations = strategy.applyResult({
-      winnerId: 1 as MemberId,
-      loserId: 2 as MemberId,
+      winnerId: mid(1),
+      loserId: mid(2),
       challengerEntry,
       challengedEntry,
       allEntries: [challengerEntry, challengedEntry],
@@ -241,7 +247,7 @@ describe('PointsTableStrategy', () => {
     // award-points: einer für walkover-win, keiner für loss (kein "Erscheinungspunkt")
     const awards = mutations.filter((m) => m.kind === 'award-points')
     expect(awards).toHaveLength(1)
-    expect(awards[0]).toMatchObject({ memberId: 1, reason: 'walkover-win', points: 2 })
+    expect(awards[0]).toMatchObject({ memberId: mid(1), reason: 'walkover-win', points: 2 })
   })
 
   it('applyResult: Aufgabe gibt regulären challengeWin/challengeLoss', () => {
@@ -249,8 +255,8 @@ describe('PointsTableStrategy', () => {
     const challengedEntry = makeEntry({ id: 20, memberId: 2, position: 1, points: 0, memberLk: 8 })
 
     const mutations = strategy.applyResult({
-      winnerId: 1 as MemberId,
-      loserId: 2 as MemberId,
+      winnerId: mid(1),
+      loserId: mid(2),
       challengerEntry,
       challengedEntry,
       allEntries: [challengerEntry, challengedEntry],
@@ -269,7 +275,7 @@ describe('PointsTableStrategy', () => {
     // Beide bekommen einen Award (challenge-win + challenge-loss)
     const awards = mutations.filter((m) => m.kind === 'award-points')
     expect(awards).toHaveLength(2)
-    expect(awards.find((a) => a.kind === 'award-points' && a.memberId === 1)).toMatchObject({
+    expect(awards.find((a) => a.kind === 'award-points' && a.memberId === mid(1))).toMatchObject({
       reason: 'challenge-win',
     })
   })
@@ -284,8 +290,8 @@ describe('Walk-Over / Aufgabe in ELO und Hybrid (#29 #30)', () => {
     challengedEntry.eloRating = 1500
 
     const mutations = strategy.applyResult({
-      winnerId: 1 as MemberId,
-      loserId: 2 as MemberId,
+      winnerId: mid(1),
+      loserId: mid(2),
       challengerEntry,
       challengedEntry,
       allEntries: [challengerEntry, challengedEntry],
@@ -308,8 +314,8 @@ describe('Walk-Over / Aufgabe in ELO und Hybrid (#29 #30)', () => {
     challengedEntry.eloRating = 1500
 
     const mutations = strategy.applyResult({
-      winnerId: 1 as MemberId,
-      loserId: 2 as MemberId,
+      winnerId: mid(1),
+      loserId: mid(2),
       challengerEntry,
       challengedEntry,
       allEntries: [challengerEntry, challengedEntry],
@@ -329,8 +335,8 @@ describe('Walk-Over / Aufgabe in ELO und Hybrid (#29 #30)', () => {
     challengedEntry.eloRating = 1500
 
     const mutations = strategy.applyResult({
-      winnerId: 1 as MemberId,
-      loserId: 2 as MemberId,
+      winnerId: mid(1),
+      loserId: mid(2),
       challengerEntry,
       challengedEntry,
       allEntries: [challengerEntry, challengedEntry],
@@ -352,8 +358,8 @@ describe('Walk-Over in Pyramide (#29)', () => {
     const between = makeEntry({ id: 30, memberId: 3, position: 3, points: 0, memberLk: 10 })
 
     const mutations = strategy.applyResult({
-      winnerId: 1 as MemberId,
-      loserId: 2 as MemberId,
+      winnerId: mid(1),
+      loserId: mid(2),
       challengerEntry,
       challengedEntry,
       allEntries: [challengerEntry, challengedEntry, between],

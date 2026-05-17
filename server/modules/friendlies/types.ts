@@ -48,8 +48,8 @@ export const createFriendlyInput = z
     courtInfo: z.string().max(120).optional(),
     note: z.string().max(500).optional(),
     matchMode: matchModeEnum,
-    partnerId: z.number().int().positive().optional(),
-    opponentIds: z.array(z.number().int().positive()).min(1).max(2),
+    partnerId: z.string().min(16).max(32).optional(),
+    opponentIds: z.array(z.string().min(16).max(32)).min(1).max(2),
   })
   .refine(
     (v) => {
@@ -68,7 +68,7 @@ const setScoreSchema = z.object({
 })
 
 export const reportFriendlyResultInput = z.object({
-  winnerMemberIds: z.array(z.number().int().positive()).min(1).max(2),
+  winnerMemberIds: z.array(z.string().min(16).max(32)).min(1).max(2),
   sets: z.array(setScoreSchema).max(5),
   outcome: z.enum(['regular', 'walkover', 'retirement']).optional(),
   outcomeNote: z.string().max(500).optional(),

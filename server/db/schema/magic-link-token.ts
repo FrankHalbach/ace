@@ -6,7 +6,7 @@ export const magicLinkToken = sqliteTable(
   'magic_link_token',
   {
     token: text('token').primaryKey(),
-    memberId: integer('member_id')
+    memberId: text('member_id')
       .notNull()
       .references(() => member.id, { onDelete: 'cascade' })
       .$type<MemberId>(),

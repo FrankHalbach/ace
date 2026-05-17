@@ -47,7 +47,7 @@ const statusColor: Record<ChallengeStatus, string> = {
   DISPUTED: 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200',
 }
 
-function otherParty(c: ChallengeDto): number {
+function otherParty(c: ChallengeDto): string {
   return c.challengerId === user.value?.memberId ? c.challengedId : c.challengerId
 }
 </script>

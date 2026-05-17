@@ -17,7 +17,7 @@ export const friendlyInvitee = sqliteTable(
       .notNull()
       .references(() => friendly.id, { onDelete: 'cascade' })
       .$type<FriendlyId>(),
-    memberId: integer('member_id')
+    memberId: text('member_id')
       .notNull()
       .references(() => member.id, { onDelete: 'cascade' })
       .$type<MemberId>(),

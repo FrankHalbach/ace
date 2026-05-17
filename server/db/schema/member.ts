@@ -1,8 +1,9 @@
 import { sql } from 'drizzle-orm'
 import { integer, real, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
 import type { Brand } from '../../shared/branded'
+import { newPublicId } from '../../shared/public-id'
 
-export type MemberId = Brand<number, 'MemberId'>
+export type MemberId = Brand<string, 'MemberId'>
 
 export type Role = 'player' | 'trainer' | 'admin'
 
@@ -25,7 +26,7 @@ export const DEFAULT_PREFERENCES: MatchPreferences = {
 export const member = sqliteTable(
   'member',
   {
-    id: integer('id').primaryKey({ autoIncrement: true }).$type<MemberId>(),
+    id: text('id').primaryKey().$type<MemberId>().$defaultFn(() => newPublicId() as MemberId),
     email: text('email').notNull(),
     firstName: text('first_name').notNull(),
     lastName: text('last_name').notNull(),

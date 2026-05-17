@@ -38,7 +38,7 @@ export const friendlyResult = sqliteTable(
     reportedAt: integer('reported_at', { mode: 'timestamp' })
       .notNull()
       .default(sql`(unixepoch())`),
-    reportedBy: integer('reported_by')
+    reportedBy: text('reported_by')
       .notNull()
       .references(() => member.id, { onDelete: 'cascade' })
       .$type<MemberId>(),
@@ -49,7 +49,7 @@ export const friendlyResult = sqliteTable(
       .notNull()
       .default('pending'),
     confirmedAt: integer('confirmed_at', { mode: 'timestamp' }),
-    confirmedBy: integer('confirmed_by')
+    confirmedBy: text('confirmed_by')
       .references(() => member.id, { onDelete: 'set null' })
       .$type<MemberId>(),
     disputedAt: integer('disputed_at', { mode: 'timestamp' }),

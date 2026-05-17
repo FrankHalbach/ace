@@ -10,7 +10,7 @@ const toast = useToast()
 const { user } = useUserSession()
 
 type MemberRow = {
-  id: number
+  id: string
   firstName: string
   lastName: string
   gender: 'm' | 'w'
@@ -21,8 +21,8 @@ type MemberRow = {
 const { data: members } = await useFetch<MemberRow[]>('/api/members', { default: () => [] })
 
 const format = ref<'singles' | 'doubles'>('singles')
-const partnerId = ref<number | null>(null)
-const opponentIds = ref<(number | null)[]>([null])
+const partnerId = ref<string | null>(null)
+const opponentIds = ref<(string | null)[]>([null])
 
 watch(format, (f) => {
   partnerId.value = null
@@ -31,8 +31,8 @@ watch(format, (f) => {
 
 // Vorausgewählter Gegner aus Query — z. B. via „Freundschaftsspiel anbieten"-Button
 onMounted(() => {
-  const pre = Number(route.query.opponentId)
-  if (Number.isInteger(pre) && pre > 0) opponentIds.value = [pre]
+  const pre = route.query.opponentId
+  if (typeof pre === 'string' && pre.length > 0) opponentIds.value = [pre]
 })
 
 const today = new Date()
@@ -62,8 +62,8 @@ const selectableMembers = computed(() =>
   (members.value ?? []).filter((m) => m.id !== me.value && m.status === 'aktiv'),
 )
 
-function memberItems(excluded: (number | null)[]) {
-  const exSet = new Set(excluded.filter((x): x is number => x !== null))
+function memberItems(excluded: (string | null)[]) {
+  const exSet = new Set(excluded.filter((x): x is string => x !== null))
   return selectableMembers.value
     .filter((m) => !exSet.has(m.id))
     .map((m) => ({ label: `${m.firstName} ${m.lastName} · LK ${m.dtbLk.toFixed(1)}`, value: m.id }))
@@ -101,7 +101,7 @@ async function submit() {
     courtInfo: courtInfo.value || undefined,
     note: note.value || undefined,
     matchMode: matchMode.value,
-    opponentIds: opponentIds.value.filter((x): x is number => x !== null),
+    opponentIds: opponentIds.value.filter((x): x is string => x !== null),
     ...(format.value === 'doubles' && partnerId.value !== null
       ? { partnerId: partnerId.value }
       : {}),

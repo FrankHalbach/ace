@@ -119,5 +119,5 @@ export const pyramidStrategy: RankingStrategy = {
 
 function byLkThenId(a: MemberDto, b: MemberDto): number {
   if (a.dtbLk !== b.dtbLk) return a.dtbLk - b.dtbLk
-  return a.id - b.id
+  return a.id < b.id ? -1 : a.id > b.id ? 1 : 0
 }
