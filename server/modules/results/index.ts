@@ -15,6 +15,7 @@ export {
 export type {
   DisputeResultInput,
   MatchMode,
+  MatchOutcome,
   MatchResultDto,
   MatchResultId,
   ReportResultInput,
