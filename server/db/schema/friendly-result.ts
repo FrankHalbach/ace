@@ -13,7 +13,7 @@ export const friendlyResult = sqliteTable(
   'friendly_result',
   {
     id: integer('id').primaryKey({ autoIncrement: true }).$type<FriendlyResultId>(),
-    friendlyId: integer('friendly_id')
+    friendlyId: text('friendly_id')
       .notNull()
       .references(() => friendly.id, { onDelete: 'cascade' })
       .$type<FriendlyId>(),

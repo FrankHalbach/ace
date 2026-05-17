@@ -1,9 +1,10 @@
 import { sql } from 'drizzle-orm'
 import { index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core'
 import type { Brand } from '../../shared/branded'
+import { newPublicId } from '../../shared/public-id'
 import { member, type MemberId } from './member'
 
-export type FriendlyId = Brand<number, 'FriendlyId'>
+export type FriendlyId = Brand<string, 'FriendlyId'>
 
 export type FriendlyFormat = 'singles' | 'doubles'
 
@@ -27,7 +28,7 @@ export type FriendlyStatus =
 export const friendly = sqliteTable(
   'friendly',
   {
-    id: integer('id').primaryKey({ autoIncrement: true }).$type<FriendlyId>(),
+    id: text('id').primaryKey().$type<FriendlyId>().$defaultFn(() => newPublicId() as FriendlyId),
     initiatorId: text('initiator_id')
       .notNull()
       .references(() => member.id, { onDelete: 'cascade' })

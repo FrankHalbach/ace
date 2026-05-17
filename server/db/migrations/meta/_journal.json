@@ -78,6 +78,13 @@
       "when": 1779388800000,
       "tag": "0010_challenge_public_ids",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "6",
+      "when": 1779475200000,
+      "tag": "0011_friendly_public_ids",
+      "breakpoints": true
     }
   ]
 }

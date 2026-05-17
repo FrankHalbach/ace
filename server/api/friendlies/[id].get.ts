@@ -4,12 +4,12 @@ import {
   FriendlyNotParticipantError,
   type FriendlyId,
 } from '../../modules/friendlies'
-import { requireIntParam } from '../../shared/require-role'
+import { requirePublicIdParam } from '../../shared/public-id'
 
 /** GET /api/friendlies/:id — Detail (nur Teilnehmer) */
 export default defineEventHandler(async (event) => {
   const { user } = await requireUserSession(event)
-  const id = requireIntParam(event, 'id') as FriendlyId
+  const id = requirePublicIdParam<FriendlyId>(event, 'id')
   try {
     return friendliesService.getDetail(id, user.memberId)
   } catch (err) {
