@@ -5,7 +5,8 @@ import {
   seasonsService,
   type SeasonId,
 } from '../../../modules/seasons'
-import { requireIntParam, requireRole } from '../../../shared/require-role'
+import { requireRole } from '../../../shared/require-role'
+import { requirePublicIdParam } from '../../../shared/public-id'
 
 /**
  * POST /api/seasons/:id/start — PLANNED → ACTIVE
@@ -17,7 +18,7 @@ import { requireIntParam, requireRole } from '../../../shared/require-role'
 export default defineEventHandler(async (event) => {
   const { user } = await requireUserSession(event)
   requireRole(user, 'admin')
-  const id = requireIntParam(event, 'id') as SeasonId
+  const id = requirePublicIdParam<SeasonId>(event, 'id')
 
   try {
     const season = seasonsService.start(id)

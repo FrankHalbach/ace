@@ -1,5 +1,6 @@
 import { SeasonFrozenError, SeasonNotFoundError, seasonsService, type SeasonId } from '../../modules/seasons'
-import { requireIntParam, requireRole } from '../../shared/require-role'
+import { requireRole } from '../../shared/require-role'
+import { requirePublicIdParam } from '../../shared/public-id'
 
 /**
  * DELETE /api/seasons/:id — Admin-only, nur im Status PLANNED erlaubt.
@@ -9,7 +10,7 @@ export default defineEventHandler(async (event) => {
   const { user } = await requireUserSession(event)
   requireRole(user, 'admin')
 
-  const id = requireIntParam(event, 'id') as SeasonId
+  const id = requirePublicIdParam<SeasonId>(event, 'id')
   try {
     seasonsService.delete(id)
     return { ok: true }

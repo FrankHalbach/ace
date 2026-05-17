@@ -85,6 +85,13 @@
       "when": 1779475200000,
       "tag": "0011_friendly_public_ids",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "6",
+      "when": 1779561600000,
+      "tag": "0012_season_public_ids",
+      "breakpoints": true
     }
   ]
 }
