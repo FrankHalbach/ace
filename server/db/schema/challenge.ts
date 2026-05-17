@@ -29,7 +29,7 @@ export const challenge = sqliteTable(
       .notNull()
       .references(() => member.id, { onDelete: 'cascade' })
       .$type<MemberId>(),
-    rankingId: integer('ranking_id')
+    rankingId: text('ranking_id')
       .notNull()
       .references(() => ranking.id, { onDelete: 'cascade' })
       .$type<RankingId>(),

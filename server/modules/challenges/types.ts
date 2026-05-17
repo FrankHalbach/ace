@@ -11,7 +11,7 @@ export type { ChallengeId, ChallengeStatus, DeclineReason }
 
 export const createChallengeInput = z.object({
   challengedId: z.string().min(16).max(32),
-  rankingId: z.number().int().positive(),
+  rankingId: z.string().min(16).max(32),
 })
 export type CreateChallengeInput = z.infer<typeof createChallengeInput>
 

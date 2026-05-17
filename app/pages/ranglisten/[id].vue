@@ -4,7 +4,7 @@ import type { RankingDetailDto } from '~~/server/modules/rankings'
 definePageMeta({ middleware: 'auth' })
 
 const route = useRoute()
-const id = computed(() => Number(route.params.id))
+const id = computed(() => String(route.params.id))
 
 const onlyActive = ref(true)
 const url = computed(() => `/api/rankings/${id.value}?onlyActive=${onlyActive.value}`)

@@ -64,6 +64,13 @@
       "when": 1779216000000,
       "tag": "0008_member_public_ids",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1779302400000,
+      "tag": "0009_ranking_public_ids",
+      "breakpoints": true
     }
   ]
 }

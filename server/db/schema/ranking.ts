@@ -1,10 +1,11 @@
 import { sql } from 'drizzle-orm'
 import { integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
 import type { Brand } from '../../shared/branded'
+import { newPublicId } from '../../shared/public-id'
 import { ageGroup, type AgeGroupId } from './age-group'
 import { season, type SeasonId } from './season'
 
-export type RankingId = Brand<number, 'RankingId'>
+export type RankingId = Brand<string, 'RankingId'>
 
 export type RankingMode = 'pyramid' | 'elo' | 'hybrid' | 'points-table'
 
@@ -30,7 +31,7 @@ export type RankingConfig = {
 export const ranking = sqliteTable(
   'ranking',
   {
-    id: integer('id').primaryKey({ autoIncrement: true }).$type<RankingId>(),
+    id: text('id').primaryKey().$type<RankingId>().$defaultFn(() => newPublicId() as RankingId),
     seasonId: integer('season_id')
       .notNull()
       .references(() => season.id, { onDelete: 'cascade' })

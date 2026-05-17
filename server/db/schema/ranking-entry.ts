@@ -9,7 +9,7 @@ export const rankingEntry = sqliteTable(
   'ranking_entry',
   {
     id: integer('id').primaryKey({ autoIncrement: true }).$type<RankingEntryId>(),
-    rankingId: integer('ranking_id')
+    rankingId: text('ranking_id')
       .notNull()
       .references(() => ranking.id, { onDelete: 'cascade' })
       .$type<RankingId>(),

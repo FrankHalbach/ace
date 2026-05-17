@@ -60,7 +60,7 @@ export type PlayerProfileDto = {
   matchesLast4Weeks: number
 
   rankings: Array<{
-    rankingId: number
+    rankingId: string
     seasonName: string
     ageGroupName: string
     mode: 'pyramid' | 'elo' | 'hybrid' | 'points-table'
