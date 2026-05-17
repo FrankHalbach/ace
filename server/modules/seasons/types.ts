@@ -97,7 +97,7 @@ export class SeasonNotFoundError extends Error {
 
 export class SeasonNameTakenError extends Error {
   readonly code = 'season.name-taken' as const
-  constructor(public readonly name: string) {
+  constructor(public override readonly name: string) {
     super(`season name "${name}" already exists`)
   }
 }
@@ -125,7 +125,7 @@ export class AgeGroupNotFoundError extends Error {
 
 export class AgeGroupNameTakenError extends Error {
   readonly code = 'age-group.name-taken' as const
-  constructor(public readonly seasonId: SeasonId, public readonly name: string) {
+  constructor(public readonly seasonId: SeasonId, public override readonly name: string) {
     super(`age group "${name}" already exists in season ${seasonId}`)
   }
 }
