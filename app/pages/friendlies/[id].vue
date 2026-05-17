@@ -110,6 +110,14 @@ const sets = ref<SetScore[]>([{ a: 0, b: 0 }, { a: 0, b: 0 }])
 const outcome = ref<MatchOutcome>('regular')
 const outcomeNote = ref('')
 
+// In best-of-3-champions und two-sets-match-tiebreak ist der 3. Satz ein
+// Match-Tie-Break.
+function isMatchTiebreakSet(setIndex: number): boolean {
+  if (setIndex !== 2) return false
+  const mode = friendly.value?.matchMode
+  return mode === 'best-of-3-champions' || mode === 'two-sets-match-tiebreak'
+}
+
 function addSet() {
   if (sets.value.length < 3) sets.value.push({ a: 0, b: 0 })
 }
@@ -304,18 +312,25 @@ async function markPlayed() {
           />
         </UFormField>
         <template v-if="outcome !== 'walkover'">
-          <div v-for="(set, i) in sets" :key="i" class="flex items-center gap-2">
-            <span class="text-sm text-muted w-14">Satz {{ i + 1 }}</span>
-            <UInput v-model.number="set.a" type="number" min="0" max="20" class="w-20" />
-            <span class="text-dimmed">:</span>
-            <UInput v-model.number="set.b" type="number" min="0" max="20" class="w-20" />
-            <UButton
-              v-if="sets.length > 1"
-              icon="i-lucide-x"
-              variant="ghost"
-              size="xs"
-              @click="removeSet(i)"
-            />
+          <div v-for="(set, i) in sets" :key="i">
+            <div class="flex items-center gap-2">
+              <span class="text-sm text-muted w-28">
+                {{ isMatchTiebreakSet(i) ? 'Match-TB' : `Satz ${i + 1}` }}
+              </span>
+              <UInput v-model.number="set.a" type="number" min="0" max="20" class="w-20" />
+              <span class="text-dimmed">:</span>
+              <UInput v-model.number="set.b" type="number" min="0" max="20" class="w-20" />
+              <UButton
+                v-if="sets.length > 1"
+                icon="i-lucide-x"
+                variant="ghost"
+                size="xs"
+                @click="removeSet(i)"
+              />
+            </div>
+            <p v-if="isMatchTiebreakSet(i)" class="text-xs text-muted pl-28 mt-1">
+              bis 10 Punkte, mindestens 2 Vorsprung (z. B. 10:8, 12:10)
+            </p>
           </div>
           <UButton v-if="sets.length < 3" variant="soft" size="sm" @click="addSet">+ Satz hinzufügen</UButton>
         </template>
