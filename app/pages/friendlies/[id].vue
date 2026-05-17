@@ -282,9 +282,11 @@ async function markPlayed() {
       </div>
     </UCard>
 
-    <!-- Initiator: Absagen, solange nicht COMPLETED/DISPUTED/CANCELLED/DECLINED -->
+    <!-- Initiator: Absagen, solange nicht COMPLETED/DISPUTED/CANCELLED/DECLINED
+         und solange noch kein Result gemeldet wurde (Domain lehnt Cancel auf
+         ReportedFriendly ab — Button wäre tote UI; siehe #48). -->
     <UCard
-      v-if="isInitiator && !['COMPLETED', 'DISPUTED', 'CANCELLED', 'DECLINED'].includes(friendly.status)"
+      v-if="isInitiator && !result && !['COMPLETED', 'DISPUTED', 'CANCELLED', 'DECLINED'].includes(friendly.status)"
       class="mb-6"
     >
       <h2 class="font-semibold mb-3">Aktionen</h2>
