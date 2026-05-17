@@ -9,12 +9,15 @@ import type {
   SetScore,
 } from '../../db/schema/match-result'
 
-export { InvalidSetsError } from '../../shared/match-scoring'
+export { InvalidSetsError } from '../../../shared/match-scoring'
 export type { ChallengeId, ConfirmationStatus, MatchMode, MatchOutcome, MatchResultId, SetScore }
 
+// Lockere Plausi — die strikte Modus-Validation passiert in
+// `validateSetsForMode`. Match-TB-Werte können > 20 sein (z. B. 22:20),
+// deshalb hier 30 als großzügige obere Schranke.
 const setScoreSchema = z.object({
-  a: z.number().int().min(0).max(20),
-  b: z.number().int().min(0).max(20),
+  a: z.number().int().min(0).max(30),
+  b: z.number().int().min(0).max(30),
 })
 
 export const reportResultInput = z.object({

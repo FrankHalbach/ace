@@ -6,6 +6,7 @@ import type {
   MatchOutcome,
   SetScore,
 } from '~~/server/modules/friendlies'
+import { InvalidSetsError, validateSetsForMode } from '~~/shared/match-scoring'
 
 definePageMeta({ middleware: 'auth' })
 
@@ -117,6 +118,28 @@ function isMatchTiebreakSet(setIndex: number): boolean {
   const mode = friendly.value?.matchMode
   return mode === 'best-of-3-champions' || mode === 'two-sets-match-tiebreak'
 }
+
+/**
+ * Live-Score-Validierung pro Satzposition. Stumm, solange noch nicht alle
+ * Sätze angetippt wurden — sonst piepst die UI bei jedem Tastendruck.
+ */
+const setErrors = computed<Record<number, string | undefined>>(() => {
+  if (outcome.value === 'walkover' || !friendly.value) return {}
+  const anyUntouched = sets.value.some((s: SetScore) => s.a === 0 && s.b === 0)
+  if (anyUntouched) return {}
+  const result: Record<number, string | undefined> = {}
+  try {
+    validateSetsForMode(friendly.value.matchMode, sets.value, { outcome: outcome.value })
+  } catch (err) {
+    if (err instanceof InvalidSetsError) {
+      const e = err as Error
+      const match = e.message.match(/Satz (\d+)/)
+      const idx = match ? parseInt(match[1]!, 10) - 1 : 0
+      result[idx] = e.message
+    }
+  }
+  return result
+})
 
 function addSet() {
   if (sets.value.length < 3) sets.value.push({ a: 0, b: 0 })
@@ -317,9 +340,9 @@ async function markPlayed() {
               <span class="text-sm text-muted w-28">
                 {{ isMatchTiebreakSet(i) ? 'Match-TB' : `Satz ${i + 1}` }}
               </span>
-              <UInput v-model.number="set.a" type="number" min="0" max="20" class="w-20" />
+              <UInputNumber v-model="set.a" :min="0" :max="isMatchTiebreakSet(i) ? 30 : 7" class="w-24" />
               <span class="text-dimmed">:</span>
-              <UInput v-model.number="set.b" type="number" min="0" max="20" class="w-20" />
+              <UInputNumber v-model="set.b" :min="0" :max="isMatchTiebreakSet(i) ? 30 : 7" class="w-24" />
               <UButton
                 v-if="sets.length > 1"
                 icon="i-lucide-x"
@@ -328,7 +351,10 @@ async function markPlayed() {
                 @click="removeSet(i)"
               />
             </div>
-            <p v-if="isMatchTiebreakSet(i)" class="text-xs text-muted pl-28 mt-1">
+            <p v-if="setErrors[i]" class="text-xs text-red-600 dark:text-red-400 pl-28 mt-1">
+              {{ setErrors[i] }}
+            </p>
+            <p v-else-if="isMatchTiebreakSet(i)" class="text-xs text-muted pl-28 mt-1">
               bis 10 Punkte, mindestens 2 Vorsprung (z. B. 10:8, 12:10)
             </p>
           </div>
@@ -349,7 +375,7 @@ async function markPlayed() {
             type="submit"
             color="primary"
             :loading="submitting"
-            :disabled="myTeamWon === null"
+            :disabled="myTeamWon === null || Object.keys(setErrors).length > 0"
           >
             Melden
           </UButton>

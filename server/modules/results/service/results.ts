@@ -12,7 +12,7 @@ import {
   validateSetsForMode,
   verifyWinnerConsistency,
   type ProSetLength,
-} from '../../../shared/match-scoring'
+} from '../../../../shared/match-scoring'
 import {
   AlreadyConfirmedError,
   ChallengeNotAcceptedError,
