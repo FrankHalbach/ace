@@ -8,15 +8,22 @@ import {
 import { challengeRepo } from '../repository/challenge-repo'
 import {
   ChallengeInvalidTransitionError,
-  ChallengeNotFoundError,
   ChallengeNotParticipantError,
   ChallengeValidationError,
   type ChallengeDto,
   type ChallengeId,
+  type ChallengeStatus,
   type CreateChallengeInput,
   type DeclineChallengeInput,
 } from '../types'
 import type { ChallengeRow } from '../../../db/schema/challenge'
+import {
+  AcceptedChallenge,
+  DisputedChallenge,
+  ProposedChallenge,
+  type Actor,
+} from '../../../../shared/domain/challenge'
+import { applyChallengeMutation, loadChallenge } from './match-adapter'
 
 const ACCEPT_DEADLINE_MS = 7 * 24 * 60 * 60 * 1000 // 7 Tage (FR-24)
 const PLAY_DEADLINE_MS = 21 * 24 * 60 * 60 * 1000 // 21 Tage (FR-25)
@@ -43,6 +50,11 @@ function toDto(row: ChallengeRow): ChallengeDto {
   }
 }
 
+/** Helper für „Detail erneut frisch laden" nach Mutation. */
+function reloadDto(id: ChallengeId): ChallengeDto {
+  return toDto(challengeRepo.findById(id)!)
+}
+
 export const challengesService = {
   // ───────────────────────────────────────────────────────────────────────
   // Lookup
@@ -54,8 +66,8 @@ export const challengesService = {
   },
 
   getForParticipant(id: ChallengeId, memberId: MemberId): ChallengeDto {
-    const row = challengeRepo.findById(id)
-    if (!row) throw new ChallengeNotFoundError(id)
+    const match = loadChallenge(id)
+    const row = match.snap.row
     if (row.challengerId !== memberId && row.challengedId !== memberId) {
       throw new ChallengeNotParticipantError()
     }
@@ -175,16 +187,24 @@ export const challengesService = {
   },
 
   // ───────────────────────────────────────────────────────────────────────
-  // Accept / Decline
+  // Accept / Decline (Lifecycle via Domain-Modell)
   // ───────────────────────────────────────────────────────────────────────
 
   accept(id: ChallengeId, memberId: MemberId, now: Date = new Date()): ChallengeDto {
-    const row = challengeRepo.findById(id)
-    if (!row) throw new ChallengeNotFoundError(id)
-    if (row.challengedId !== memberId) throw new ChallengeNotParticipantError()
-    const updated = challengeRepo.transition(id, 'PROPOSED', 'ACCEPTED', { acceptedAt: now })
-    if (!updated) throw new ChallengeInvalidTransitionError(row.status, 'ACCEPTED')
-    return toDto(updated)
+    const match = loadChallenge(id)
+    if (!(match instanceof ProposedChallenge)) {
+      throw new ChallengeInvalidTransitionError(match._state as ChallengeStatus, 'ACCEPTED')
+    }
+    const actor: Actor = { memberId, isTrainer: false }
+    try {
+      applyChallengeMutation(match.accept(actor, now))
+    } catch (err) {
+      if (err instanceof Error && (err as { code?: string }).code === 'challenge.not-participant') {
+        throw new ChallengeNotParticipantError()
+      }
+      throw err
+    }
+    return reloadDto(id)
   },
 
   decline(
@@ -193,46 +213,60 @@ export const challengesService = {
     input: DeclineChallengeInput,
     now: Date = new Date(),
   ): ChallengeDto {
-    const row = challengeRepo.findById(id)
-    if (!row) throw new ChallengeNotFoundError(id)
-    if (row.challengedId !== memberId) throw new ChallengeNotParticipantError()
-    const updated = challengeRepo.transition(id, 'PROPOSED', 'DECLINED', {
-      declinedAt: now,
-      declineReason: input.reason,
-      declineNote: input.note ?? null,
-    })
-    if (!updated) throw new ChallengeInvalidTransitionError(row.status, 'DECLINED')
-    return toDto(updated)
+    const match = loadChallenge(id)
+    if (!(match instanceof ProposedChallenge)) {
+      throw new ChallengeInvalidTransitionError(match._state as ChallengeStatus, 'DECLINED')
+    }
+    const actor: Actor = { memberId, isTrainer: false }
+    try {
+      applyChallengeMutation(
+        match.decline(actor, { reason: input.reason, note: input.note ?? null }, now),
+      )
+    } catch (err) {
+      if (err instanceof Error && (err as { code?: string }).code === 'challenge.not-participant') {
+        throw new ChallengeNotParticipantError()
+      }
+      throw err
+    }
+    return reloadDto(id)
   },
 
   // ───────────────────────────────────────────────────────────────────────
-  // Lifecycle-Übergänge, von results-Modul aufgerufen
+  // Lifecycle-Übergänge, vom results-Modul aufgerufen
   // ───────────────────────────────────────────────────────────────────────
 
   markCompleted(id: ChallengeId, now: Date = new Date()): ChallengeDto {
-    const row = challengeRepo.findById(id)
-    if (!row) throw new ChallengeNotFoundError(id)
-    // Erlaubt aus ACCEPTED (Spieler-Confirm) ODER DISPUTED (Trainer-Force-Confirm).
-    const updated = challengeRepo.transition(id, ['ACCEPTED', 'DISPUTED'], 'COMPLETED', { completedAt: now })
-    if (!updated) throw new ChallengeInvalidTransitionError(row.status, 'COMPLETED')
-    return toDto(updated)
+    const match = loadChallenge(id)
+    if (match instanceof AcceptedChallenge) {
+      applyChallengeMutation(match.markCompleted(now))
+    } else if (match instanceof DisputedChallenge) {
+      // Trainer-Force-Confirm-Pfad — Domain verlangt isTrainer.
+      const trainerActor: Actor = { memberId: '' as MemberId, isTrainer: true }
+      applyChallengeMutation(match.markCompleted(trainerActor, now))
+    } else {
+      throw new ChallengeInvalidTransitionError(match._state as ChallengeStatus, 'COMPLETED')
+    }
+    return reloadDto(id)
   },
 
   markDisputed(id: ChallengeId, now: Date = new Date()): ChallengeDto {
-    const row = challengeRepo.findById(id)
-    if (!row) throw new ChallengeNotFoundError(id)
-    const updated = challengeRepo.transition(id, 'ACCEPTED', 'DISPUTED', { disputedAt: now })
-    if (!updated) throw new ChallengeInvalidTransitionError(row.status, 'DISPUTED')
-    return toDto(updated)
+    const match = loadChallenge(id)
+    if (!(match instanceof AcceptedChallenge)) {
+      throw new ChallengeInvalidTransitionError(match._state as ChallengeStatus, 'DISPUTED')
+    }
+    applyChallengeMutation(match.markDisputed(now))
+    return reloadDto(id)
   },
 
   /** Trainer cancelt einen Streitfall — Challenge → CANCELLED, keine Rangliste-Wirkung. */
   cancelByTrainer(id: ChallengeId, now: Date = new Date()): ChallengeDto {
-    const row = challengeRepo.findById(id)
-    if (!row) throw new ChallengeNotFoundError(id)
-    const updated = challengeRepo.transition(id, 'DISPUTED', 'CANCELLED', { cancelledAt: now })
-    if (!updated) throw new ChallengeInvalidTransitionError(row.status, 'CANCELLED')
-    return toDto(updated)
+    const match = loadChallenge(id)
+    if (!(match instanceof DisputedChallenge)) {
+      throw new ChallengeInvalidTransitionError(match._state as ChallengeStatus, 'CANCELLED')
+    }
+    const trainerActor: Actor = { memberId: '' as MemberId, isTrainer: true }
+    applyChallengeMutation(match.trainerCancel(trainerActor, now))
+    return reloadDto(id)
   },
 
   // ───────────────────────────────────────────────────────────────────────
@@ -244,8 +278,10 @@ export const challengesService = {
     const stale = challengeRepo.findStaleByStatus('PROPOSED', olderThan)
     let expired = 0
     for (const c of stale) {
-      const ok = challengeRepo.transition(c.id, 'PROPOSED', 'EXPIRED', { expiredAt: now })
-      if (ok) expired++
+      const match = loadChallenge(c.id)
+      if (!(match instanceof ProposedChallenge)) continue
+      applyChallengeMutation(match.expire(now))
+      expired++
     }
     return expired
   },
@@ -256,8 +292,10 @@ export const challengesService = {
     const stale = challengeRepo.findStaleByStatus('ACCEPTED', olderThan)
     let updated = 0
     for (const c of stale) {
-      const ok = challengeRepo.transition(c.id, 'ACCEPTED', 'DISPUTED', { disputedAt: now })
-      if (ok) updated++
+      const match = loadChallenge(c.id)
+      if (!(match instanceof AcceptedChallenge)) continue
+      applyChallengeMutation(match.markStaleDisputed(now))
+      updated++
     }
     return updated
   },
