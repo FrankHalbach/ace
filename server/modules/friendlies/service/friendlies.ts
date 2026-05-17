@@ -83,6 +83,21 @@ function isParticipant(row: FriendlyRow, invitees: FriendlyInviteeRow[], memberI
   return invitees.some((i) => i.memberId === memberId)
 }
 
+function attachInvitees(rows: FriendlyRow[]): FriendlyDetailDto[] {
+  if (rows.length === 0) return []
+  const all = friendlyInviteeRepo.listByFriendlies(rows.map((r) => r.id))
+  const byFriendly = new Map<FriendlyRow['id'], FriendlyInviteeRow[]>()
+  for (const inv of all) {
+    const bucket = byFriendly.get(inv.friendlyId)
+    if (bucket) bucket.push(inv)
+    else byFriendly.set(inv.friendlyId, [inv])
+  }
+  return rows.map((row) => ({
+    ...toDto(row),
+    invitees: (byFriendly.get(row.id) ?? []).map(toInviteeDto),
+  }))
+}
+
 export const friendliesService = {
   // ───────────────────────────────────────────────────────────────────────
   // Lookup
@@ -104,19 +119,11 @@ export const friendliesService = {
   },
 
   listForMember(memberId: MemberId): FriendlyDetailDto[] {
-    const rows = friendlyRepo.listForMember(memberId)
-    return rows.map((row) => {
-      const invitees = friendlyInviteeRepo.listByFriendly(row.id)
-      return { ...toDto(row), invitees: invitees.map(toInviteeDto) }
-    })
+    return attachInvitees(friendlyRepo.listForMember(memberId))
   },
 
   listDisputed(): FriendlyDetailDto[] {
-    const rows = friendlyRepo.listByStatus('DISPUTED')
-    return rows.map((row) => {
-      const invitees = friendlyInviteeRepo.listByFriendly(row.id)
-      return { ...toDto(row), invitees: invitees.map(toInviteeDto) }
-    })
+    return attachInvitees(friendlyRepo.listByStatus('DISPUTED'))
   },
 
   // ───────────────────────────────────────────────────────────────────────

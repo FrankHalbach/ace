@@ -1,5 +1,7 @@
 import { challengesService } from '../../challenges'
+import type { ChallengeDto } from '../../challenges'
 import { friendliesService } from '../../friendlies'
+import type { FriendlyDetailDto } from '../../friendlies'
 import { profileService, type MemberDto, type MemberId } from '../../members'
 import {
   getRankingEntries,
@@ -27,8 +29,13 @@ export const suggestionsService = {
     const viewer = profileService.findById(viewerId)
     if (!viewer || viewer.status !== 'aktiv') return []
 
+    // Viewer-Historie einmalig laden. Vorher: in den Helper-Funktionen pro
+    // Kandidat erneut gefetched → O(M) redundante listForMember(viewer).
+    const viewerChallenges = challengesService.listForMember(viewerId)
+    const viewerFriendlies = friendliesService.listForMember(viewerId)
+
     const allMembers = profileService.listAll()
-    const viewerLastMatchAt = lastMatchAtForMember(viewerId, now)
+    const viewerLastMatchAt = lastMatchAt(viewerChallenges, viewerFriendlies)
     const viewerInactive =
       !viewerLastMatchAt || now.getTime() - viewerLastMatchAt.getTime() > INACTIVE_THRESHOLD_MS
 
@@ -38,15 +45,15 @@ export const suggestionsService = {
       .filter((m) => m.id !== viewerId)
       .filter((m) => m.status === 'aktiv')
       .filter((m) => Math.abs(m.dtbLk - viewer.dtbLk) <= LK_RANGE)
-      .filter((m) => !hasRecentInteraction(viewerId, m.id, cooldownSince))
+      .filter((m) => !hasRecentInteractionWith(viewerId, m.id, viewerChallenges, viewerFriendlies, cooldownSince))
 
     const scored = candidates.map((c) => {
       const lkDiff = Math.abs(c.dtbLk - viewer.dtbLk)
-      const candidateLastMatchAt = lastMatchAtForMember(c.id, now)
+      const candidateLastMatchAt = lastMatchAtForMember(c.id)
       const candidateInactive =
         !candidateLastMatchAt ||
         now.getTime() - candidateLastMatchAt.getTime() > INACTIVE_THRESHOLD_MS
-      const havePlayed = havePlayedAgainst(viewerId, c.id)
+      const havePlayed = havePlayedAgainstFromLists(viewerId, c.id, viewerChallenges, viewerFriendlies)
 
       let score = 100 - 10 * lkDiff
       if (candidateInactive) score += 50
@@ -92,14 +99,14 @@ function reasonText(reason: SuggestionReason, candidate: MemberDto, lkDiff: numb
   }
 }
 
-function lastMatchAtForMember(memberId: MemberId, _now: Date): Date | null {
+function lastMatchAt(challenges: ChallengeDto[], friendlies: FriendlyDetailDto[]): Date | null {
   let latest: Date | null = null
-  for (const c of challengesService.listForMember(memberId)) {
+  for (const c of challenges) {
     if (c.status === 'COMPLETED' && c.completedAt) {
       if (!latest || c.completedAt > latest) latest = c.completedAt
     }
   }
-  for (const f of friendliesService.listForMember(memberId)) {
+  for (const f of friendlies) {
     if (f.status === 'COMPLETED' || f.status === 'PLAYED') {
       const at = f.completedAt ?? f.playedAt
       if (at && (!latest || at > latest)) latest = at
@@ -108,12 +115,27 @@ function lastMatchAtForMember(memberId: MemberId, _now: Date): Date | null {
   return latest
 }
 
+/** Bequemlichkeit für Kandidaten-Lookup im Scoring-Loop. */
+function lastMatchAtForMember(memberId: MemberId): Date | null {
+  return lastMatchAt(
+    challengesService.listForMember(memberId),
+    friendliesService.listForMember(memberId),
+  )
+}
+
 /**
  * Hat es zwischen den beiden in den letzten 14 Tagen eine Interaktion
  * gegeben (Cooldown FR-26)? Aktive Challenges/Friendlies zählen ebenfalls.
+ * Erwartet die Listen aus Sicht von `a` als Parameter — keine eigenen Fetches.
  */
-function hasRecentInteraction(a: MemberId, b: MemberId, since: Date): boolean {
-  for (const c of challengesService.listForMember(a)) {
+function hasRecentInteractionWith(
+  a: MemberId,
+  b: MemberId,
+  challenges: ChallengeDto[],
+  friendlies: FriendlyDetailDto[],
+  since: Date,
+): boolean {
+  for (const c of challenges) {
     const other = c.challengerId === a ? c.challengedId : c.challengerId
     if (other !== b) continue
     if (c.status === 'PROPOSED' || c.status === 'ACCEPTED') return true
@@ -121,7 +143,7 @@ function hasRecentInteraction(a: MemberId, b: MemberId, since: Date): boolean {
       return true
     }
   }
-  for (const f of friendliesService.listForMember(a)) {
+  for (const f of friendlies) {
     const allParticipants = [f.initiatorId, ...f.invitees.map((i) => i.memberId)]
     if (!allParticipants.includes(b)) continue
     if (f.status === 'PROPOSED' || f.status === 'CONFIRMED') return true
@@ -135,15 +157,21 @@ function hasRecentInteraction(a: MemberId, b: MemberId, since: Date): boolean {
 
 /**
  * „Haben die beiden überhaupt schon mal gegeneinander gespielt?" — über
- * alle COMPLETED Challenges + COMPLETED/PLAYED Friendlies.
+ * alle COMPLETED Challenges + COMPLETED/PLAYED Friendlies. Liest aus den
+ * vorgeladenen Listen von `a`.
  */
-function havePlayedAgainst(a: MemberId, b: MemberId): boolean {
-  for (const c of challengesService.listForMember(a)) {
+function havePlayedAgainstFromLists(
+  a: MemberId,
+  b: MemberId,
+  challenges: ChallengeDto[],
+  friendlies: FriendlyDetailDto[],
+): boolean {
+  for (const c of challenges) {
     if (c.status !== 'COMPLETED') continue
     const other = c.challengerId === a ? c.challengedId : c.challengerId
     if (other === b) return true
   }
-  for (const f of friendliesService.listForMember(a)) {
+  for (const f of friendlies) {
     if (f.status !== 'COMPLETED' && f.status !== 'PLAYED') continue
     const allParticipants = [f.initiatorId, ...f.invitees.map((i) => i.memberId)]
     if (allParticipants.includes(b)) return true
