@@ -2,6 +2,15 @@
 import type { DropdownMenuItem } from '@nuxt/ui'
 import type { MemberDto } from '~~/server/modules/members'
 
+/**
+ * `variant = 'expanded'` rendert die Trigger-Fläche als breiten Profil-Row
+ * (Avatar + Name + Rolle + LK), passend für den Desktop-Drawer-Fuß. Default
+ * bleibt die kompakte Avatar-Pille für die Mobile-Topbar.
+ */
+const props = withDefaults(defineProps<{ variant?: 'compact' | 'expanded' }>(), {
+  variant: 'compact',
+})
+
 const { user } = useUserSession()
 const colorMode = useColorMode()
 
@@ -45,17 +54,41 @@ const themeOptions: { value: ThemePref; icon: string; label: string }[] = [
   { value: 'system', icon: 'i-lucide-monitor', label: 'System (Gerät folgen)' },
 ]
 
-// Top-level Items: "Mein Profil". Trainer-/Admin-Bereich liegen als
-// Schnellzugriffs-Karten auf der Startseite (rollen-konditional), Theme
-// und Abmelden liegen als kompakter Footer im content-bottom-Slot.
-const items = computed<DropdownMenuItem[][]>(() => [
-  [{ label: 'Mein Profil', icon: 'i-lucide-user-round', to: '/profile' }],
-])
+const isAdmin = computed(() => (profile.value?.roles ?? []).includes('admin'))
+const isStaff = computed(() => {
+  const r = profile.value?.roles ?? []
+  return r.includes('trainer') || r.includes('admin')
+})
+
+// Top-level Items: "Mein Profil" immer; Trainer-/Admin-Bereich nur in der
+// kompakten Variante (Mobile-Topbar) — auf Desktop trägt der Drawer diese
+// Einträge bereits sichtbar im "Bereich"-Block, dort wäre doppelt redundant.
+const items = computed<DropdownMenuItem[][]>(() => {
+  const sections: DropdownMenuItem[][] = []
+  sections.push([
+    { label: 'Mein Profil', icon: 'i-lucide-user-round', to: '/profile' },
+  ])
+
+  if (props.variant === 'compact') {
+    const areaItems: DropdownMenuItem[] = []
+    if (isStaff.value) {
+      areaItems.push({ label: 'Trainer-Bereich', icon: 'i-lucide-clipboard-list', to: '/trainer' })
+    }
+    if (isAdmin.value) {
+      areaItems.push({ label: 'Admin-Bereich', icon: 'i-lucide-shield', to: '/admin' })
+    }
+    if (areaItems.length > 0) sections.push(areaItems)
+  }
+
+  return sections
+})
 </script>
 
 <template>
   <UDropdownMenu :items="items" :ui="{ content: 'w-64' }">
+    <!-- Compact-Trigger (Mobile-Topbar): Avatar + Chevron als Pill. -->
     <UButton
+      v-if="variant === 'compact'"
       variant="ghost"
       color="neutral"
       class="rounded-full !p-0.5 !pr-2 gap-1.5 hover:bg-elevated focus-visible:ring-2 focus-visible:ring-primary/40"
@@ -69,11 +102,53 @@ const items = computed<DropdownMenuItem[][]>(() => [
       />
     </UButton>
 
-    <!-- Header: nur im Haupt-Menü, NICHT in Sub-Menüs (Nuxt UI proxiert
-         content-slots in alle Children-Dropdowns — daher das v-if). -->
+    <!-- Expanded-Trigger (Desktop-Drawer-Fuß): voller Profil-Row. -->
+    <UButton
+      v-else
+      variant="ghost"
+      color="neutral"
+      class="w-full !justify-start !p-2 !pr-3 gap-3 !rounded-lg hover:!bg-elevated/60 focus-visible:ring-2 focus-visible:ring-primary/40"
+      :aria-label="`Menü für ${displayName}`"
+    >
+      <UAvatar :alt="displayName" :text="initials" size="md" class="shrink-0" />
+      <div class="min-w-0 flex-1 text-left">
+        <div class="font-semibold text-sm truncate leading-tight">
+          {{ displayName }}
+        </div>
+        <div class="flex items-center gap-1.5 mt-1 min-w-0">
+          <span
+            v-if="primaryRole"
+            class="mono text-[10px] font-semibold tracking-[0.14em] uppercase text-muted leading-none"
+          >
+            {{ primaryRole }}
+          </span>
+          <span
+            v-if="primaryRole && profile"
+            class="inline-block size-1 rounded-full bg-[color:var(--rule)] shrink-0"
+            aria-hidden="true"
+          />
+          <span
+            v-if="profile"
+            class="mono text-[11px] font-medium tabular-nums text-primary leading-none"
+          >
+            LK {{ profile.dtbLk.toFixed(1) }}
+          </span>
+        </div>
+      </div>
+      <UIcon
+        name="i-lucide-chevron-down"
+        class="size-3.5 text-muted shrink-0"
+        aria-hidden="true"
+      />
+    </UButton>
+
+    <!-- Header im Dropdown-Content: nur in der compact-Variante zeigen —
+         expanded hat das Profil schon im Trigger und doppelt nicht. Außerdem
+         nicht in Sub-Menüs (Nuxt UI proxiert content-slots in Children-
+         Dropdowns; daher das `!sub`-Gate). -->
     <template #content-top="{ sub }">
       <div
-        v-if="profile && !sub"
+        v-if="profile && !sub && variant === 'compact'"
         class="flex items-center gap-3 px-2 py-2.5 mb-1 border-b border-default"
       >
         <UAvatar :alt="displayName" :text="initials" size="md" />

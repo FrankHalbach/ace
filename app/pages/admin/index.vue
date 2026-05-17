@@ -1,6 +1,5 @@
 <script setup lang="ts">
 definePageMeta({
-  layout: 'admin',
   middleware: 'admin',
 })
 
@@ -8,7 +7,7 @@ useHead({ title: 'Admin' })
 </script>
 
 <template>
-  <div>
+  <UContainer class="py-10 max-w-3xl md:py-14">
     <h1 class="text-2xl font-semibold mb-2">Admin</h1>
     <p class="text-muted mb-8">
       Verwalte Saisons, Mitglieder und Plattform-Konfiguration.
@@ -33,5 +32,5 @@ useHead({ title: 'Admin' })
         <div class="text-sm text-muted">folgt mit dem admin-Feature</div>
       </div>
     </div>
-  </div>
+  </UContainer>
 </template>
