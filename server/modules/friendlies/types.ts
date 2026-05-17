@@ -62,9 +62,11 @@ export const createFriendlyInput = z
   )
 export type CreateFriendlyInput = z.infer<typeof createFriendlyInput>
 
+// Lockere Plausi — die strikte Modus-Validation passiert in
+// `validateSetsForMode`. Match-TB-Werte können > 20 sein.
 const setScoreSchema = z.object({
-  a: z.number().int().min(0).max(20),
-  b: z.number().int().min(0).max(20),
+  a: z.number().int().min(0).max(30),
+  b: z.number().int().min(0).max(30),
 })
 
 export const reportFriendlyResultInput = z.object({

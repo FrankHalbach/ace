@@ -317,9 +317,9 @@ async function markPlayed() {
               <span class="text-sm text-muted w-28">
                 {{ isMatchTiebreakSet(i) ? 'Match-TB' : `Satz ${i + 1}` }}
               </span>
-              <UInputNumber v-model="set.a" :min="0" :max="isMatchTiebreakSet(i) ? 25 : 7" class="w-24" />
+              <UInputNumber v-model="set.a" :min="0" :max="isMatchTiebreakSet(i) ? 30 : 7" class="w-24" />
               <span class="text-dimmed">:</span>
-              <UInputNumber v-model="set.b" :min="0" :max="isMatchTiebreakSet(i) ? 25 : 7" class="w-24" />
+              <UInputNumber v-model="set.b" :min="0" :max="isMatchTiebreakSet(i) ? 30 : 7" class="w-24" />
               <UButton
                 v-if="sets.length > 1"
                 icon="i-lucide-x"
