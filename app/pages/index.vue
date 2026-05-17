@@ -21,7 +21,16 @@ const { data: suggestions, refresh: refreshSuggestions } = await useFetch<Sugges
 // Cache dedupliziert auf dem useFetch-Key. memberName wird hier mit-
 // exportiert, damit wir nicht erneut useMemberLookup awaiten müssen (jeder
 // User-Composable-Await danach würde den Nuxt-Context verlieren).
-const { challenges, friendlies, scheduledItems, memberName } = await useTermine()
+// nextMatch + upcomingRest brauchen wir auch hier — der Layout-Rail zeigt
+// Termine nur ab xl, drunter rendert die Home-Page sie selbst inline.
+const {
+  challenges,
+  friendlies,
+  scheduledItems,
+  nextMatch,
+  upcomingRest,
+  memberName,
+} = await useTermine()
 
 useHead({ title: 'Start' })
 
@@ -276,6 +285,14 @@ const heroSub = computed(() => {
         <p class="text-xs text-muted truncate mt-2.5">letzte 4 Wo</p>
       </div>
     </section>
+
+    <!-- TERMINE inline für Mobile (< xl) — ab xl rendert der Layout-Right-
+         Rail dieselben Sections, also hier ausblenden um Doppelung zu
+         vermeiden. Damit sehen Mobile-User trotzdem "was als nächstes
+         läuft", auch wenn der Rail nicht sichtbar ist. -->
+    <div v-if="nextMatch || upcomingRest.length > 0" class="anim anim-3 xl:hidden mb-14 md:mb-16">
+      <TermineSections :next-match="nextMatch" :upcoming-rest="upcomingRest" />
+    </div>
 
     <!-- OFFEN — actions waiting on me. Eingehende Items kriegen den
          Tennis-Ball-Gelb-"Neu"-Punkt; "Ergebnis melden" nicht. -->
