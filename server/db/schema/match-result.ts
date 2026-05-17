@@ -30,7 +30,7 @@ export const matchResult = sqliteTable(
   'match_result',
   {
     id: integer('id').primaryKey({ autoIncrement: true }).$type<MatchResultId>(),
-    challengeId: integer('challenge_id')
+    challengeId: text('challenge_id')
       .notNull()
       .references(() => challenge.id, { onDelete: 'cascade' })
       .$type<ChallengeId>(),
