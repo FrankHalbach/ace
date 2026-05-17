@@ -46,7 +46,7 @@ async function accept() {
     toast.add({ title: 'Forderung angenommen', color: 'primary' })
     await refresh()
   } catch (err: unknown) {
-    toast.add({ title: 'Fehler', description: (err as { statusMessage?: string }).statusMessage ?? '', color: 'error' })
+    toast.add({ title: 'Fehler', description: apiError(err), color: 'error' })
   } finally {
     submitting.value = false
   }
@@ -63,7 +63,7 @@ async function decline() {
     showDecline.value = false
     await refresh()
   } catch (err: unknown) {
-    toast.add({ title: 'Fehler', description: (err as { statusMessage?: string }).statusMessage ?? '', color: 'error' })
+    toast.add({ title: 'Fehler', description: apiError(err), color: 'error' })
   } finally {
     submitting.value = false
   }
@@ -150,7 +150,7 @@ async function reportResult() {
     await refresh()
     await refreshResult()
   } catch (err: unknown) {
-    toast.add({ title: 'Fehler', description: (err as { statusMessage?: string }).statusMessage ?? '', color: 'error' })
+    toast.add({ title: 'Fehler', description: apiError(err), color: 'error' })
   } finally {
     submitting.value = false
   }
@@ -166,7 +166,7 @@ async function confirmResult() {
     await refresh()
     await refreshResult()
   } catch (err: unknown) {
-    toast.add({ title: 'Fehler', description: (err as { statusMessage?: string }).statusMessage ?? '', color: 'error' })
+    toast.add({ title: 'Fehler', description: apiError(err), color: 'error' })
   } finally {
     submitting.value = false
   }
@@ -187,7 +187,7 @@ async function disputeResult() {
     await refresh()
     await refreshResult()
   } catch (err: unknown) {
-    toast.add({ title: 'Fehler', description: (err as { statusMessage?: string }).statusMessage ?? '', color: 'error' })
+    toast.add({ title: 'Fehler', description: apiError(err), color: 'error' })
   } finally {
     submitting.value = false
   }

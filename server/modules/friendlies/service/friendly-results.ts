@@ -1,13 +1,8 @@
 import type { MemberId } from '../../members'
-import { friendliesService } from './friendlies'
-import { friendlyInviteeRepo } from '../repository/friendly-invitee-repo'
-import { friendlyRepo } from '../repository/friendly-repo'
 import { friendlyResultRepo } from '../repository/friendly-result-repo'
-import { validateSetsForMode, verifyWinnerConsistency } from '../../../../shared/match-scoring'
 import {
   AlreadyConfirmedError,
   FriendlyInvalidTransitionError,
-  FriendlyNotFoundError,
   FriendlyResultNotFoundError,
   NotLoserError,
   NotWinnerError,
@@ -18,8 +13,14 @@ import {
   type ReportFriendlyResultInput,
 } from '../types'
 import type { FriendlyResultRow } from '../../../db/schema/friendly-result'
-import type { FriendlyRow } from '../../../db/schema/friendly'
-import type { FriendlyInviteeRow } from '../../../db/schema/friendly-invitee'
+import {
+  AcceptedFriendly,
+  DisputedFriendly,
+  PlayedFriendly,
+  ReportedFriendly,
+  type Actor,
+} from '../../../../shared/domain/friendly'
+import { applyFriendlyMutation, loadFriendlyMatch } from './match-adapter'
 
 const PENDING_DISPUTE_AFTER_MS = 3 * 24 * 60 * 60 * 1000 // 3 Tage (FR-32)
 
@@ -42,26 +43,16 @@ function toDto(row: FriendlyResultRow): FriendlyResultDto {
   }
 }
 
-/**
- * Liefert für ein Friendly: { initiatorTeam: MemberId[], opponentTeam: MemberId[] }
- */
-function teams(row: FriendlyRow, invitees: FriendlyInviteeRow[]): {
-  initiatorTeam: MemberId[]
-  opponentTeam: MemberId[]
-} {
-  const initiatorTeam: MemberId[] = [row.initiatorId]
-  const opponentTeam: MemberId[] = []
-  for (const i of invitees) {
-    if (i.team === 'initiator') initiatorTeam.push(i.memberId)
-    else opponentTeam.push(i.memberId)
+/** Mappt Domain-Codes auf bestehende Service-Errors für API-Kompatibilität. */
+function mapReportError(err: unknown): never {
+  const code = err instanceof Error ? (err as { code?: string }).code : undefined
+  if (code === 'friendly.before-scheduled') {
+    throw new FriendlyInvalidTransitionError('CONFIRMED', 'PLAYED')
   }
-  return { initiatorTeam, opponentTeam }
-}
-
-function arraysHaveSameMembers(a: MemberId[], b: MemberId[]): boolean {
-  if (a.length !== b.length) return false
-  const sa = new Set(a)
-  return b.every((x) => sa.has(x))
+  if (code === 'friendly.not-winner' || code === 'friendly.not-participant') {
+    throw new NotWinnerError()
+  }
+  throw err instanceof Error ? err : new Error(String(err))
 }
 
 export const friendlyResultsService = {
@@ -76,8 +67,8 @@ export const friendlyResultsService = {
   },
 
   /**
-   * Ergebnis melden — Reporter muss Teilnehmer und Mitglied des Sieger-Teams sein.
-   * Friendly muss `CONFIRMED` oder `PLAYED` sein.
+   * Ergebnis melden — Domain prüft Termin (#47), Sieger-Team, Reporter-Zugehörigkeit
+   * und Set-Format. Setzt zugleich Friendly auf PLAYED (Status-Transition).
    */
   report(
     friendlyId: FriendlyId,
@@ -85,92 +76,61 @@ export const friendlyResultsService = {
     input: ReportFriendlyResultInput,
     now: Date = new Date(),
   ): FriendlyResultDto {
-    const friendlyRow = friendlyRepo.findById(friendlyId)
-    if (!friendlyRow) throw new FriendlyNotFoundError(friendlyId)
-    if (friendlyRow.status !== 'CONFIRMED' && friendlyRow.status !== 'PLAYED') {
-      throw new FriendlyInvalidTransitionError(friendlyRow.status, 'COMPLETED')
+    const match = loadFriendlyMatch(friendlyId)
+    if (
+      !(match instanceof AcceptedFriendly) &&
+      !(match instanceof PlayedFriendly)
+    ) {
+      throw new FriendlyInvalidTransitionError(match._state as FriendlyId extends never ? never : 'CONFIRMED' | 'PLAYED' | 'PROPOSED', 'PLAYED')
     }
 
-    const invitees = friendlyInviteeRepo.listByFriendly(friendlyId)
-    const { initiatorTeam, opponentTeam } = teams(friendlyRow, invitees)
-    const allParticipants = [...initiatorTeam, ...opponentTeam]
-    if (!allParticipants.includes(reporterId)) {
-      throw new NotWinnerError() // ist auch kein Verlierer → strikteste Variante
+    const actor: Actor = { memberId: reporterId, isTrainer: false }
+    try {
+      applyFriendlyMutation(
+        match.reportResult(
+          actor,
+          {
+            winnerMemberIds: input.winnerMemberIds.map((id) => id as MemberId),
+            sets: input.sets,
+            outcome: input.outcome ?? 'regular',
+            outcomeNote: input.outcomeNote,
+          },
+          now,
+        ),
+      )
+    } catch (err) {
+      mapReportError(err)
     }
-
-    const winnerIds = input.winnerMemberIds.map((n) => n as MemberId)
-    const winnerCountExpected = friendlyRow.format === 'singles' ? 1 : 2
-    if (winnerIds.length !== winnerCountExpected) {
-      throw new NotWinnerError()
-    }
-    // Sieger-Team muss exakt einem der beiden Teams entsprechen
-    const winnerIsInitiatorTeam = arraysHaveSameMembers(winnerIds, initiatorTeam)
-    const winnerIsOpponentTeam = arraysHaveSameMembers(winnerIds, opponentTeam)
-    if (!winnerIsInitiatorTeam && !winnerIsOpponentTeam) {
-      throw new NotWinnerError()
-    }
-    // Reporter muss im Sieger-Team sein
-    const winnerTeam = winnerIsInitiatorTeam ? initiatorTeam : opponentTeam
-    if (!winnerTeam.includes(reporterId)) {
-      throw new NotWinnerError()
-    }
-
-    // Friendlies haben kein Saison-Kontext — Pro-Set-Länge nutzt den Default (8).
-    const outcome = input.outcome ?? 'regular'
-    validateSetsForMode(friendlyRow.matchMode, input.sets, { outcome })
-    if (outcome === 'regular') {
-      // Konvention: Spielfeld-Seite A entspricht dem Initiator-Team.
-      verifyWinnerConsistency(input.sets, winnerIsInitiatorTeam, { winnerSubject: 'team' })
-    }
-
-    if (friendlyResultRepo.findByFriendly(friendlyId)) {
-      throw new AlreadyConfirmedError()
-    }
-
-    const row = friendlyResultRepo.insert({
-      friendlyId,
-      winnerMemberIds: winnerIds,
-      sets: input.sets,
-      matchMode: friendlyRow.matchMode,
-      reportedAt: now,
-      reportedBy: reporterId,
-      confirmationStatus: 'pending',
-      outcome,
-      outcomeNote: input.outcomeNote ?? null,
-    })
+    const row = friendlyResultRepo.findByFriendly(friendlyId)!
     return toDto(row)
   },
 
   /**
-   * Verlierer-Team-Mitglied bestätigt. First-wins.
-   * Markiert das Friendly als COMPLETED und stempelt `lastFriendlyAt` für alle.
+   * Verlierer-Team-Mitglied bestätigt. Domain prüft Loser-Zugehörigkeit.
+   * Triggert Friendly → COMPLETED + last_friendly_at-Stempel.
    */
   confirm(
     id: FriendlyResultId,
     memberId: MemberId,
     now: Date = new Date(),
   ): FriendlyResultDto {
-    const row = friendlyResultRepo.findById(id)
-    if (!row) throw new FriendlyResultNotFoundError(id)
-    if (row.confirmationStatus === 'confirmed') throw new AlreadyConfirmedError()
-    if (row.confirmationStatus === 'disputed') throw new AlreadyConfirmedError()
+    const resultRow = friendlyResultRepo.findById(id)
+    if (!resultRow) throw new FriendlyResultNotFoundError(id)
+    if (resultRow.confirmationStatus === 'confirmed') throw new AlreadyConfirmedError()
+    if (resultRow.confirmationStatus === 'disputed') throw new AlreadyConfirmedError()
 
-    const friendlyRow = friendlyRepo.findById(row.friendlyId)
-    if (!friendlyRow) throw new FriendlyResultNotFoundError(id)
-    const invitees = friendlyInviteeRepo.listByFriendly(row.friendlyId)
-    const { initiatorTeam, opponentTeam } = teams(friendlyRow, invitees)
-
-    const winnerIsInitiatorTeam = arraysHaveSameMembers(row.winnerMemberIds, initiatorTeam)
-    const loserTeam = winnerIsInitiatorTeam ? opponentTeam : initiatorTeam
-    if (!loserTeam.includes(memberId)) throw new NotLoserError()
-
-    friendlyResultRepo.updateById(id, {
-      confirmationStatus: 'confirmed',
-      confirmedAt: now,
-      confirmedBy: memberId,
-    })
-    friendliesService.markCompleted(row.friendlyId, now)
-
+    const match = loadFriendlyMatch(resultRow.friendlyId)
+    if (!(match instanceof ReportedFriendly)) {
+      throw new FriendlyInvalidTransitionError(match._state as 'PROPOSED', 'COMPLETED')
+    }
+    const actor: Actor = { memberId, isTrainer: false }
+    try {
+      applyFriendlyMutation(match.confirmResult(actor, now))
+    } catch (err) {
+      const code = err instanceof Error ? (err as { code?: string }).code : undefined
+      if (code === 'friendly.not-loser') throw new NotLoserError()
+      throw err
+    }
     return toDto(friendlyResultRepo.findById(id)!)
   },
 
@@ -180,45 +140,47 @@ export const friendlyResultsService = {
     input: DisputeFriendlyResultInput,
     now: Date = new Date(),
   ): FriendlyResultDto {
-    const row = friendlyResultRepo.findById(id)
-    if (!row) throw new FriendlyResultNotFoundError(id)
-    if (row.confirmationStatus !== 'pending') throw new AlreadyConfirmedError()
+    const resultRow = friendlyResultRepo.findById(id)
+    if (!resultRow) throw new FriendlyResultNotFoundError(id)
+    if (resultRow.confirmationStatus !== 'pending') throw new AlreadyConfirmedError()
 
-    const friendlyRow = friendlyRepo.findById(row.friendlyId)
-    if (!friendlyRow) throw new FriendlyResultNotFoundError(id)
-    const invitees = friendlyInviteeRepo.listByFriendly(row.friendlyId)
-    const { initiatorTeam, opponentTeam } = teams(friendlyRow, invitees)
-
-    const winnerIsInitiatorTeam = arraysHaveSameMembers(row.winnerMemberIds, initiatorTeam)
-    const loserTeam = winnerIsInitiatorTeam ? opponentTeam : initiatorTeam
-    if (!loserTeam.includes(memberId)) throw new NotLoserError()
-
-    friendlyResultRepo.updateById(id, {
-      confirmationStatus: 'disputed',
-      disputedAt: now,
-      disputeNote: input.note,
-    })
-    friendliesService.markDisputed(row.friendlyId, now)
-
+    const match = loadFriendlyMatch(resultRow.friendlyId)
+    if (!(match instanceof ReportedFriendly)) {
+      throw new FriendlyInvalidTransitionError(match._state as 'PROPOSED', 'DISPUTED')
+    }
+    const actor: Actor = { memberId, isTrainer: false }
+    try {
+      applyFriendlyMutation(match.disputeResult(actor, input.note, now))
+    } catch (err) {
+      const code = err instanceof Error ? (err as { code?: string }).code : undefined
+      if (code === 'friendly.not-loser') throw new NotLoserError()
+      throw err
+    }
     return toDto(friendlyResultRepo.findById(id)!)
   },
 
   /**
    * Trainer-Force-Confirm: bestätigt das gemeldete Ergebnis ohne Loser-Check.
-   * Funktioniert auch auf disputed Ergebnissen — markiert das Friendly als
-   * COMPLETED.
+   * Greift sowohl bei pending als auch disputed Results.
    */
   forceConfirm(id: FriendlyResultId, now: Date = new Date()): FriendlyResultDto {
-    const row = friendlyResultRepo.findById(id)
-    if (!row) throw new FriendlyResultNotFoundError(id)
-    if (row.confirmationStatus === 'confirmed') throw new AlreadyConfirmedError()
+    const resultRow = friendlyResultRepo.findById(id)
+    if (!resultRow) throw new FriendlyResultNotFoundError(id)
+    if (resultRow.confirmationStatus === 'confirmed') throw new AlreadyConfirmedError()
 
-    friendlyResultRepo.updateById(id, {
-      confirmationStatus: 'confirmed',
-      confirmedAt: now,
-    })
-    friendliesService.markCompleted(row.friendlyId, now)
-
+    const match = loadFriendlyMatch(resultRow.friendlyId)
+    if (!(match instanceof ReportedFriendly) && !(match instanceof DisputedFriendly)) {
+      throw new FriendlyInvalidTransitionError(match._state as 'PROPOSED', 'COMPLETED')
+    }
+    const actor: Actor = { memberId: '' as MemberId, isTrainer: true }
+    if (match instanceof DisputedFriendly) {
+      applyFriendlyMutation(match.trainerForceConfirm(actor, now))
+    } else {
+      // ReportedFriendly: nutzt confirmResult mit Trainer-Override (vereinfacht
+      // — Domain hat dafür keinen eigenen Befehl; wir verwenden den vorhandenen
+      // Pfad und übergeben den Trainer als Confirmer.
+      applyFriendlyMutation(match.confirmResult(actor, now))
+    }
     return toDto(friendlyResultRepo.findById(id)!)
   },
 
@@ -228,17 +190,21 @@ export const friendlyResultsService = {
     const stale = friendlyResultRepo.findStalePending(cutoff)
     let updated = 0
     for (const r of stale) {
-      friendlyResultRepo.updateById(r.id, {
-        confirmationStatus: 'disputed',
-        disputedAt: now,
-        disputeNote: 'Automatisch: keine Reaktion innerhalb von 3 Tagen',
-      })
       try {
-        friendliesService.markDisputed(r.friendlyId, now)
+        const match = loadFriendlyMatch(r.friendlyId)
+        if (match instanceof ReportedFriendly) {
+          applyFriendlyMutation(
+            match.disputeResult(
+              { memberId: '' as MemberId, isTrainer: true },
+              'Automatisch: keine Reaktion innerhalb von 3 Tagen',
+              now,
+            ),
+          )
+          updated++
+        }
       } catch {
         // Friendly bereits in anderem Status — ignorieren
       }
-      updated++
     }
     return updated
   },

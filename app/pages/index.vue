@@ -56,7 +56,7 @@ async function sendChallenge(s: SuggestionDto) {
   } catch (err: unknown) {
     toast.add({
       title: 'Forderung fehlgeschlagen',
-      description: (err as { statusMessage?: string }).statusMessage ?? '',
+      description: apiError(err),
       color: 'error',
     })
   } finally {

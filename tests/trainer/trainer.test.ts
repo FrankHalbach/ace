@@ -47,7 +47,7 @@ function setupSeasonWithMembers(): { memberIds: MemberId[]; rankingId: RankingId
   return { memberIds, rankingId: herren.id as RankingId }
 }
 
-const tomorrow = () => new Date(Date.now() + 24 * 60 * 60 * 1000)
+const tomorrow = () => new Date(Date.now() - 30 * 60 * 1000)
 
 describe('Trainer disputes — Liste', () => {
   it('Liste enthält disputed Challenges und Friendlies, sortiert nach disputedAt absteigend', () => {

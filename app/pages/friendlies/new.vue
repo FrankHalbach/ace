@@ -114,11 +114,7 @@ async function submit() {
     toast.add({ title: 'Eingeladen — Eingeladene erhalten eine E-Mail', color: 'primary' })
     await router.push(`/friendlies/${created.id}`)
   } catch (err: unknown) {
-    toast.add({
-      title: 'Fehler',
-      description: (err as { statusMessage?: string }).statusMessage ?? 'Unbekannter Fehler',
-      color: 'error',
-    })
+    toast.add({ title: 'Fehler', description: apiError(err), color: 'error' })
   } finally {
     submitting.value = false
   }

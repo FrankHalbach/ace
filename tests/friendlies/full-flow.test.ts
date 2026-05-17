@@ -31,7 +31,10 @@ function insertMembers(n: number): MemberId[] {
   return ids
 }
 
-const tomorrow = () => new Date(Date.now() + 24 * 60 * 60 * 1000)
+// Test-Termin: 30 Minuten in der Vergangenheit. Liegt innerhalb der
+// 1h-Toleranz von friendliesService.create und erlaubt direkten Result-
+// Report (validateSetsForMode/AcceptedFriendly braucht now >= scheduledAt).
+const tomorrow = () => new Date(Date.now() - 30 * 60 * 1000)
 
 describe('Friendly-Validierung', () => {
   it('verbietet Selbst-Einladung', () => {
@@ -340,13 +343,20 @@ describe('Dispute-Flow', () => {
 
   it('Auto-Dispute schlägt nach 3 Tagen zu', () => {
     const [a, b] = insertMembers(2)
-    const f = friendliesService.create(a, {
-      format: 'singles',
-      scheduledAt: tomorrow(),
-      opponentIds: [b],
-      matchMode: 'best-of-3-champions',
-    })
-    friendliesService.accept(f.id, b)
+    // Back-date scheduledAt + create-now, damit der spätere report mit
+    // old=4d ago semantisch nach dem Termin liegt (#47-Fix).
+    const longAgo = new Date(Date.now() - 5 * 24 * 60 * 60 * 1000)
+    const f = friendliesService.create(
+      a,
+      {
+        format: 'singles',
+        scheduledAt: longAgo,
+        opponentIds: [b],
+        matchMode: 'best-of-3-champions',
+      },
+      longAgo,
+    )
+    friendliesService.accept(f.id, b, longAgo)
     const old = new Date(Date.now() - 4 * 24 * 60 * 60 * 1000)
     const r = friendlyResultsService.report(
       f.id,
@@ -380,5 +390,84 @@ describe('Friendly-Listing für Mitglied', () => {
     })
     const list = friendliesService.listForMember(b)
     expect(list).toHaveLength(2)
+  })
+})
+
+// ─── Integration-Tests für die Domain-Bug-Fixes ──────────────────────────────
+
+describe('Domain-Modell: Bug-Fixes #47 (Result vor Termin)', () => {
+  it('Result-Report VOR scheduledAt wird abgelehnt', () => {
+    const [a, b] = insertMembers(2)
+    // Termin liegt 30 min in der Vergangenheit (tomorrow()), wir nehmen aber
+    // einen now-Wert 2h davor → schon vor scheduledAt
+    const past = new Date(Date.now() - 30 * 60 * 1000) // = tomorrow() = scheduledAt
+    const f = friendliesService.create(a, {
+      format: 'singles',
+      scheduledAt: past,
+      opponentIds: [b],
+      matchMode: 'best-of-3-champions',
+    })
+    friendliesService.accept(f.id, b)
+
+    // Versuche Report mit now = 1h VOR scheduledAt
+    const beforeMatch = new Date(past.getTime() - 60 * 60 * 1000)
+    expect(() =>
+      friendlyResultsService.report(
+        f.id,
+        a,
+        { winnerMemberIds: [a], sets: [{ a: 6, b: 4 }, { a: 6, b: 2 }] },
+        beforeMatch,
+      ),
+    ).toThrow()
+  })
+
+  it('Result-Report transitioniert Friendly auf PLAYED', () => {
+    const [a, b] = insertMembers(2)
+    const f = friendliesService.create(a, {
+      format: 'singles',
+      scheduledAt: tomorrow(),
+      opponentIds: [b],
+      matchMode: 'best-of-3-champions',
+    })
+    friendliesService.accept(f.id, b)
+    friendlyResultsService.report(f.id, a, {
+      winnerMemberIds: [a],
+      sets: [{ a: 6, b: 4 }, { a: 6, b: 2 }],
+    })
+    // Friendly sollte jetzt PLAYED sein, nicht mehr CONFIRMED.
+    const f2 = friendliesService.findById(f.id)
+    expect(f2?.status).toBe('PLAYED')
+  })
+})
+
+describe('Domain-Modell: Bug-Fixes #48 (Cancel nach Result-Report)', () => {
+  it('Cancel nach Report wird abgelehnt', () => {
+    const [a, b] = insertMembers(2)
+    const f = friendliesService.create(a, {
+      format: 'singles',
+      scheduledAt: tomorrow(),
+      opponentIds: [b],
+      matchMode: 'best-of-3-champions',
+    })
+    friendliesService.accept(f.id, b)
+    friendlyResultsService.report(f.id, a, {
+      winnerMemberIds: [a],
+      sets: [{ a: 6, b: 4 }, { a: 6, b: 2 }],
+    })
+    // Initiator versucht jetzt zu cancellen — soll fehlschlagen
+    expect(() => friendliesService.cancel(f.id, a)).toThrow()
+  })
+
+  it('Cancel vor Report ist weiter erlaubt (PROPOSED)', () => {
+    const [a, b] = insertMembers(2)
+    const f = friendliesService.create(a, {
+      format: 'singles',
+      scheduledAt: tomorrow(),
+      opponentIds: [b],
+      matchMode: 'best-of-3-champions',
+    })
+    // Noch kein Accept, noch kein Result → Cancel geht
+    const result = friendliesService.cancel(f.id, a)
+    expect(result.status).toBe('CANCELLED')
   })
 })

@@ -85,6 +85,11 @@ function formatDate(d: Date | string): string {
 
 const submitting = ref(false)
 
+/** Liegt der geplante Termin in der Zukunft? — Result-Reporting blockt davor. */
+const isInFuture = computed(
+  () => friendly.value !== null && friendly.value !== undefined && new Date(friendly.value.scheduledAt).getTime() > Date.now(),
+)
+
 async function callAction(path: string, body?: Record<string, unknown>): Promise<boolean> {
   submitting.value = true
   try {
@@ -93,11 +98,7 @@ async function callAction(path: string, body?: Record<string, unknown>): Promise
     await refreshResult()
     return true
   } catch (err: unknown) {
-    toast.add({
-      title: 'Fehler',
-      description: (err as { statusMessage?: string }).statusMessage ?? 'Unbekannter Fehler',
-      color: 'error',
-    })
+    toast.add({ title: 'Fehler', description: apiError(err), color: 'error' })
     return false
   } finally {
     submitting.value = false
@@ -295,7 +296,11 @@ async function markPlayed() {
     <!-- CONFIRMED: Ergebnis melden oder „nur gespielt" -->
     <UCard v-if="(friendly.status === 'CONFIRMED' || friendly.status === 'PLAYED') && !result" class="mb-6">
       <h2 class="font-semibold mb-3">Nach dem Match</h2>
-      <div v-if="!showReport" class="flex flex-wrap gap-2">
+      <p v-if="isInFuture" class="text-sm text-muted italic">
+        Match liegt in der Zukunft — Result-Eintrag erst nach dem Termin
+        ({{ formatDate(friendly.scheduledAt) }}).
+      </p>
+      <div v-else-if="!showReport" class="flex flex-wrap gap-2">
         <UButton color="primary" @click="showReport = true">Ergebnis eintragen</UButton>
         <UButton
           v-if="friendly.status === 'CONFIRMED'"
