@@ -1,4 +1,4 @@
-import { and, eq } from 'drizzle-orm'
+import { and, eq, inArray } from 'drizzle-orm'
 import { useDb } from '../../../db'
 import {
   friendlyInvitee,
@@ -19,6 +19,15 @@ export const friendlyInviteeRepo = {
       .select()
       .from(friendlyInvitee)
       .where(eq(friendlyInvitee.friendlyId, friendlyId))
+      .all()
+  },
+
+  listByFriendlies(friendlyIds: FriendlyId[]): FriendlyInviteeRow[] {
+    if (friendlyIds.length === 0) return []
+    return useDb()
+      .select()
+      .from(friendlyInvitee)
+      .where(inArray(friendlyInvitee.friendlyId, friendlyIds))
       .all()
   },
 
