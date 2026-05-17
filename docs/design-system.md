@@ -75,6 +75,40 @@ Hue).
 | `danger`           | `#a13c2a` | Ablehnung, Walk-over-Niederlage, Fehler          |
 | `neutral`          | `#8b8a82` | Pausiert, Abgelaufen, Archiviert                 |
 
+### 2.5 Dark Mode
+
+Dark Mode ist ab v1 vollwertig unterstützt. Nuxt color-mode setzt `class="dark"`
+aufs `<html>`, der `.dark { }`-Block in [`tokens.css`](../app/assets/css/tokens.css)
+spiegelt die Light-Palette und hebt sie für Lesbarkeit an. Editoriale Wärme
+bleibt erhalten — der BG hat Olivenote (`#14130f`), nicht Pure-Black; Ink ist
+Cream (`#ecebe2`), nicht Pure-White.
+
+| Token              | Light       | Dark        | Notiz                              |
+|--------------------|-------------|-------------|------------------------------------|
+| `primary`          | `#2d5841`   | `#6ba17f`   | tennis-green lifted für Kontrast   |
+| `primary-soft`     | `#e8efe8`   | `#1d2a23`   | deep green tint statt cream tint   |
+| `primary-strong`   | `#1f3e2d`   | `#82b894`   | hover = noch heller in Dark        |
+| `accent`           | `#b85c38`   | `#d77954`   | court-clay lifted                  |
+| `accent-soft`      | `#f5e6dd`   | `#3a221a`   | deep clay tint                     |
+| `tennis-ball`      | `#dceb6b`   | `#c5d65a`   | leicht desaturiert (weniger burn)  |
+| `bg`               | `#fafaf7`   | `#14130f`   | warm dark mit Olivenote            |
+| `bg-soft`          | `#f3f1e9`   | `#1c1b16`   | drawer, list rails                 |
+| `surface`          | `#ffffff`   | `#1f1e19`   | cards, inputs                      |
+| `rule`             | `#e0dcd0`   | `#2d2c25`   | hairlines                          |
+| `ink`              | `#1a1a1a`   | `#ecebe2`   | warm cream foreground              |
+| `ink-muted`        | `#5a5a55`   | `#a8a59a`   |                                    |
+| `ink-soft`         | `#8b8a82`   | `#7a7770`   |                                    |
+| `on-primary`       | `#fafaf7`   | `#14130f`   | **reversed-contrast** auf Buttons  |
+| `on-accent`        | `#fafaf7`   | `#14130f`   | **reversed-contrast** auf Buttons  |
+
+Status-Farben (`success`, `info`, `warning`, `danger`, `neutral`) sind analog
+gehoben. Soft-Varianten der Status-Pills nutzen in Dark dunkle Tints statt
+heller Pastelle.
+
+**Reversed-Contrast auf Primary/Accent-Buttons**: weil das gelifftete Grün/Orange
+hell ist, kommt dunkler Text drauf (`#14130f`) — sieht aus wie „Ink auf
+hellem Hintergrund", nur im Inverse zur Light-Logik.
+
 ## 3. Status-Mapping für Challenge- und Match-States
 
 Die Domäne hat klar definierte Zustände (siehe Spec § 6). Diese Tabelle ist
@@ -210,7 +244,5 @@ als Palette mit 50–950-Skala definiert und mit den Tokens oben verknüpft.
 
 - Icon-Set (entscheiden, sobald wir erste Screens designen — Heroicons oder
   Lucide sind die heißesten Kandidaten)
-- Dark Mode (out of Scope für v1, aber Tokens sind so benannt, dass eine
-  spätere Dark-Variante möglich ist)
 - Animations-Sprache (kommt mit der ersten interaktiven Komponente)
 - Illustrations / Empty-States (entstehen organisch)
