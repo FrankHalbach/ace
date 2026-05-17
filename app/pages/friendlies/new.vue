@@ -107,7 +107,7 @@ async function submit() {
       : {}),
   }
   try {
-    const created = await $fetch<{ id: number }>('/api/friendlies', {
+    const created = await $fetch<{ id: string }>('/api/friendlies', {
       method: 'POST',
       body,
     })

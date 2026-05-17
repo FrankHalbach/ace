@@ -10,7 +10,7 @@ import type {
 definePageMeta({ middleware: 'auth' })
 
 const route = useRoute()
-const id = computed(() => Number(route.params.id))
+const id = computed(() => String(route.params.id))
 const { user } = useUserSession()
 const toast = useToast()
 

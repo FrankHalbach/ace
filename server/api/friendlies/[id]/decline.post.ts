@@ -5,12 +5,12 @@ import {
   FriendlyNotParticipantError,
   type FriendlyId,
 } from '../../../modules/friendlies'
-import { requireIntParam } from '../../../shared/require-role'
+import { requirePublicIdParam } from '../../../shared/public-id'
 
 /** POST /api/friendlies/:id/decline — Eingeladener lehnt ab */
 export default defineEventHandler(async (event) => {
   const { user } = await requireUserSession(event)
-  const id = requireIntParam(event, 'id') as FriendlyId
+  const id = requirePublicIdParam<FriendlyId>(event, 'id')
   try {
     return friendliesService.decline(id, user.memberId)
   } catch (err) {

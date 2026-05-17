@@ -81,7 +81,7 @@ export type PlayerProfileDto = {
       }
     | {
         kind: 'friendly'
-        friendlyId: number
+        friendlyId: string
         format: 'singles' | 'doubles'
         partnerId: MemberId | null
         partnerName: string | null

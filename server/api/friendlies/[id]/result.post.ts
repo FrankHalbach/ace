@@ -8,12 +8,12 @@ import {
   reportFriendlyResultInput,
   type FriendlyId,
 } from '../../../modules/friendlies'
-import { requireIntParam } from '../../../shared/require-role'
+import { requirePublicIdParam } from '../../../shared/public-id'
 
 /** POST /api/friendlies/:id/result — Sieger-Team meldet Ergebnis */
 export default defineEventHandler(async (event) => {
   const { user } = await requireUserSession(event)
-  const id = requireIntParam(event, 'id') as FriendlyId
+  const id = requirePublicIdParam<FriendlyId>(event, 'id')
   const body = await readValidatedBody(event, reportFriendlyResultInput.parse)
 
   try {

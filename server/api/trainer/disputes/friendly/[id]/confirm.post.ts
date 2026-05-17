@@ -5,14 +5,14 @@ import {
   type FriendlyId,
 } from '../../../../../modules/friendlies'
 import { DisputeNotFoundError, trainerDisputesService } from '../../../../../modules/trainer'
-import { requireIntParam } from '../../../../../shared/require-role'
+import { requirePublicIdParam } from '../../../../../shared/public-id'
 import { requireTrainerOrAdmin } from '../../../../../shared/require-trainer'
 
 /** POST /api/trainer/disputes/friendly/:id/confirm — Trainer bestätigt */
 export default defineEventHandler(async (event) => {
   const { user } = await requireUserSession(event)
   requireTrainerOrAdmin(user)
-  const id = requireIntParam(event, 'id') as FriendlyId
+  const id = requirePublicIdParam<FriendlyId>(event, 'id')
   try {
     trainerDisputesService.confirmFriendly(id)
     return { ok: true }
