@@ -48,6 +48,11 @@ const MESSAGES: Record<string, string> = {
   'team-tag.duplicate-name': 'Eine Mannschaft mit diesem Namen existiert bereits.',
   'team-tag.inactive': 'Diese Mannschaft ist archiviert und kann nicht neu zugewiesen werden.',
 
+  // Members
+  'member.not-found': 'Mitglied nicht gefunden.',
+  'member.must-keep-player-role': 'Die Spieler-Rolle kann nicht entfernt werden.',
+  'member.cannot-remove-last-admin': 'Mindestens ein aktiver Admin muss erhalten bleiben.',
+
   // Auth / Rollen
   'auth.role-required': 'Du hast nicht die nötige Berechtigung.',
   'auth.rate-limit-exceeded': 'Zu viele Versuche — bitte später erneut probieren.',

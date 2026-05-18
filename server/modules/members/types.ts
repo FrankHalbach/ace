@@ -41,6 +41,40 @@ export type MemberDto = {
   preferences: MatchPreferences
 }
 
+/**
+ * Erweiterter DTO fuer die Admin-Mitgliederliste — enthaelt Felder, die
+ * Spielern untereinander nicht sichtbar sind (Lifecycle-Zeitstempel,
+ * Deaktivierungs-Markierung).
+ */
+export type MemberAdminDto = MemberDto & {
+  deactivatedAt: Date | null
+  deactivationReason: string | null
+  invitedAt: Date | null
+  firstLoginAt: Date | null
+}
+
+const ROLE_ENUM = z.enum(['player', 'trainer', 'admin'])
+
+export const setRolesInput = z.object({
+  roles: z.array(ROLE_ENUM).min(1).max(3),
+})
+
+export type SetRolesInput = z.infer<typeof setRolesInput>
+
+export class MustKeepPlayerRoleError extends Error {
+  readonly code = 'member.must-keep-player-role' as const
+  constructor() {
+    super('player role must remain on every member')
+  }
+}
+
+export class CannotRemoveLastAdminError extends Error {
+  readonly code = 'member.cannot-remove-last-admin' as const
+  constructor() {
+    super('at least one active admin must remain')
+  }
+}
+
 // Set-Score (lokal redefiniert, um keine Cross-Modul-Type-Imports zu erzwingen).
 type SetScore = { a: number; b: number }
 

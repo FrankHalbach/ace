@@ -7,12 +7,19 @@
  */
 export { profileService, MemberNotFoundError } from './service/profile'
 export { getMemberProfile } from './service/player-profile'
-export { updateOwnProfileInput } from './types'
+export {
+  CannotRemoveLastAdminError,
+  MustKeepPlayerRoleError,
+  memberAdminService,
+} from './service/admin'
+export { setRolesInput, updateOwnProfileInput } from './types'
 export type {
   MatchPreferences,
+  MemberAdminDto,
   MemberDto,
   MemberId,
   PlayerProfileDto,
   Role,
+  SetRolesInput,
   UpdateOwnProfileInput,
 } from './types'
