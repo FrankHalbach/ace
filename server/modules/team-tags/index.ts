@@ -20,6 +20,7 @@ export type {
   AssignTagsInput,
   CreateTeamTagInput,
   SetMemberTeamTagsInput,
+  TeamMemberDto,
   TeamTagDto,
   TeamTagId,
   UpdateTeamTagInput,

@@ -1,5 +1,6 @@
 import { asc, eq, sql } from 'drizzle-orm'
 import { useDb } from '../../../db'
+import { member } from '../../../db/schema/member'
 import {
   teamTag,
   type TeamTagId,
@@ -11,6 +12,16 @@ import {
   type MemberTeamTagRow,
 } from '../../../db/schema/member-team-tag'
 import type { MemberId } from '../../members'
+
+export type TeamMemberRow = {
+  id: MemberId
+  firstName: string
+  lastName: string
+  gender: 'm' | 'w'
+  dtbLk: number
+  status: 'aktiv' | 'pausiert'
+  assignedAt: Date
+}
 
 export const teamTagRepo = {
   listAll(): TeamTagRow[] {
@@ -68,6 +79,24 @@ export const teamTagRepo = {
       .innerJoin(teamTag, eq(memberTeamTag.teamTagId, teamTag.id))
       .where(eq(memberTeamTag.memberId, memberId))
       .orderBy(asc(teamTag.sortOrder), asc(teamTag.name))
+      .all()
+  },
+
+  listMembersForTag(tagId: TeamTagId): TeamMemberRow[] {
+    return useDb()
+      .select({
+        id: member.id,
+        firstName: member.firstName,
+        lastName: member.lastName,
+        gender: member.gender,
+        dtbLk: member.dtbLk,
+        status: member.status,
+        assignedAt: memberTeamTag.assignedAt,
+      })
+      .from(memberTeamTag)
+      .innerJoin(member, eq(memberTeamTag.memberId, member.id))
+      .where(eq(memberTeamTag.teamTagId, tagId))
+      .orderBy(asc(member.lastName), asc(member.firstName))
       .all()
   },
 

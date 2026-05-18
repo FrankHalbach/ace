@@ -1,11 +1,12 @@
 import { auditService } from '../../admin'
-import { teamTagRepo } from '../repository/team-tag-repo'
+import { teamTagRepo, type TeamMemberRow } from '../repository/team-tag-repo'
 import {
   TeamTagDuplicateNameError,
   TeamTagInactiveError,
   TeamTagNotFoundError,
   type AssignTagsInput,
   type CreateTeamTagInput,
+  type TeamMemberDto,
   type TeamTagDto,
   type TeamTagId,
   type UpdateTeamTagInput,
@@ -19,6 +20,17 @@ function toDto(row: TeamTagRow): TeamTagDto {
     name: row.name,
     sortOrder: row.sortOrder,
     active: row.active,
+  }
+}
+
+function toMemberDto(row: TeamMemberRow): TeamMemberDto {
+  return {
+    id: row.id,
+    firstName: row.firstName,
+    lastName: row.lastName,
+    gender: row.gender,
+    dtbLk: row.dtbLk,
+    status: row.status,
   }
 }
 
@@ -41,6 +53,17 @@ export const teamTagsService = {
 
   listForMember(memberId: MemberId): TeamTagDto[] {
     return teamTagRepo.listForMember(memberId).map(toDto)
+  },
+
+  /**
+   * Listet alle Mitglieder einer Mannschaft, alphabetisch nach Nachname.
+   * Wirft `TeamTagNotFoundError` wenn der Tag nicht existiert — auch
+   * inaktive Tags geben Mitglieder zurück, damit der Trainer die
+   * bestehenden Zuordnungen weiterhin pflegen kann.
+   */
+  listMembersForTag(tagId: TeamTagId): TeamMemberDto[] {
+    loadTag(tagId)
+    return teamTagRepo.listMembersForTag(tagId).map(toMemberDto)
   },
 
   create(input: CreateTeamTagInput, actorId: MemberId): TeamTagDto {
@@ -110,6 +133,42 @@ export const teamTagsService = {
         active: before.active,
       },
     })
+  },
+
+  /**
+   * Fuegt einen Spieler einer Mannschaft hinzu, ohne dessen andere
+   * Tag-Zuordnungen anzutasten. Idempotent — doppelte Aufrufe lassen die
+   * Liste unveraendert (kein zweiter Audit-Eintrag).
+   */
+  addMember(tagId: TeamTagId, memberId: MemberId, actorId: MemberId): TeamMemberDto[] {
+    loadTag(tagId)
+    const current = teamTagRepo.listForMember(memberId).map((r) => r.id)
+    if (!current.includes(tagId)) {
+      teamTagsService.setAssignments({
+        memberId,
+        tagIds: [...current, tagId],
+        assignedBy: actorId,
+      })
+    }
+    return teamTagsService.listMembersForTag(tagId)
+  },
+
+  /**
+   * Entfernt einen Spieler aus einer Mannschaft. Andere Tag-Zuordnungen
+   * bleiben unberuehrt. Idempotent — Aufrufe auf nicht-zugewiesene Spieler
+   * sind erlaubt und schreiben keinen Audit-Eintrag.
+   */
+  removeMember(tagId: TeamTagId, memberId: MemberId, actorId: MemberId): TeamMemberDto[] {
+    loadTag(tagId)
+    const current = teamTagRepo.listForMember(memberId).map((r) => r.id)
+    if (current.includes(tagId)) {
+      teamTagsService.setAssignments({
+        memberId,
+        tagIds: current.filter((id) => id !== tagId),
+        assignedBy: actorId,
+      })
+    }
+    return teamTagsService.listMembersForTag(tagId)
   },
 
   setAssignments(input: AssignTagsInput): TeamTagDto[] {

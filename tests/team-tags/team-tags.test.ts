@@ -253,4 +253,164 @@ describe('teamTagsService', () => {
       expect(all.map((t) => t.name)).toEqual(['Gamma', 'Alpha', 'Beta'])
     })
   })
+
+  describe('listMembersForTag', () => {
+    it('liefert die zugewiesenen Spieler alphabetisch nach Nachname', () => {
+      const actor = insertMember('Zorn')
+      const a = insertMember('Anders')
+      const m = insertMember('Maier')
+      const tag = teamTagsService.create({ name: '1. Herren' }, actor)
+
+      teamTagsService.setAssignments({ memberId: m, tagIds: [tag.id], assignedBy: actor })
+      teamTagsService.setAssignments({ memberId: a, tagIds: [tag.id], assignedBy: actor })
+
+      const members = teamTagsService.listMembersForTag(tag.id)
+      expect(members.map((p) => p.lastName)).toEqual(['Anders', 'Maier'])
+    })
+
+    it('gibt jeden Spieler nur einmal, mit den erwarteten DTO-Feldern', () => {
+      const actor = insertMember('Coach')
+      const p = insertMember('Spieler')
+      const tag = teamTagsService.create({ name: 'Damen 30' }, actor)
+      teamTagsService.setAssignments({ memberId: p, tagIds: [tag.id], assignedBy: actor })
+
+      const members = teamTagsService.listMembersForTag(tag.id)
+      expect(members).toHaveLength(1)
+      expect(members[0]).toMatchObject({
+        id: p,
+        firstName: 'T',
+        lastName: 'Spieler',
+        gender: 'm',
+        dtbLk: 10,
+        status: 'aktiv',
+      })
+      // Keine privaten Felder durchreichen
+      expect(members[0]).not.toHaveProperty('email')
+      expect(members[0]).not.toHaveProperty('roles')
+    })
+
+    it('liefert auch fuer archivierte Tags die bestehenden Zuweisungen', () => {
+      const actor = insertMember('Coach')
+      const p = insertMember('Player')
+      const tag = teamTagsService.create({ name: 'Bald-archiviert' }, actor)
+      teamTagsService.setAssignments({ memberId: p, tagIds: [tag.id], assignedBy: actor })
+      teamTagsService.update(tag.id, { active: false }, actor)
+
+      const members = teamTagsService.listMembersForTag(tag.id)
+      expect(members).toHaveLength(1)
+    })
+
+    it('liefert leere Liste fuer Tag ohne Zuweisungen', () => {
+      const actor = insertMember('Coach')
+      const tag = teamTagsService.create({ name: 'Leer' }, actor)
+      expect(teamTagsService.listMembersForTag(tag.id)).toEqual([])
+    })
+
+    it('wirft NotFound bei unbekannter Tag-ID', () => {
+      expect(() =>
+        teamTagsService.listMembersForTag('unknown-tag-id' as TeamTagId),
+      ).toThrow(TeamTagNotFoundError)
+    })
+  })
+
+  describe('addMember / removeMember', () => {
+    it('addMember fuegt Spieler hinzu, ohne andere Tag-Zuordnungen anzutasten', () => {
+      const actor = insertMember('Coach')
+      const p = insertMember('Player')
+      const team = teamTagsService.create({ name: '1. Herren' }, actor)
+      const other = teamTagsService.create({ name: 'Bezirksliga' }, actor)
+      teamTagsService.setAssignments({
+        memberId: p,
+        tagIds: [other.id],
+        assignedBy: actor,
+      })
+
+      teamTagsService.addMember(team.id, p, actor)
+
+      const tags = teamTagsService.listForMember(p)
+      expect(tags.map((t) => t.id).sort()).toEqual([team.id, other.id].sort())
+    })
+
+    it('addMember ist idempotent — kein zweiter Audit-Eintrag', () => {
+      const actor = insertMember('Coach')
+      const p = insertMember('Player')
+      const team = teamTagsService.create({ name: '1. Herren' }, actor)
+
+      teamTagsService.addMember(team.id, p, actor)
+      const auditCountAfterFirst = auditService
+        .listRecent()
+        .filter((a) => a.action === 'member.team-tags-changed').length
+
+      teamTagsService.addMember(team.id, p, actor)
+      const auditCountAfterSecond = auditService
+        .listRecent()
+        .filter((a) => a.action === 'member.team-tags-changed').length
+
+      expect(auditCountAfterSecond).toBe(auditCountAfterFirst)
+    })
+
+    it('addMember liefert aktuelle Mitgliederliste der Mannschaft zurueck', () => {
+      const actor = insertMember('Coach')
+      const p = insertMember('Player')
+      const team = teamTagsService.create({ name: '1. Herren' }, actor)
+
+      const result = teamTagsService.addMember(team.id, p, actor)
+      expect(result.map((m) => m.id)).toEqual([p])
+    })
+
+    it('addMember wirft Inactive bei archivierter Mannschaft', () => {
+      const actor = insertMember('Coach')
+      const p = insertMember('Player')
+      const team = teamTagsService.create({ name: 'Archiv' }, actor)
+      teamTagsService.update(team.id, { active: false }, actor)
+
+      expect(() => teamTagsService.addMember(team.id, p, actor)).toThrow(
+        TeamTagInactiveError,
+      )
+    })
+
+    it('removeMember entfernt Spieler, andere Tag-Zuordnungen bleiben', () => {
+      const actor = insertMember('Coach')
+      const p = insertMember('Player')
+      const team = teamTagsService.create({ name: '1. Herren' }, actor)
+      const other = teamTagsService.create({ name: 'Bezirksliga' }, actor)
+      teamTagsService.setAssignments({
+        memberId: p,
+        tagIds: [team.id, other.id],
+        assignedBy: actor,
+      })
+
+      teamTagsService.removeMember(team.id, p, actor)
+
+      const tags = teamTagsService.listForMember(p)
+      expect(tags.map((t) => t.id)).toEqual([other.id])
+    })
+
+    it('removeMember erlaubt auch archivierte Tags', () => {
+      const actor = insertMember('Coach')
+      const p = insertMember('Player')
+      const team = teamTagsService.create({ name: 'Bald-archiviert' }, actor)
+      teamTagsService.setAssignments({
+        memberId: p,
+        tagIds: [team.id],
+        assignedBy: actor,
+      })
+      teamTagsService.update(team.id, { active: false }, actor)
+
+      expect(() => teamTagsService.removeMember(team.id, p, actor)).not.toThrow()
+      expect(teamTagsService.listForMember(p)).toHaveLength(0)
+    })
+
+    it('removeMember ist idempotent — kein Audit bei nicht-zugewiesenem Spieler', () => {
+      const actor = insertMember('Coach')
+      const p = insertMember('Player')
+      const team = teamTagsService.create({ name: '1. Herren' }, actor)
+
+      const before = auditService.listRecent().length
+      teamTagsService.removeMember(team.id, p, actor)
+      const after = auditService.listRecent().length
+
+      expect(after).toBe(before)
+    })
+  })
 })

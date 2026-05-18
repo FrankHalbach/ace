@@ -11,6 +11,16 @@ export type TeamTagDto = {
   active: boolean
 }
 
+/** Schlanker Spieler-DTO für die Mannschafts-Mitgliederliste. */
+export type TeamMemberDto = {
+  id: MemberId
+  firstName: string
+  lastName: string
+  gender: 'm' | 'w'
+  dtbLk: number
+  status: 'aktiv' | 'pausiert'
+}
+
 // --- Zod-Schemas (auch für Front-End geteilt) -----------------------------
 
 export const createTeamTagInput = z.object({
