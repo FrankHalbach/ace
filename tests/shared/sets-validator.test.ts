@@ -7,24 +7,18 @@ import {
 
 describe('validateSetsForMode — Anzahl Sätze', () => {
   it('lehnt leere Set-Liste ab', () => {
-    expect(() => validateSetsForMode('best-of-3-champions', [])).toThrow(InvalidSetsError)
+    expect(() => validateSetsForMode('two-sets-match-tiebreak', [])).toThrow(InvalidSetsError)
   })
 
-  it('Pro-Set: genau ein Satz erforderlich', () => {
-    expect(() =>
-      validateSetsForMode('pro-set', [{ a: 8, b: 6 }, { a: 8, b: 4 }]),
-    ).toThrow(/genau ein Satz/i)
-  })
-
-  it('Best-of-3 verlangt 2 oder 3 Sätze', () => {
-    expect(() => validateSetsForMode('best-of-3-champions', [{ a: 6, b: 4 }])).toThrow(
+  it('verlangt 2 oder 3 Sätze', () => {
+    expect(() => validateSetsForMode('two-sets-match-tiebreak', [{ a: 6, b: 4 }])).toThrow(
       /2 oder 3 Sätze/i,
     )
   })
 
   it('Unentschieden pro Satz ist verboten', () => {
     expect(() =>
-      validateSetsForMode('best-of-3-full', [{ a: 6, b: 6 }, { a: 6, b: 4 }]),
+      validateSetsForMode('two-sets-match-tiebreak', [{ a: 6, b: 6 }, { a: 6, b: 4 }]),
     ).toThrow(/Unentschieden/i)
   })
 })
@@ -43,7 +37,7 @@ describe('validateSetsForMode — regulärer Satz (A1)', () => {
     [6, 7],
   ])('akzeptiert %i:%i', (a, b) => {
     expect(() =>
-      validateSetsForMode('best-of-3-full', [
+      validateSetsForMode('two-sets-match-tiebreak', [
         { a, b },
         { a: 6, b: 1 },
       ]),
@@ -60,7 +54,7 @@ describe('validateSetsForMode — regulärer Satz (A1)', () => {
     [3, 1],
   ])('lehnt %i:%i ab', (a, b) => {
     expect(() =>
-      validateSetsForMode('best-of-3-full', [
+      validateSetsForMode('two-sets-match-tiebreak', [
         { a, b },
         { a: 6, b: 1 },
       ]),
@@ -69,7 +63,7 @@ describe('validateSetsForMode — regulärer Satz (A1)', () => {
 })
 
 describe('validateSetsForMode — Match-Tie-Break als Decider (A2)', () => {
-  it('two-sets-match-tiebreak: 3. Satz muss Match-TB sein', () => {
+  it('3. Satz muss Match-TB sein', () => {
     expect(() =>
       validateSetsForMode('two-sets-match-tiebreak', [
         { a: 6, b: 4 },
@@ -86,7 +80,7 @@ describe('validateSetsForMode — Match-Tie-Break als Decider (A2)', () => {
     [10, 0],
   ])('akzeptiert Match-TB %i:%i', (a, b) => {
     expect(() =>
-      validateSetsForMode('best-of-3-champions', [
+      validateSetsForMode('two-sets-match-tiebreak', [
         { a: 6, b: 4 },
         { a: 2, b: 6 },
         { a, b },
@@ -101,143 +95,35 @@ describe('validateSetsForMode — Match-Tie-Break als Decider (A2)', () => {
     [9, 7],
   ])('lehnt %i:%i als Match-TB ab', (a, b) => {
     expect(() =>
-      validateSetsForMode('best-of-3-champions', [
+      validateSetsForMode('two-sets-match-tiebreak', [
         { a: 6, b: 4 },
         { a: 2, b: 6 },
         { a, b },
       ]),
     ).toThrow(/Match-Tie-Break/i)
   })
-
-  it('best-of-3-tiebreak: 3. Satz ist regulär, kein Match-TB', () => {
-    // Im Modus mit regulärem 3. Satz darf 6:4 stehen.
-    expect(() =>
-      validateSetsForMode('best-of-3-tiebreak', [
-        { a: 6, b: 4 },
-        { a: 2, b: 6 },
-        { a: 6, b: 4 },
-      ]),
-    ).not.toThrow()
-    // Match-TB-Score (10:8) ist im 3. Satz von best-of-3-tiebreak NICHT zulässig.
-    expect(() =>
-      validateSetsForMode('best-of-3-tiebreak', [
-        { a: 6, b: 4 },
-        { a: 2, b: 6 },
-        { a: 10, b: 8 },
-      ]),
-    ).toThrow(InvalidSetsError)
-  })
-})
-
-describe('validateSetsForMode — Short-Set (short-sets-tiebreak)', () => {
-  it.each([
-    [4, 0],
-    [4, 1],
-    [4, 2],
-    [5, 3],
-    [5, 4],
-    [0, 4],
-    [4, 5],
-  ])('akzeptiert Short-Set %i:%i', (a, b) => {
-    expect(() =>
-      validateSetsForMode('short-sets-tiebreak', [
-        { a, b },
-        { a: 4, b: 1 },
-      ]),
-    ).not.toThrow()
-  })
-
-  it.each([
-    [6, 4],
-    [4, 3],
-    [5, 5],
-    [5, 2],
-    [3, 1],
-  ])('lehnt Short-Set %i:%i ab', (a, b) => {
-    expect(() =>
-      validateSetsForMode('short-sets-tiebreak', [
-        { a, b },
-        { a: 4, b: 1 },
-      ]),
-    ).toThrow(InvalidSetsError)
-  })
-})
-
-describe('validateSetsForMode — Pro-Set (A3)', () => {
-  it.each([
-    [8, 0],
-    [8, 1],
-    [8, 6],
-    [9, 8],
-  ])('Länge 8: akzeptiert %i:%i', (a, b) => {
-    expect(() => validateSetsForMode('pro-set', [{ a, b }], { proSetLength: 8 })).not.toThrow()
-  })
-
-  it.each([
-    [8, 7],
-    [9, 7],
-    [12, 7],
-    [4, 1],
-  ])('Länge 8: lehnt %i:%i ab', (a, b) => {
-    expect(() => validateSetsForMode('pro-set', [{ a, b }], { proSetLength: 8 })).toThrow(
-      InvalidSetsError,
-    )
-  })
-
-  it.each([
-    [9, 0],
-    [9, 7],
-    [10, 9],
-  ])('Länge 9: akzeptiert %i:%i', (a, b) => {
-    expect(() => validateSetsForMode('pro-set', [{ a, b }], { proSetLength: 9 })).not.toThrow()
-  })
-
-  it.each([
-    [9, 8],
-    [10, 8],
-    [11, 9],
-  ])('Länge 9: lehnt %i:%i ab', (a, b) => {
-    expect(() => validateSetsForMode('pro-set', [{ a, b }], { proSetLength: 9 })).toThrow(
-      InvalidSetsError,
-    )
-  })
-
-  it('Default-Länge ist 8 (kein options-Parameter)', () => {
-    expect(() => validateSetsForMode('pro-set', [{ a: 8, b: 6 }])).not.toThrow()
-    expect(() => validateSetsForMode('pro-set', [{ a: 9, b: 7 }])).toThrow(InvalidSetsError)
-  })
-
-  it('Fehlermeldung nennt die erwartete Länge', () => {
-    expect(() => validateSetsForMode('pro-set', [{ a: 9, b: 7 }], { proSetLength: 8 })).toThrow(
-      /Länge 8/,
-    )
-  })
 })
 
 describe('validateSetsForMode — Walk-Over (#29)', () => {
   it('akzeptiert leere sets bei outcome=walkover', () => {
     expect(() =>
-      validateSetsForMode('best-of-3-champions', [], { outcome: 'walkover' }),
+      validateSetsForMode('two-sets-match-tiebreak', [], { outcome: 'walkover' }),
     ).not.toThrow()
   })
 
   it('lehnt nicht-leere sets bei outcome=walkover ab', () => {
     expect(() =>
-      validateSetsForMode('best-of-3-champions', [{ a: 6, b: 4 }, { a: 6, b: 2 }], {
+      validateSetsForMode('two-sets-match-tiebreak', [{ a: 6, b: 4 }, { a: 6, b: 2 }], {
         outcome: 'walkover',
       }),
     ).toThrow(/Walk-Over/i)
-  })
-
-  it('walkover funktioniert auch bei pro-set', () => {
-    expect(() => validateSetsForMode('pro-set', [], { outcome: 'walkover' })).not.toThrow()
   })
 })
 
 describe('validateSetsForMode — Aufgabe (#30)', () => {
   it('akzeptiert unvollständigen letzten Satz bei outcome=retirement', () => {
     expect(() =>
-      validateSetsForMode('best-of-3-champions', [{ a: 6, b: 2 }, { a: 3, b: 1 }], {
+      validateSetsForMode('two-sets-match-tiebreak', [{ a: 6, b: 2 }, { a: 3, b: 1 }], {
         outcome: 'retirement',
       }),
     ).not.toThrow()
@@ -245,7 +131,7 @@ describe('validateSetsForMode — Aufgabe (#30)', () => {
 
   it('akzeptiert auch einen einzigen unvollständigen Satz', () => {
     expect(() =>
-      validateSetsForMode('best-of-3-champions', [{ a: 2, b: 1 }], {
+      validateSetsForMode('two-sets-match-tiebreak', [{ a: 2, b: 1 }], {
         outcome: 'retirement',
       }),
     ).not.toThrow()
@@ -253,14 +139,13 @@ describe('validateSetsForMode — Aufgabe (#30)', () => {
 
   it('verlangt mindestens einen angespielten Satz bei retirement', () => {
     expect(() =>
-      validateSetsForMode('best-of-3-champions', [], { outcome: 'retirement' }),
+      validateSetsForMode('two-sets-match-tiebreak', [], { outcome: 'retirement' }),
     ).toThrow(/Mindestens ein Satz/i)
   })
 
   it('lehnt unvollständigen Satz NICHT-am-Ende auch bei retirement ab', () => {
-    // Satz 1 muss regulär sein, nur der letzte darf unvollständig sein
     expect(() =>
-      validateSetsForMode('best-of-3-champions', [{ a: 3, b: 1 }, { a: 6, b: 2 }], {
+      validateSetsForMode('two-sets-match-tiebreak', [{ a: 3, b: 1 }, { a: 6, b: 2 }], {
         outcome: 'retirement',
       }),
     ).toThrow(InvalidSetsError)
@@ -268,7 +153,7 @@ describe('validateSetsForMode — Aufgabe (#30)', () => {
 
   it('vollständiger letzter Satz bei retirement ist auch ok', () => {
     expect(() =>
-      validateSetsForMode('best-of-3-champions', [{ a: 6, b: 2 }, { a: 4, b: 6 }], {
+      validateSetsForMode('two-sets-match-tiebreak', [{ a: 6, b: 2 }, { a: 4, b: 6 }], {
         outcome: 'retirement',
       }),
     ).not.toThrow()
@@ -276,26 +161,19 @@ describe('validateSetsForMode — Aufgabe (#30)', () => {
 
   it('Unentschieden im letzten Satz ist trotzdem verboten', () => {
     expect(() =>
-      validateSetsForMode('best-of-3-champions', [{ a: 6, b: 2 }, { a: 2, b: 2 }], {
+      validateSetsForMode('two-sets-match-tiebreak', [{ a: 6, b: 2 }, { a: 2, b: 2 }], {
         outcome: 'retirement',
       }),
     ).toThrow(/Unentschieden/i)
   })
 
-  it('short-sets-tiebreak: letzter Satz darf < 4 sein', () => {
+  it('unvollständiger Match-TB als 3. Satz ist bei retirement zulässig', () => {
     expect(() =>
-      validateSetsForMode('short-sets-tiebreak', [{ a: 4, b: 1 }, { a: 2, b: 1 }], {
-        outcome: 'retirement',
-      }),
-    ).not.toThrow()
-  })
-
-  it('pro-set: letzter Satz darf < proSetLength sein', () => {
-    expect(() =>
-      validateSetsForMode('pro-set', [{ a: 5, b: 3 }], {
-        outcome: 'retirement',
-        proSetLength: 8,
-      }),
+      validateSetsForMode(
+        'two-sets-match-tiebreak',
+        [{ a: 6, b: 4 }, { a: 4, b: 6 }, { a: 5, b: 3 }],
+        { outcome: 'retirement' },
+      ),
     ).not.toThrow()
   })
 })

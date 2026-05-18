@@ -112,12 +112,8 @@ const sets = ref<SetScore[]>([{ a: 0, b: 0 }, { a: 0, b: 0 }])
 const outcome = ref<MatchOutcome>('regular')
 const outcomeNote = ref('')
 
-// In best-of-3-champions und two-sets-match-tiebreak ist der 3. Satz ein
-// Match-Tie-Break.
 function isMatchTiebreakSet(setIndex: number): boolean {
-  if (setIndex !== 2) return false
-  const mode = friendly.value?.matchMode
-  return mode === 'best-of-3-champions' || mode === 'two-sets-match-tiebreak'
+  return setIndex === 2 && friendly.value?.matchMode === 'two-sets-match-tiebreak'
 }
 
 /**

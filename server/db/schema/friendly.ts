@@ -8,13 +8,7 @@ export type FriendlyId = Brand<string, 'FriendlyId'>
 
 export type FriendlyFormat = 'singles' | 'doubles'
 
-export type FriendlyMatchMode =
-  | 'two-sets-match-tiebreak'
-  | 'best-of-3-tiebreak'
-  | 'best-of-3-full'
-  | 'best-of-3-champions'
-  | 'short-sets-tiebreak'
-  | 'pro-set'
+export type FriendlyMatchMode = 'two-sets-match-tiebreak'
 
 export type FriendlyStatus =
   | 'PROPOSED'
@@ -38,14 +32,7 @@ export const friendly = sqliteTable(
     courtInfo: text('court_info'),
     note: text('note'),
     matchMode: text('match_mode', {
-      enum: [
-        'two-sets-match-tiebreak',
-        'best-of-3-tiebreak',
-        'best-of-3-full',
-        'best-of-3-champions',
-        'short-sets-tiebreak',
-        'pro-set',
-      ],
+      enum: ['two-sets-match-tiebreak'],
     }).notNull(),
 
     status: text('status', {

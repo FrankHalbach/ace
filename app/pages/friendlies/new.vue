@@ -54,7 +54,7 @@ function toTimeInput(d: Date): string {
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
 }
 const note = ref('')
-const matchMode = ref<FriendlyMatchMode>('best-of-3-champions')
+const matchMode = ref<FriendlyMatchMode>('two-sets-match-tiebreak')
 
 const me = computed(() => user.value?.memberId)
 
@@ -171,18 +171,9 @@ async function submit() {
         </UFormField>
 
         <UFormField label="Match-Modus">
-          <USelect
-            v-model="matchMode"
-            :items="[
-              { label: '2 Sätze + Match-Tiebreak', value: 'two-sets-match-tiebreak' },
-              { label: 'Best-of-3 mit Champions-Tiebreak', value: 'best-of-3-champions' },
-              { label: 'Best-of-3 mit echtem 3. Satz', value: 'best-of-3-full' },
-              { label: 'Best-of-3 mit Match-Tiebreak (Standard)', value: 'best-of-3-tiebreak' },
-              { label: 'Kurzsätze (4 Spiele) + Match-Tiebreak', value: 'short-sets-tiebreak' },
-              { label: 'Pro Set', value: 'pro-set' },
-            ]"
-            class="w-full"
-          />
+          <p class="text-sm text-default">
+            2 Gewinnsätze, bei Satzstand 1:1 entscheidet ein Match-Tiebreak (bis 10, mit 2 Punkten Vorsprung).
+          </p>
         </UFormField>
 
         <UFormField label="Notiz (optional, max. 500 Zeichen)">

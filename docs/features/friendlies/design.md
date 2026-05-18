@@ -4,6 +4,11 @@
 **Datum**: 2026-05-15
 **Modul**: [`friendlies`](../../architecture/overview.md#1-modul-schnitt)
 
+> **Stand 2026-05-18 (Issue #57, vor-Launch):** Von den unten beschriebenen
+> Match-Modi ist aktuell nur `two-sets-match-tiebreak` aktiv (2 Gewinnsätze,
+> im Entscheidungssatz Match-Tiebreak bis 10). Weitere Modi sind in
+> Issue #58 für Phase 2 vorgesehen.
+
 ## Ziel
 
 Mitglieder verabreden sich für Einzel- oder Doppel-Freundschaftsspiele —

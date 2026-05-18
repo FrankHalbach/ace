@@ -4,6 +4,10 @@
 **Datum**: 2026-05-15
 **Module**: [`challenges`](../../architecture/overview.md#1-modul-schnitt), [`results`](../../architecture/overview.md#1-modul-schnitt)
 
+> **Stand 2026-05-18 (Issue #57, vor-Launch):** Von den unten beschriebenen
+> Match-Modi ist aktuell nur `two-sets-match-tiebreak` aktiv. Weitere Modi
+> sind in Issue #58 für Phase 2 vorgesehen.
+
 ## Ziel
 
 Spieler können andere herausfordern, das Match planen, das Ergebnis melden

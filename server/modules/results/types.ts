@@ -23,16 +23,7 @@ const setScoreSchema = z.object({
 export const reportResultInput = z.object({
   winnerId: z.string().min(16).max(32),
   sets: z.array(setScoreSchema).max(5),
-  matchMode: z
-    .enum([
-      'two-sets-match-tiebreak',
-      'best-of-3-tiebreak',
-      'best-of-3-full',
-      'best-of-3-champions',
-      'short-sets-tiebreak',
-      'pro-set',
-    ])
-    .optional(),
+  matchMode: z.enum(['two-sets-match-tiebreak']).optional(),
   outcome: z.enum(['regular', 'walkover', 'retirement']).optional(),
   outcomeNote: z.string().max(500).optional(),
 })
