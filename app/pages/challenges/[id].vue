@@ -77,15 +77,11 @@ const sets = ref<SetScore[]>([{ a: 0, b: 0 }, { a: 0, b: 0 }])
 const outcome = ref<MatchOutcome>('regular')
 const outcomeNote = ref('')
 
-// Challenge-Matches werden derzeit hartcodiert im best-of-3-champions-Modus
-// gemeldet — dort ist der 3. Satz immer ein Match-Tie-Break.
-const CHALLENGE_MATCH_MODE = 'best-of-3-champions' as const
+// Challenge-Matches werden im einzigen aktiven Modus gemeldet (Issue #57) —
+// dort ist der 3. Satz immer ein Match-Tie-Break.
+const CHALLENGE_MATCH_MODE = 'two-sets-match-tiebreak' as const
 function isMatchTiebreakSet(setIndex: number): boolean {
-  return (
-    setIndex === 2 &&
-    (CHALLENGE_MATCH_MODE === 'best-of-3-champions' ||
-      (CHALLENGE_MATCH_MODE as string) === 'two-sets-match-tiebreak')
-  )
+  return setIndex === 2
 }
 
 /**
@@ -141,7 +137,7 @@ async function reportResult() {
       body: {
         winnerId,
         sets: orientedSets,
-        matchMode: 'best-of-3-champions',
+        matchMode: CHALLENGE_MATCH_MODE,
         outcome: outcome.value,
         outcomeNote: outcomeNote.value.trim() || undefined,
       },

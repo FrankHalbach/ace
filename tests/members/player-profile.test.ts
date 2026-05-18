@@ -75,7 +75,7 @@ describe('Spieler-Profil', () => {
     const r = resultsService.report(c.id, memberIds[3]!, {
       winnerId: memberIds[3]!,
       sets: [{ a: 6, b: 4 }, { a: 6, b: 3 }],
-      matchMode: 'best-of-3-champions',
+      matchMode: 'two-sets-match-tiebreak',
     })
     resultsService.confirm(r.id, memberIds[1]!)
 
@@ -101,7 +101,7 @@ describe('Spieler-Profil', () => {
       format: 'singles',
       scheduledAt: tomorrow(),
       opponentIds: [memberIds[2]!],
-      matchMode: 'best-of-3-champions',
+      matchMode: 'two-sets-match-tiebreak',
     })
     friendliesService.accept(f.id, memberIds[2]!)
     friendliesService.markPlayed(f.id, memberIds[0]!)
@@ -122,7 +122,7 @@ describe('Spieler-Profil', () => {
       format: 'singles',
       scheduledAt: tomorrow(),
       opponentIds: [memberIds[2]!],
-      matchMode: 'best-of-3-champions',
+      matchMode: 'two-sets-match-tiebreak',
     })
     friendliesService.accept(f.id, memberIds[2]!)
     const fr = friendlyResultsService.report(f.id, memberIds[0]!, {
@@ -150,7 +150,7 @@ describe('Spieler-Profil', () => {
     const r = resultsService.report(c.id, memberIds[3]!, {
       winnerId: memberIds[3]!,
       sets: [{ a: 6, b: 4 }, { a: 6, b: 3 }],
-      matchMode: 'best-of-3-champions',
+      matchMode: 'two-sets-match-tiebreak',
     })
     resultsService.confirm(r.id, memberIds[1]!)
 

@@ -52,9 +52,8 @@ der Gegner.
 **Unvollständiger letzter Satz bei `retirement`**:
 - Beide Werte ≥ 0
 - Werte dürfen nicht gleich sein (Aufgabe bei `0:0` wäre `walkover`)
-- Beide Werte UNTER der Sieg-Schwelle des Modus (z. B. < 6 für reguläre
-  Sätze, < 4 für Short-Sets, < `proSetLength` für Pro-Set, < 10 für
-  Match-TB)
+- Beide Werte UNTER der Sieg-Schwelle des Modus (< 6 für reguläre Sätze,
+  < 10 für Match-TB — weitere Modi siehe Issue #58)
 - Ein _vollständiger_ letzter Satz bei `retirement` ist trotzdem gültig
   — typisch wenn jemand nach Satz 2 aufgibt: `6:2, 4:6` ret.
 

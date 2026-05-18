@@ -101,7 +101,7 @@ describe('suggestionsService.suggestFor', () => {
     const r = resultsService.report(ch.id, me!, {
       winnerId: me!,
       sets: [{ a: 6, b: 4 }, { a: 6, b: 3 }],
-      matchMode: 'best-of-3-champions',
+      matchMode: 'two-sets-match-tiebreak',
     })
     resultsService.confirm(r.id, b!)
 
@@ -129,7 +129,7 @@ describe('suggestionsService.suggestFor', () => {
     const r = resultsService.report(
       ch.id,
       me!,
-      { winnerId: me!, sets: [{ a: 6, b: 4 }, { a: 6, b: 3 }], matchMode: 'best-of-3-champions' },
+      { winnerId: me!, sets: [{ a: 6, b: 4 }, { a: 6, b: 3 }], matchMode: 'two-sets-match-tiebreak' },
       oldDate,
     )
     resultsService.confirm(r.id, c!, oldDate)
@@ -182,7 +182,7 @@ describe('suggestionsService.suggestFor', () => {
       format: 'singles',
       scheduledAt: tomorrow,
       opponentIds: [tom],
-      matchMode: 'best-of-3-champions',
+      matchMode: 'two-sets-match-tiebreak',
     })
 
     const names = suggestionsService.suggestFor(me).map((s) => s.firstName)

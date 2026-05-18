@@ -141,11 +141,11 @@ describe('Voller Flow Pyramide: Create → Accept → Report → Confirm', () =>
     const c = challengesService.create(memberIds[3], { challengedId: memberIds[1], rankingId })
     challengesService.accept(c.id, memberIds[1])
 
-    // Sieger meldet: Challenger gewinnt 6:4, 6:3 (best-of-3-champions hat keinen TB nötig wenn 2:0)
+    // Sieger meldet: Challenger gewinnt 6:4, 6:3 (kein Match-TB nötig bei 2:0)
     const r = resultsService.report(c.id, memberIds[3], {
       winnerId: memberIds[3],
       sets: [{ a: 6, b: 4 }, { a: 6, b: 3 }],
-      matchMode: 'best-of-3-champions',
+      matchMode: 'two-sets-match-tiebreak',
     })
     expect(r.confirmationStatus).toBe('pending')
 
@@ -175,7 +175,7 @@ describe('Voller Flow Pyramide: Create → Accept → Report → Confirm', () =>
     const r = resultsService.report(c.id, memberIds[1], {
       winnerId: memberIds[1],
       sets: [{ a: 1, b: 6 }, { a: 2, b: 6 }],
-      matchMode: 'best-of-3-champions',
+      matchMode: 'two-sets-match-tiebreak',
     })
     resultsService.confirm(r.id, memberIds[3])
 
@@ -194,7 +194,7 @@ describe('Dispute-Flow', () => {
     const r = resultsService.report(c.id, memberIds[3], {
       winnerId: memberIds[3],
       sets: [{ a: 6, b: 4 }, { a: 6, b: 3 }],
-      matchMode: 'best-of-3-champions',
+      matchMode: 'two-sets-match-tiebreak',
     })
 
     const disputed = resultsService.dispute(r.id, memberIds[1], { note: 'Score war anders' })
@@ -214,19 +214,19 @@ describe('Set-Score-Validation ist verdrahtet (#26/#27/#28)', () => {
       resultsService.report(c.id, memberIds[3], {
         winnerId: memberIds[3],
         sets: [{ a: 8, b: 6 }, { a: 6, b: 4 }],
-        matchMode: 'best-of-3-champions',
+        matchMode: 'two-sets-match-tiebreak',
       }),
     ).toThrow(/8:6/)
   })
 
-  it('akzeptiert Match-TB im 3. Satz bei best-of-3-champions', () => {
+  it('akzeptiert Match-TB im 3. Satz', () => {
     const { memberIds, rankingId } = setupSeasonWithMembers()
     const c = challengesService.create(memberIds[3], { challengedId: memberIds[1], rankingId })
     challengesService.accept(c.id, memberIds[1])
     const r = resultsService.report(c.id, memberIds[3], {
       winnerId: memberIds[3],
       sets: [{ a: 6, b: 4 }, { a: 2, b: 6 }, { a: 10, b: 8 }],
-      matchMode: 'best-of-3-champions',
+      matchMode: 'two-sets-match-tiebreak',
     })
     expect(r.confirmationStatus).toBe('pending')
   })
@@ -239,7 +239,7 @@ describe('Set-Score-Validation ist verdrahtet (#26/#27/#28)', () => {
       resultsService.report(c.id, memberIds[3], {
         winnerId: memberIds[3],
         sets: [{ a: 6, b: 4 }, { a: 2, b: 6 }, { a: 7, b: 5 }],
-        matchMode: 'best-of-3-champions',
+        matchMode: 'two-sets-match-tiebreak',
       }),
     ).toThrow(/Match-Tie-Break/i)
   })
@@ -253,7 +253,7 @@ describe('Walk-Over / Aufgabe-Flow (#29 #30)', () => {
     const r = resultsService.report(c.id, memberIds[3], {
       winnerId: memberIds[3],
       sets: [],
-      matchMode: 'best-of-3-champions',
+      matchMode: 'two-sets-match-tiebreak',
       outcome: 'walkover',
       outcomeNote: 'Gegner kam nicht',
     })
@@ -270,7 +270,7 @@ describe('Walk-Over / Aufgabe-Flow (#29 #30)', () => {
     const r = resultsService.report(c.id, memberIds[3], {
       winnerId: memberIds[3],
       sets: [],
-      matchMode: 'best-of-3-champions',
+      matchMode: 'two-sets-match-tiebreak',
       outcome: 'walkover',
     })
     resultsService.confirm(r.id, memberIds[1])
@@ -289,7 +289,7 @@ describe('Walk-Over / Aufgabe-Flow (#29 #30)', () => {
       resultsService.report(c.id, memberIds[3], {
         winnerId: memberIds[3],
         sets: [{ a: 6, b: 0 }, { a: 6, b: 0 }],
-        matchMode: 'best-of-3-champions',
+        matchMode: 'two-sets-match-tiebreak',
         outcome: 'walkover',
       }),
     ).toThrow(/Walk-Over/i)
@@ -304,7 +304,7 @@ describe('Walk-Over / Aufgabe-Flow (#29 #30)', () => {
     const r = resultsService.report(c.id, memberIds[3], {
       winnerId: memberIds[1], // Challenged ist Sieger trotz Teilscore-Führung
       sets: [{ a: 6, b: 2 }, { a: 3, b: 1 }],
-      matchMode: 'best-of-3-champions',
+      matchMode: 'two-sets-match-tiebreak',
       outcome: 'retirement',
     })
     expect(r.outcome).toBe('retirement')

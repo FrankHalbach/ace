@@ -44,7 +44,7 @@ describe('Friendly-Validierung', () => {
         format: 'singles',
         scheduledAt: tomorrow(),
         opponentIds: [a],
-        matchMode: 'best-of-3-champions',
+        matchMode: 'two-sets-match-tiebreak',
       }),
     ).toThrowError(/selbst/i)
   })
@@ -57,7 +57,7 @@ describe('Friendly-Validierung', () => {
         scheduledAt: tomorrow(),
         partnerId: b,
         opponentIds: [b, b], // b doppelt
-        matchMode: 'best-of-3-champions',
+        matchMode: 'two-sets-match-tiebreak',
       }),
     ).toThrowError(/mehrfach/i)
   })
@@ -69,7 +69,7 @@ describe('Friendly-Validierung', () => {
         format: 'singles',
         scheduledAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
         opponentIds: [b],
-        matchMode: 'best-of-3-champions',
+        matchMode: 'two-sets-match-tiebreak',
       }),
     ).toThrowError(/vergangenheit/i)
   })
@@ -83,7 +83,7 @@ describe('Friendly-Validierung', () => {
         format: 'singles',
         scheduledAt: tomorrow(),
         opponentIds: [b],
-        matchMode: 'best-of-3-champions',
+        matchMode: 'two-sets-match-tiebreak',
       }),
     ).toThrowError(/pausiert/i)
   })
@@ -96,7 +96,7 @@ describe('Friendly-Validierung', () => {
         format: 'singles',
         scheduledAt: tomorrow(),
         opponentIds: [b, c],
-        matchMode: 'best-of-3-champions',
+        matchMode: 'two-sets-match-tiebreak',
       } as never),
     ).toThrowError()
     // Doubles ohne Partner → Team-Shape verletzt
@@ -105,7 +105,7 @@ describe('Friendly-Validierung', () => {
         format: 'doubles',
         scheduledAt: tomorrow(),
         opponentIds: [c, d],
-        matchMode: 'best-of-3-champions',
+        matchMode: 'two-sets-match-tiebreak',
       } as never),
     ).toThrowError()
   })
@@ -119,7 +119,7 @@ describe('Lifecycle Singles: Create → Accept → Result → Confirm', () => {
       format: 'singles',
       scheduledAt: tomorrow(),
       opponentIds: [b],
-      matchMode: 'best-of-3-champions',
+      matchMode: 'two-sets-match-tiebreak',
     })
     expect(f.status).toBe('PROPOSED')
     expect(f.invitees).toHaveLength(1)
@@ -135,7 +135,7 @@ describe('Lifecycle Singles: Create → Accept → Result → Confirm', () => {
       sets: [{ a: 6, b: 4 }, { a: 6, b: 3 }],
     })
     expect(r.confirmationStatus).toBe('pending')
-    expect(r.matchMode).toBe('best-of-3-champions')
+    expect(r.matchMode).toBe('two-sets-match-tiebreak')
 
     // b (Verlierer) bestätigt
     const confirmedResult = friendlyResultsService.confirm(r.id, b)
@@ -158,7 +158,7 @@ describe('Lifecycle Singles: Create → Accept → Result → Confirm', () => {
       format: 'singles',
       scheduledAt: tomorrow(),
       opponentIds: [b],
-      matchMode: 'best-of-3-champions',
+      matchMode: 'two-sets-match-tiebreak',
     })
     friendliesService.accept(f.id, b)
     const r = friendlyResultsService.report(f.id, a, {
@@ -175,7 +175,7 @@ describe('Lifecycle Singles: Create → Accept → Result → Confirm', () => {
       format: 'singles',
       scheduledAt: tomorrow(),
       opponentIds: [b],
-      matchMode: 'best-of-3-champions',
+      matchMode: 'two-sets-match-tiebreak',
     })
     friendliesService.accept(f.id, b)
     expect(() =>
@@ -195,7 +195,7 @@ describe('Lifecycle Singles: Create → Accept → Result → Confirm', () => {
       format: 'singles',
       scheduledAt: tomorrow(),
       opponentIds: [b],
-      matchMode: 'best-of-3-champions',
+      matchMode: 'two-sets-match-tiebreak',
     })
     const declined = friendliesService.decline(f.id, b)
     expect(declined.status).toBe('DECLINED')
@@ -207,7 +207,7 @@ describe('Lifecycle Singles: Create → Accept → Result → Confirm', () => {
       format: 'singles',
       scheduledAt: tomorrow(),
       opponentIds: [b],
-      matchMode: 'best-of-3-champions',
+      matchMode: 'two-sets-match-tiebreak',
     })
     const cancelled = friendliesService.cancel(f.id, a)
     expect(cancelled.status).toBe('CANCELLED')
@@ -219,7 +219,7 @@ describe('Lifecycle Singles: Create → Accept → Result → Confirm', () => {
       format: 'singles',
       scheduledAt: tomorrow(),
       opponentIds: [b],
-      matchMode: 'best-of-3-champions',
+      matchMode: 'two-sets-match-tiebreak',
     })
     friendliesService.accept(f.id, b)
     const played = friendliesService.markPlayed(f.id, a)
@@ -241,7 +241,7 @@ describe('Lifecycle Doubles: Create → 3x Accept → Result → Confirm', () =>
       scheduledAt: tomorrow(),
       partnerId: p,
       opponentIds: [o1, o2],
-      matchMode: 'best-of-3-champions',
+      matchMode: 'two-sets-match-tiebreak',
     })
     expect(f.status).toBe('PROPOSED')
     expect(f.invitees).toHaveLength(3)
@@ -265,7 +265,7 @@ describe('Lifecycle Doubles: Create → 3x Accept → Result → Confirm', () =>
       scheduledAt: tomorrow(),
       partnerId: p,
       opponentIds: [o1, o2],
-      matchMode: 'best-of-3-champions',
+      matchMode: 'two-sets-match-tiebreak',
     })
     friendliesService.accept(f.id, p)
     const declined = friendliesService.decline(f.id, o1)
@@ -279,7 +279,7 @@ describe('Lifecycle Doubles: Create → 3x Accept → Result → Confirm', () =>
       scheduledAt: tomorrow(),
       partnerId: p,
       opponentIds: [o1, o2],
-      matchMode: 'best-of-3-champions',
+      matchMode: 'two-sets-match-tiebreak',
     })
     friendliesService.accept(f.id, p)
     friendliesService.accept(f.id, o1)
@@ -307,7 +307,7 @@ describe('Lifecycle Doubles: Create → 3x Accept → Result → Confirm', () =>
       scheduledAt: tomorrow(),
       partnerId: p,
       opponentIds: [o1, o2],
-      matchMode: 'best-of-3-champions',
+      matchMode: 'two-sets-match-tiebreak',
     })
     friendliesService.accept(f.id, p)
     friendliesService.accept(f.id, o1)
@@ -328,7 +328,7 @@ describe('Dispute-Flow', () => {
       format: 'singles',
       scheduledAt: tomorrow(),
       opponentIds: [b],
-      matchMode: 'best-of-3-champions',
+      matchMode: 'two-sets-match-tiebreak',
     })
     friendliesService.accept(f.id, b)
     const r = friendlyResultsService.report(f.id, a, {
@@ -352,7 +352,7 @@ describe('Dispute-Flow', () => {
         format: 'singles',
         scheduledAt: longAgo,
         opponentIds: [b],
-        matchMode: 'best-of-3-champions',
+        matchMode: 'two-sets-match-tiebreak',
       },
       longAgo,
     )
@@ -380,13 +380,13 @@ describe('Friendly-Listing für Mitglied', () => {
       format: 'singles',
       scheduledAt: tomorrow(),
       opponentIds: [b],
-      matchMode: 'best-of-3-champions',
+      matchMode: 'two-sets-match-tiebreak',
     })
     friendliesService.create(c, {
       format: 'singles',
       scheduledAt: new Date(tomorrow().getTime() + 5 * 60 * 60 * 1000),
       opponentIds: [b],
-      matchMode: 'best-of-3-champions',
+      matchMode: 'two-sets-match-tiebreak',
     })
     const list = friendliesService.listForMember(b)
     expect(list).toHaveLength(2)
@@ -405,7 +405,7 @@ describe('Domain-Modell: Bug-Fixes #47 (Result vor Termin)', () => {
       format: 'singles',
       scheduledAt: past,
       opponentIds: [b],
-      matchMode: 'best-of-3-champions',
+      matchMode: 'two-sets-match-tiebreak',
     })
     friendliesService.accept(f.id, b)
 
@@ -427,7 +427,7 @@ describe('Domain-Modell: Bug-Fixes #47 (Result vor Termin)', () => {
       format: 'singles',
       scheduledAt: tomorrow(),
       opponentIds: [b],
-      matchMode: 'best-of-3-champions',
+      matchMode: 'two-sets-match-tiebreak',
     })
     friendliesService.accept(f.id, b)
     friendlyResultsService.report(f.id, a, {
@@ -447,7 +447,7 @@ describe('Domain-Modell: Bug-Fixes #48 (Cancel nach Result-Report)', () => {
       format: 'singles',
       scheduledAt: tomorrow(),
       opponentIds: [b],
-      matchMode: 'best-of-3-champions',
+      matchMode: 'two-sets-match-tiebreak',
     })
     friendliesService.accept(f.id, b)
     friendlyResultsService.report(f.id, a, {
@@ -464,7 +464,7 @@ describe('Domain-Modell: Bug-Fixes #48 (Cancel nach Result-Report)', () => {
       format: 'singles',
       scheduledAt: tomorrow(),
       opponentIds: [b],
-      matchMode: 'best-of-3-champions',
+      matchMode: 'two-sets-match-tiebreak',
     })
     // Noch kein Accept, noch kein Result → Cancel geht
     const result = friendliesService.cancel(f.id, a)
