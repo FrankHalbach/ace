@@ -1,4 +1,4 @@
-import { asc, eq } from 'drizzle-orm'
+import { asc, eq, sql } from 'drizzle-orm'
 import { useDb } from '../../../db'
 import {
   teamTag,
@@ -23,6 +23,14 @@ export const teamTagRepo = {
 
   findById(id: TeamTagId): TeamTagRow | undefined {
     return useDb().select().from(teamTag).where(eq(teamTag.id, id)).get()
+  },
+
+  findByNameLower(name: string): TeamTagRow | undefined {
+    return useDb()
+      .select()
+      .from(teamTag)
+      .where(sql`lower(${teamTag.name}) = ${name.trim().toLowerCase()}`)
+      .get()
   },
 
   insert(values: TeamTagInsert): TeamTagRow {
