@@ -40,14 +40,14 @@ describe('Friendly Schedule-Konflikt (N-04)', () => {
       format: 'singles',
       scheduledAt: at(24),
       opponentIds: [b],
-      matchMode: 'best-of-3-champions',
+      matchMode: 'two-sets-match-tiebreak',
     })
     expect(() =>
       friendliesService.create(a, {
         format: 'singles',
         scheduledAt: at(25), // 1h später — innerhalb ±2h
         opponentIds: [c],
-        matchMode: 'best-of-3-champions',
+        matchMode: 'two-sets-match-tiebreak',
       }),
     ).toThrowError(/schedule-conflict|bereits ein Match/i)
   })
@@ -58,14 +58,14 @@ describe('Friendly Schedule-Konflikt (N-04)', () => {
       format: 'singles',
       scheduledAt: at(24),
       opponentIds: [c],
-      matchMode: 'best-of-3-champions',
+      matchMode: 'two-sets-match-tiebreak',
     })
     expect(() =>
       friendliesService.create(a, {
         format: 'singles',
         scheduledAt: at(25), // c hängt schon im 24h-Slot
         opponentIds: [c],
-        matchMode: 'best-of-3-champions',
+        matchMode: 'two-sets-match-tiebreak',
       }),
     ).toThrowError(/schedule-conflict|bereits ein Match/i)
   })
@@ -76,14 +76,14 @@ describe('Friendly Schedule-Konflikt (N-04)', () => {
       format: 'singles',
       scheduledAt: at(24),
       opponentIds: [b],
-      matchMode: 'best-of-3-champions',
+      matchMode: 'two-sets-match-tiebreak',
     })
     expect(() =>
       friendliesService.create(a, {
         format: 'singles',
         scheduledAt: at(27), // 3h später → außerhalb Fenster
         opponentIds: [c],
-        matchMode: 'best-of-3-champions',
+        matchMode: 'two-sets-match-tiebreak',
       }),
     ).not.toThrow()
   })
@@ -94,7 +94,7 @@ describe('Friendly Schedule-Konflikt (N-04)', () => {
       format: 'singles',
       scheduledAt: at(24),
       opponentIds: [b],
-      matchMode: 'best-of-3-champions',
+      matchMode: 'two-sets-match-tiebreak',
     })
     friendliesService.decline(first.id, b)
     expect(() =>
@@ -102,7 +102,7 @@ describe('Friendly Schedule-Konflikt (N-04)', () => {
         format: 'singles',
         scheduledAt: at(24),
         opponentIds: [c],
-        matchMode: 'best-of-3-champions',
+        matchMode: 'two-sets-match-tiebreak',
       }),
     ).not.toThrow()
   })
@@ -119,7 +119,7 @@ describe('Friendly Schedule-Konflikt (N-04)', () => {
       format: 'singles',
       scheduledAt: at(40),
       opponentIds: [b],
-      matchMode: 'best-of-3-champions',
+      matchMode: 'two-sets-match-tiebreak',
     })
     // Direct-DB-Insert eines zweiten Friendlies, das b ebenfalls auf 40h legt
     const ghostRow = useDb()
@@ -128,7 +128,7 @@ describe('Friendly Schedule-Konflikt (N-04)', () => {
         initiatorId: c,
         format: 'singles',
         scheduledAt: at(40),
-        matchMode: 'best-of-3-champions',
+        matchMode: 'two-sets-match-tiebreak',
         status: 'PROPOSED',
         createdAt: new Date(),
       })
@@ -155,7 +155,7 @@ describe('Friendly Schedule-Konflikt (N-04)', () => {
       format: 'singles',
       scheduledAt: at(24),
       opponentIds: [b],
-      matchMode: 'best-of-3-champions',
+      matchMode: 'two-sets-match-tiebreak',
     })
     // Es gibt nur EINEN Eintrag im Slot — den, den b akzeptiert. Nicht blocken.
     expect(() => friendliesService.accept(f.id, b)).not.toThrow()

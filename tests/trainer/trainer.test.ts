@@ -59,7 +59,7 @@ describe('Trainer disputes — Liste', () => {
     const r1 = resultsService.report(c1.id, memberIds[3], {
       winnerId: memberIds[3],
       sets: [{ a: 6, b: 4 }, { a: 6, b: 3 }],
-      matchMode: 'best-of-3-champions',
+      matchMode: 'two-sets-match-tiebreak',
     })
     resultsService.dispute(r1.id, memberIds[1], { note: 'falscher Score' })
 
@@ -68,7 +68,7 @@ describe('Trainer disputes — Liste', () => {
       format: 'singles',
       scheduledAt: tomorrow(),
       opponentIds: [memberIds[2]],
-      matchMode: 'best-of-3-champions',
+      matchMode: 'two-sets-match-tiebreak',
     })
     friendliesService.accept(f.id, memberIds[2])
     const fr = friendlyResultsService.report(f.id, memberIds[0], {
@@ -99,7 +99,7 @@ describe('Trainer Confirm Challenge', () => {
     const r = resultsService.report(c.id, memberIds[3], {
       winnerId: memberIds[3],
       sets: [{ a: 6, b: 4 }, { a: 6, b: 3 }],
-      matchMode: 'best-of-3-champions',
+      matchMode: 'two-sets-match-tiebreak',
     })
     resultsService.dispute(r.id, memberIds[1], { note: 'streit' })
 
@@ -128,7 +128,7 @@ describe('Trainer Cancel Challenge', () => {
     const r = resultsService.report(c.id, memberIds[3], {
       winnerId: memberIds[3],
       sets: [{ a: 6, b: 4 }, { a: 6, b: 3 }],
-      matchMode: 'best-of-3-champions',
+      matchMode: 'two-sets-match-tiebreak',
     })
     resultsService.dispute(r.id, memberIds[1], { note: 'streit' })
 
@@ -170,7 +170,7 @@ describe('Trainer Confirm/Cancel Friendly', () => {
       format: 'singles',
       scheduledAt: tomorrow(),
       opponentIds: [memberIds[2]],
-      matchMode: 'best-of-3-champions',
+      matchMode: 'two-sets-match-tiebreak',
     })
     friendliesService.accept(f.id, memberIds[2])
     const fr = friendlyResultsService.report(f.id, memberIds[0], {
@@ -197,7 +197,7 @@ describe('Trainer Confirm/Cancel Friendly', () => {
       format: 'singles',
       scheduledAt: tomorrow(),
       opponentIds: [memberIds[2]],
-      matchMode: 'best-of-3-champions',
+      matchMode: 'two-sets-match-tiebreak',
     })
     friendliesService.accept(f.id, memberIds[2])
     const fr = friendlyResultsService.report(f.id, memberIds[0], {
@@ -235,7 +235,7 @@ describe('Trainer Activity-Übersicht', () => {
     const r = resultsService.report(c.id, memberIds[3], {
       winnerId: memberIds[3],
       sets: [{ a: 6, b: 4 }, { a: 6, b: 3 }],
-      matchMode: 'best-of-3-champions',
+      matchMode: 'two-sets-match-tiebreak',
     })
     resultsService.confirm(r.id, memberIds[1])
 
@@ -244,7 +244,7 @@ describe('Trainer Activity-Übersicht', () => {
       format: 'singles',
       scheduledAt: tomorrow(),
       opponentIds: [memberIds[2]],
-      matchMode: 'best-of-3-champions',
+      matchMode: 'two-sets-match-tiebreak',
     })
     friendliesService.accept(f.id, memberIds[2])
     friendliesService.markPlayed(f.id, memberIds[0])
@@ -270,7 +270,7 @@ describe('Trainer Activity-Übersicht', () => {
     const r = resultsService.report(c.id, memberIds[3], {
       winnerId: memberIds[3],
       sets: [{ a: 6, b: 4 }, { a: 6, b: 3 }],
-      matchMode: 'best-of-3-champions',
+      matchMode: 'two-sets-match-tiebreak',
     })
     // Confirm vor 35 Tagen
     const old = new Date(Date.now() - 35 * 24 * 60 * 60 * 1000)

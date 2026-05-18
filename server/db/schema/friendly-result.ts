@@ -25,14 +25,7 @@ export const friendlyResult = sqliteTable(
 
     sets: text('sets', { mode: 'json' }).$type<SetScore[]>().notNull(),
     matchMode: text('match_mode', {
-      enum: [
-        'two-sets-match-tiebreak',
-        'best-of-3-tiebreak',
-        'best-of-3-full',
-        'best-of-3-champions',
-        'short-sets-tiebreak',
-        'pro-set',
-      ],
+      enum: ['two-sets-match-tiebreak'],
     }).notNull(),
 
     reportedAt: integer('reported_at', { mode: 'timestamp' })

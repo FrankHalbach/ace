@@ -32,14 +32,7 @@ export type {
   SetScore,
 }
 
-const matchModeEnum = z.enum([
-  'two-sets-match-tiebreak',
-  'best-of-3-tiebreak',
-  'best-of-3-full',
-  'best-of-3-champions',
-  'short-sets-tiebreak',
-  'pro-set',
-])
+const matchModeEnum = z.enum(['two-sets-match-tiebreak'])
 
 export const createFriendlyInput = z
   .object({

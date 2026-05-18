@@ -5,14 +5,9 @@ import {
   getRankingEntries,
   getRankingMeta,
   strategyFor,
-  type RankingId,
 } from '../../rankings'
 import { matchResultRepo } from '../repository/match-result-repo'
-import {
-  validateSetsForMode,
-  verifyWinnerConsistency,
-  type ProSetLength,
-} from '../../../../shared/match-scoring'
+import { validateSetsForMode, verifyWinnerConsistency } from '../../../../shared/match-scoring'
 import {
   AlreadyConfirmedError,
   ChallengeNotAcceptedError,
@@ -29,14 +24,7 @@ import type { MatchResultRow } from '../../../db/schema/match-result'
 
 const PENDING_DISPUTE_AFTER_MS = 3 * 24 * 60 * 60 * 1000 // 3 Tage (FR-32)
 
-const DEFAULT_MATCH_MODE: MatchMode = 'best-of-3-champions'
-
-/** Liest die `proSetLength` aus der Saison-Config der Rangliste — Default 8. */
-function proSetLengthForRanking(rankingId: RankingId): ProSetLength {
-  const meta = getRankingMeta(rankingId)
-  const raw = meta?.seasonConfig?.proSetLength
-  return raw === 9 ? 9 : 8
-}
+const DEFAULT_MATCH_MODE: MatchMode = 'two-sets-match-tiebreak'
 
 function toDto(row: MatchResultRow): MatchResultDto {
   return {
@@ -94,8 +82,7 @@ export const resultsService = {
     // Modus aus Input oder Default
     const matchMode: MatchMode = input.matchMode ?? DEFAULT_MATCH_MODE
     const outcome = input.outcome ?? 'regular'
-    const proSetLength = proSetLengthForRanking(challenge.rankingId)
-    validateSetsForMode(matchMode, input.sets, { proSetLength, outcome })
+    validateSetsForMode(matchMode, input.sets, { outcome })
     if (outcome === 'regular') {
       verifyWinnerConsistency(input.sets, winnerId === challenge.challengerId)
     }

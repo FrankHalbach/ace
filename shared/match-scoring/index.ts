@@ -3,4 +3,4 @@ export {
   validateSetsForMode,
   verifyWinnerConsistency,
 } from './sets-validator'
-export type { MatchOutcome, ProSetLength, ScoringMode, SetScore, ValidateOptions } from './sets-validator'
+export type { MatchOutcome, ScoringMode, SetScore, ValidateOptions } from './sets-validator'
