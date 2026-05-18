@@ -22,10 +22,21 @@ useHead({ title: 'Admin' })
         <div class="text-sm text-muted">Saisons anlegen, Status steuern, Altersgruppen pflegen</div>
       </NuxtLink>
 
-      <div class="block p-4 border border-default rounded-lg opacity-50">
+      <NuxtLink
+        to="/team-tags"
+        class="block p-4 border border-default rounded-lg hover:border-primary hover:bg-elevated transition"
+      >
+        <div class="font-medium text-default">Mannschaften</div>
+        <div class="text-sm text-muted">Mannschafts-Tags pflegen — gemeinsam mit Trainern</div>
+      </NuxtLink>
+
+      <NuxtLink
+        to="/admin/members"
+        class="block p-4 border border-default rounded-lg hover:border-primary hover:bg-elevated transition"
+      >
         <div class="font-medium text-default">Mitglieder</div>
-        <div class="text-sm text-muted">folgt mit dem admin-Feature</div>
-      </div>
+        <div class="text-sm text-muted">Liste, Rollen pflegen — CSV-Import und Einladungen folgen</div>
+      </NuxtLink>
 
       <div class="block p-4 border border-default rounded-lg opacity-50">
         <div class="font-medium text-default">Audit-Log</div>

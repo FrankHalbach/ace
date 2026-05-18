@@ -293,21 +293,22 @@ Repo-Schicht für `auditEntry`, ansonsten Aufrufe in andere Module.
 | `rankings`         | `recomputeFromResult(resultId)` (neu/refactor) | reapply nach Korrektur                            |
 | `auth` / `magic-link` | Token-Konsum setzt `firstLoginAt` falls null | One-Liner im bestehenden Konsum-Pfad           |
 
-### Eigenes Sub-Modul: `team-tags`
+### Eigenes Modul: `team-tags`
 
-`team-tags` ist klein genug für ein Sub-Modul im `admin`-Modul (`server/modules/admin/team-tags/`), aber abgekapselt: eigene Repo-Schicht, eigene Service-Funktionen.
-Andere Module konsumieren später per Service:
+`team-tags` lebt als top-level Modul `server/modules/team-tags/` parallel
+zum `admin`-Modul — passend zur Repo-Konvention (jedes Modul ist
+top-level, kein bestehendes Modul hat Sub-Module) und zum neutralen
+URL-Pfad `/api/team-tags`. Konsumenten (Profil, Rangliste, Member-Card)
+importieren direkt aus `from '../team-tags'`, ohne über `admin` zu gehen.
 
 ```typescript
-// server/modules/admin/index.ts
+// server/modules/team-tags/index.ts
 export const teamTagsService = {
-  listForMember(memberId): Promise<TeamTagDto[]>
-  listAll(includeInactive?): Promise<TeamTagDto[]>
+  listAll(): TeamTagDto[]
+  listForMember(memberId): TeamTagDto[]
+  // create/update/delete/setAssignments folgen mit Endpoint-PR
 }
 ```
-
-Profil-/Rangliste-/Member-Card-Views lesen darüber, ohne die Tabellen
-direkt zu kennen.
 
 Das `admin`-Modul exportiert für andere Module nur einen kleinen Helfer:
 

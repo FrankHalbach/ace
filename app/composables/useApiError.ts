@@ -44,6 +44,15 @@ const MESSAGES: Record<string, string> = {
   'season.invalid-transition': 'Status-Wechsel der Saison nicht möglich.',
   'age-group.not-found': 'Altersgruppe nicht gefunden.',
   'age-group.name-taken': 'Eine Altersgruppe mit diesem Namen existiert in dieser Saison schon.',
+  'team-tag.not-found': 'Mannschaft nicht gefunden.',
+  'team-tag.duplicate-name': 'Eine Mannschaft mit diesem Namen existiert bereits.',
+  'team-tag.inactive': 'Diese Mannschaft ist archiviert und kann nicht neu zugewiesen werden.',
+
+  // Members
+  'member.not-found': 'Mitglied nicht gefunden.',
+  'member.must-keep-player-role': 'Die Spieler-Rolle kann nicht entfernt werden.',
+  'member.cannot-remove-last-admin': 'Mindestens ein aktiver Admin muss erhalten bleiben.',
+  'member.duplicate-email': 'Diese E-Mail-Adresse ist bereits vergeben.',
 
   // Auth / Rollen
   'auth.role-required': 'Du hast nicht die nötige Berechtigung.',

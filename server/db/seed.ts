@@ -10,13 +10,38 @@
  *
  * Ausführen: pnpm db:seed
  */
-import { sql } from 'drizzle-orm'
+import { and, eq, sql } from 'drizzle-orm'
 import { useDb } from './index'
 import { member, type MemberInsert } from './schema/member'
+import { memberTeamTag } from './schema/member-team-tag'
+import { teamTag, type TeamTagInsert } from './schema/team-tag'
 import { generateForSeason } from '../modules/rankings'
 import { seasonsService } from '../modules/seasons'
 
 const DEMO_SEASON_NAME = 'Sommer 2026'
+
+const seedTeamTags: TeamTagInsert[] = [
+  { name: '1. Herren', sortOrder: 10 },
+  { name: '2. Herren', sortOrder: 20 },
+  { name: 'Damen 30', sortOrder: 30 },
+  { name: 'Junioren', sortOrder: 40 },
+  { name: 'Archiv-Beispiel', sortOrder: 99, active: false },
+]
+
+/**
+ * Beispiel-Zuordnungen: email → Liste der Tag-Namen, die diese Person bekommt.
+ * Demonstriert Mehrfach-Tags (Tom ist in „1. Herren" und „2. Herren"), reine
+ * Anzeige-Funktion (Mannschaft ist nicht an Rangliste gekoppelt) und
+ * Jugend-Tag fuer einen U18-Spieler.
+ */
+const seedTagAssignments: Record<string, string[]> = {
+  'max@neureut.de': ['1. Herren'],
+  'tom@neureut.de': ['1. Herren', '2. Herren'],
+  'klaus@neureut.de': ['2. Herren'],
+  'jan@neureut.de': ['2. Herren'],
+  'sara@neureut.de': ['Damen 30'],
+  'lukas@neureut.de': ['Junioren'],
+}
 
 const seedMembers: MemberInsert[] = [
   // Test-Logins (Console-Magic-Link funktioniert mit allen drei)
@@ -105,6 +130,76 @@ export function runSeed(): void {
     console.log(`✔ Seed komplett: ${inserted} Mitglieder neu, ${skipped} übersprungen.`)
     console.log(`  Saison "${DEMO_SEASON_NAME}" angelegt: ${rankingsCreated} Ranglisten, ${entriesCreated} Einträge.`)
   }
+
+  // --- Mannschafts-Tags ----------------------------------------------------
+
+  let tagsInserted = 0
+  let tagsSkipped = 0
+  for (const tag of seedTeamTags) {
+    const existing = db
+      .select()
+      .from(teamTag)
+      .where(sql`lower(${teamTag.name}) = ${tag.name.toLowerCase()}`)
+      .get()
+    if (existing) {
+      tagsSkipped++
+      continue
+    }
+    db.insert(teamTag).values(tag).run()
+    tagsInserted++
+  }
+  console.log(`  Mannschafts-Tags: ${tagsInserted} neu, ${tagsSkipped} übersprungen.`)
+
+  // --- Tag-Zuweisungen -----------------------------------------------------
+
+  const adminRow = db
+    .select()
+    .from(member)
+    .where(sql`lower(${member.email}) = ${'admin@neureut.de'}`)
+    .get()
+  const tagByName = new Map(
+    db.select().from(teamTag).all().map((t) => [t.name, t]),
+  )
+
+  let assignmentsInserted = 0
+  let assignmentsSkipped = 0
+  if (adminRow) {
+    for (const [email, names] of Object.entries(seedTagAssignments)) {
+      const memberRow = db
+        .select()
+        .from(member)
+        .where(sql`lower(${member.email}) = ${email.toLowerCase()}`)
+        .get()
+      if (!memberRow) continue
+      for (const name of names) {
+        const tag = tagByName.get(name)
+        if (!tag) continue
+        const exists = db
+          .select()
+          .from(memberTeamTag)
+          .where(
+            and(
+              eq(memberTeamTag.memberId, memberRow.id),
+              eq(memberTeamTag.teamTagId, tag.id),
+            ),
+          )
+          .get()
+        if (exists) {
+          assignmentsSkipped++
+          continue
+        }
+        db.insert(memberTeamTag)
+          .values({
+            memberId: memberRow.id,
+            teamTagId: tag.id,
+            assignedBy: adminRow.id,
+          })
+          .run()
+        assignmentsInserted++
+      }
+    }
+  }
+  console.log(`  Tag-Zuweisungen: ${assignmentsInserted} neu, ${assignmentsSkipped} übersprungen.`)
 
   console.log('  Test-Logins:')
   for (const m of seedMembers.slice(0, 3)) {
