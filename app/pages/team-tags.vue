@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { TeamMemberDto, TeamTagDto, TeamTagId } from '~~/server/modules/team-tags'
+import type { TeamMemberDto, TeamTagDto } from '~~/server/modules/team-tags'
 
 definePageMeta({ middleware: 'trainer' })
 useHead({ title: 'Mannschaften' })
@@ -13,8 +13,7 @@ const { data: tags, refresh } = await useFetch<TeamTagDto[]>('/api/team-tags', {
   default: () => [],
 })
 
-// Globaler Spielerpool fuer den Add-Picker. Frischen wir nach jeder Aenderung
-// nicht zwingend — die Mitgliederliste ist stabil; ein Refresh am Mount reicht.
+// Globaler Spielerpool fuer den Add-Picker.
 const { data: allMembers } = await useFetch<TeamMemberDto[]>('/api/members', {
   default: () => [],
 })
@@ -50,162 +49,92 @@ async function createTag() {
   }
 }
 
-// --- Rename / Sort / Active / Delete (unverändert von vorher) -------------
+// --- Modal-State (Editieren einer einzelnen Mannschaft) -------------------
 
-const editingId = ref<string | null>(null)
-const editingName = ref('')
-const savingId = ref<string | null>(null)
-const deletingId = ref<string | null>(null)
+const editingTag = ref<TeamTagDto | null>(null)
+const draftName = ref('')
+const draftSortOrder = ref<number>(0)
+const draftActive = ref(true)
+const savingMeta = ref(false)
 
-function startEdit(tag: TeamTagDto) {
-  editingId.value = tag.id
-  editingName.value = tag.name
-}
+const roster = ref<TeamMemberDto[] | null>(null)
+const rosterLoading = ref(false)
+const rosterMutating = ref(false)
+const memberCounts = ref<Record<string, number>>({})
 
-function cancelEdit() {
-  editingId.value = null
-  editingName.value = ''
-}
-
-async function saveEdit(tag: TeamTagDto) {
-  const name = editingName.value.trim()
-  if (!name || name === tag.name) {
-    cancelEdit()
-    return
-  }
-  savingId.value = tag.id
+async function openEditor(tag: TeamTagDto) {
+  editingTag.value = tag
+  draftName.value = tag.name
+  draftSortOrder.value = tag.sortOrder
+  draftActive.value = tag.active
+  roster.value = null
+  rosterLoading.value = true
   try {
-    await $fetch(`/api/team-tags/${tag.id}`, {
-      method: 'PATCH',
-      body: { name },
-    })
-    cancelEdit()
-    await refresh()
-    toast.add({ title: 'Umbenannt', color: 'primary' })
-  } catch (err: unknown) {
-    toast.add({ title: 'Umbenennen fehlgeschlagen', description: apiError(err), color: 'error' })
-  } finally {
-    savingId.value = null
-  }
-}
-
-async function toggleActive(tag: TeamTagDto) {
-  savingId.value = tag.id
-  try {
-    await $fetch(`/api/team-tags/${tag.id}`, {
-      method: 'PATCH',
-      body: { active: !tag.active },
-    })
-    await refresh()
-    toast.add({
-      title: tag.active ? 'Archiviert' : 'Wieder aktiv',
-      color: 'primary',
-    })
-  } catch (err: unknown) {
-    toast.add({ title: 'Fehler', description: apiError(err), color: 'error' })
-  } finally {
-    savingId.value = null
-  }
-}
-
-async function updateSortOrder(tag: TeamTagDto, value: number) {
-  if (value === tag.sortOrder) return
-  savingId.value = tag.id
-  try {
-    await $fetch(`/api/team-tags/${tag.id}`, {
-      method: 'PATCH',
-      body: { sortOrder: value },
-    })
-    await refresh()
-  } catch (err: unknown) {
-    toast.add({ title: 'Fehler', description: apiError(err), color: 'error' })
-  } finally {
-    savingId.value = null
-  }
-}
-
-async function deleteTag(tag: TeamTagDto) {
-  if (!isAdmin.value) return
-  if (
-    !confirm(
-      `Mannschaft „${tag.name}" wirklich löschen? Bestehende Zuordnungen werden entfernt.`,
-    )
-  ) {
-    return
-  }
-  deletingId.value = tag.id
-  try {
-    await $fetch(`/api/team-tags/${tag.id}`, { method: 'DELETE' })
-    await refresh()
-    toast.add({ title: 'Mannschaft gelöscht', color: 'primary' })
-  } catch (err: unknown) {
-    toast.add({ title: 'Löschen fehlgeschlagen', description: apiError(err), color: 'error' })
-  } finally {
-    deletingId.value = null
-  }
-}
-
-// --- Roster (aufklappbar) -------------------------------------------------
-
-const expanded = ref<Set<string>>(new Set())
-const rosterByTag = ref<Record<string, TeamMemberDto[] | null>>({})
-const rosterLoading = ref<Set<string>>(new Set())
-const rosterMutating = ref<Set<string>>(new Set())
-const addPickerByTag = ref<Record<string, string | null>>({})
-
-function isExpanded(tag: TeamTagDto): boolean {
-  return expanded.value.has(tag.id)
-}
-
-async function toggleExpand(tag: TeamTagDto) {
-  if (expanded.value.has(tag.id)) {
-    expanded.value.delete(tag.id)
-    expanded.value = new Set(expanded.value)
-    return
-  }
-  expanded.value.add(tag.id)
-  expanded.value = new Set(expanded.value)
-  if (rosterByTag.value[tag.id] === undefined) {
-    await loadRoster(tag.id)
-  }
-}
-
-async function loadRoster(tagId: string) {
-  rosterLoading.value.add(tagId)
-  rosterLoading.value = new Set(rosterLoading.value)
-  try {
-    const members = await $fetch<TeamMemberDto[]>(`/api/team-tags/${tagId}/members`)
-    rosterByTag.value = { ...rosterByTag.value, [tagId]: members }
+    const members = await $fetch<TeamMemberDto[]>(`/api/team-tags/${tag.id}/members`)
+    roster.value = members
+    memberCounts.value = { ...memberCounts.value, [tag.id]: members.length }
   } catch (err: unknown) {
     toast.add({
       title: 'Konnte Mitglieder nicht laden',
       description: apiError(err),
       color: 'error',
     })
-    rosterByTag.value = { ...rosterByTag.value, [tagId]: [] }
+    roster.value = []
   } finally {
-    rosterLoading.value.delete(tagId)
-    rosterLoading.value = new Set(rosterLoading.value)
+    rosterLoading.value = false
   }
 }
 
-function rosterFor(tag: TeamTagDto): TeamMemberDto[] | null {
-  const r = rosterByTag.value[tag.id]
-  return r === undefined ? null : r
+function closeEditor() {
+  editingTag.value = null
+  roster.value = null
+  rosterMutating.value = false
 }
 
-function isRosterLoading(tag: TeamTagDto): boolean {
-  return rosterLoading.value.has(tag.id)
+const metaDirty = computed(() => {
+  const t = editingTag.value
+  if (!t) return false
+  return (
+    draftName.value.trim() !== t.name ||
+    draftSortOrder.value !== t.sortOrder ||
+    draftActive.value !== t.active
+  )
+})
+
+async function saveMeta() {
+  const tag = editingTag.value
+  if (!tag) return
+  const name = draftName.value.trim()
+  if (!name) return
+
+  const patch: Record<string, unknown> = {}
+  if (name !== tag.name) patch.name = name
+  if (draftSortOrder.value !== tag.sortOrder) patch.sortOrder = draftSortOrder.value
+  if (draftActive.value !== tag.active) patch.active = draftActive.value
+  if (Object.keys(patch).length === 0) return
+
+  savingMeta.value = true
+  try {
+    await $fetch(`/api/team-tags/${tag.id}`, { method: 'PATCH', body: patch })
+    await refresh()
+    // Update den lokalen editingTag mit neuem Stand, ohne Modal zu schliessen.
+    const fresh = (tags.value ?? []).find((t) => t.id === tag.id)
+    if (fresh) editingTag.value = fresh
+    toast.add({ title: 'Gespeichert', color: 'primary' })
+  } catch (err: unknown) {
+    toast.add({ title: 'Speichern fehlgeschlagen', description: apiError(err), color: 'error' })
+  } finally {
+    savingMeta.value = false
+  }
 }
 
-function isMutating(tag: TeamTagDto): boolean {
-  return rosterMutating.value.has(tag.id)
-}
+// --- Roster-Mutations -----------------------------------------------------
 
-/** Spieler, die noch NICHT in dieser Mannschaft sind — fuer den Picker. */
-function pickerItems(tag: TeamTagDto) {
-  const roster = rosterFor(tag) ?? []
-  const assignedIds = new Set(roster.map((m) => m.id))
+const addPickerValue = ref<string | null>(null)
+
+function pickerItems() {
+  const r = roster.value ?? []
+  const assignedIds = new Set(r.map((m) => m.id))
   return (allMembers.value ?? [])
     .filter((m) => !assignedIds.has(m.id) && m.status === 'aktiv')
     .map((m) => ({
@@ -214,15 +143,17 @@ function pickerItems(tag: TeamTagDto) {
     }))
 }
 
-async function addMember(tag: TeamTagDto, memberId: string) {
-  rosterMutating.value.add(tag.id)
-  rosterMutating.value = new Set(rosterMutating.value)
+async function addMember(memberId: string) {
+  const tag = editingTag.value
+  if (!tag) return
+  rosterMutating.value = true
   try {
     const next = await $fetch<TeamMemberDto[]>(`/api/team-tags/${tag.id}/members`, {
       method: 'POST',
       body: { memberId },
     })
-    rosterByTag.value = { ...rosterByTag.value, [tag.id]: next }
+    roster.value = next
+    memberCounts.value = { ...memberCounts.value, [tag.id]: next.length }
     toast.add({ title: 'Spieler hinzugefügt', color: 'primary' })
   } catch (err: unknown) {
     toast.add({
@@ -231,21 +162,22 @@ async function addMember(tag: TeamTagDto, memberId: string) {
       color: 'error',
     })
   } finally {
-    rosterMutating.value.delete(tag.id)
-    rosterMutating.value = new Set(rosterMutating.value)
-    addPickerByTag.value = { ...addPickerByTag.value, [tag.id]: null }
+    rosterMutating.value = false
+    addPickerValue.value = null
   }
 }
 
-async function removeMember(tag: TeamTagDto, member: TeamMemberDto) {
-  rosterMutating.value.add(tag.id)
-  rosterMutating.value = new Set(rosterMutating.value)
+async function removeMember(member: TeamMemberDto) {
+  const tag = editingTag.value
+  if (!tag) return
+  rosterMutating.value = true
   try {
     const next = await $fetch<TeamMemberDto[]>(
       `/api/team-tags/${tag.id}/members/${member.id}`,
       { method: 'DELETE' },
     )
-    rosterByTag.value = { ...rosterByTag.value, [tag.id]: next }
+    roster.value = next
+    memberCounts.value = { ...memberCounts.value, [tag.id]: next.length }
     toast.add({
       title: `${member.firstName} ${member.lastName} entfernt`,
       color: 'primary',
@@ -257,17 +189,41 @@ async function removeMember(tag: TeamTagDto, member: TeamMemberDto) {
       color: 'error',
     })
   } finally {
-    rosterMutating.value.delete(tag.id)
-    rosterMutating.value = new Set(rosterMutating.value)
+    rosterMutating.value = false
   }
 }
 
-function initials(m: TeamMemberDto): string {
-  return `${m.firstName[0] ?? ''}${m.lastName[0] ?? ''}`.toUpperCase() || '·'
+// --- Loeschen (admin) -----------------------------------------------------
+
+const deleting = ref(false)
+
+async function deleteCurrent() {
+  const tag = editingTag.value
+  if (!tag || !isAdmin.value) return
+  const count = roster.value?.length ?? 0
+  const msg =
+    count === 0
+      ? `Mannschaft „${tag.name}" wirklich löschen?`
+      : `Mannschaft „${tag.name}" wirklich löschen? ${count} bestehende Zuordnung${count === 1 ? '' : 'en'} werden entfernt.`
+  if (!confirm(msg)) return
+
+  deleting.value = true
+  try {
+    await $fetch(`/api/team-tags/${tag.id}`, { method: 'DELETE' })
+    await refresh()
+    closeEditor()
+    toast.add({ title: 'Mannschaft gelöscht', color: 'primary' })
+  } catch (err: unknown) {
+    toast.add({ title: 'Löschen fehlgeschlagen', description: apiError(err), color: 'error' })
+  } finally {
+    deleting.value = false
+  }
 }
 
-function onPickerChange(tag: TeamTagDto, value: string | null) {
-  if (value) addMember(tag, value)
+// --- Helpers --------------------------------------------------------------
+
+function initials(m: TeamMemberDto): string {
+  return `${m.firstName[0] ?? ''}${m.lastName[0] ?? ''}`.toUpperCase() || '·'
 }
 </script>
 
@@ -282,8 +238,8 @@ function onPickerChange(tag: TeamTagDto, value: string | null) {
 
     <p class="text-muted text-sm mb-6">
       Mannschafts-Tags sind reine Anzeige-Markierungen am Spieler. Pflege durch
-      Admin und Trainer. Archivierte Tags lassen sich nicht mehr neu vergeben,
-      bestehende Zuordnungen bleiben aber bestehen.
+      Admin und Trainer. Auf eine Zeile klicken, um Spieler zuzuweisen oder die
+      Mannschaft zu bearbeiten.
     </p>
 
     <UCard v-if="showCreate" class="mb-6">
@@ -325,158 +281,121 @@ function onPickerChange(tag: TeamTagDto, value: string | null) {
     </p>
 
     <ul v-else class="space-y-2">
-      <li
-        v-for="tag in tags"
-        :key="tag.id"
-        class="border border-default rounded-lg overflow-hidden transition-colors"
-        :class="{
-          'opacity-60': !tag.active,
-          'border-primary/30 bg-elevated/30': isExpanded(tag) && tag.active,
-        }"
-      >
-        <!-- ROW: Header (unchanged actions + new expand affordance) -->
-        <div class="flex items-center gap-3 p-3">
-          <!-- Chevron — clickable expand toggle, separate from row controls -->
-          <button
-            type="button"
-            class="shrink-0 size-9 inline-flex items-center justify-center rounded-md text-muted hover:text-default hover:bg-elevated transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-            :aria-label="isExpanded(tag) ? 'Mitglieder einklappen' : 'Mitglieder anzeigen'"
-            :aria-expanded="isExpanded(tag)"
-            @click="toggleExpand(tag)"
+      <li v-for="tag in tags" :key="tag.id">
+        <button
+          type="button"
+          class="w-full text-left p-4 border border-default rounded-lg flex items-center gap-4 hover:border-primary/40 hover:bg-elevated/40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 min-h-[60px]"
+          :class="{ 'opacity-60': !tag.active }"
+          @click="openEditor(tag)"
+        >
+          <!-- Sortier-Badge (kleine Mono-Pille) -->
+          <span
+            class="shrink-0 mono text-[11px] font-semibold tabular-nums text-muted bg-elevated rounded px-2 py-1"
+            aria-label="Sortier-Position"
           >
-            <UIcon
-              name="i-lucide-chevron-right"
-              class="size-5 transition-transform duration-200"
-              :class="{ 'rotate-90': isExpanded(tag) }"
-            />
-          </button>
+            {{ tag.sortOrder }}
+          </span>
 
-          <!-- Sortier-Zahl -->
-          <UInput
-            :model-value="tag.sortOrder"
-            type="number"
-            min="0"
-            max="9999"
-            size="xs"
-            class="w-16 shrink-0"
-            :disabled="savingId === tag.id"
-            @change="(e: Event) => updateSortOrder(tag, Number((e.target as HTMLInputElement).value))"
-          />
-
-          <!-- Name (Anzeige oder Edit-Modus) -->
-          <div class="flex-1 min-w-0">
-            <form
-              v-if="editingId === tag.id"
-              class="flex items-center gap-2"
-              @submit.prevent="saveEdit(tag)"
+          <div class="flex-1 min-w-0 flex items-baseline gap-2 flex-wrap">
+            <span class="font-medium truncate">{{ tag.name }}</span>
+            <span
+              v-if="!tag.active"
+              class="mono text-[10px] font-semibold tracking-[0.14em] uppercase text-muted shrink-0"
             >
-              <UInput
-                v-model="editingName"
-                size="sm"
-                class="flex-1"
-                autofocus
-                :maxlength="80"
-                :disabled="savingId === tag.id"
-                @keyup.escape="cancelEdit"
-              />
-              <UButton
-                type="submit"
-                color="primary"
-                size="xs"
-                :loading="savingId === tag.id"
-              >
-                OK
-              </UButton>
-              <UButton variant="ghost" color="neutral" size="xs" @click="cancelEdit">
-                Abbrechen
-              </UButton>
-            </form>
-            <button
-              v-else
-              type="button"
-              class="w-full text-left flex items-center gap-2 group focus-visible:outline-none focus-visible:underline"
-              @click="toggleExpand(tag)"
+              archiviert
+            </span>
+            <span
+              v-if="memberCounts[tag.id] !== undefined"
+              class="mono text-[11px] font-medium tabular-nums text-muted shrink-0"
             >
-              <span class="font-medium truncate group-hover:text-primary transition-colors">
-                {{ tag.name }}
-              </span>
-              <span
-                v-if="!tag.active"
-                class="mono text-[10px] font-semibold tracking-[0.14em] uppercase text-muted shrink-0"
-              >
-                archiviert
-              </span>
-              <span
-                v-if="rosterFor(tag)"
-                class="mono text-[11px] font-medium tabular-nums text-muted shrink-0"
-              >
-                · {{ rosterFor(tag)?.length ?? 0 }}
-              </span>
-            </button>
+              · {{ memberCounts[tag.id] }} Spieler
+            </span>
           </div>
 
-          <!-- Aktionen (unchanged) -->
-          <div v-if="editingId !== tag.id" class="flex items-center gap-1 shrink-0">
+          <UIcon name="i-lucide-chevron-right" class="size-5 text-muted shrink-0" />
+        </button>
+      </li>
+    </ul>
+
+    <!-- Modal: Mannschaft editieren -->
+    <UModal :open="editingTag != null" :ui="{ content: 'max-w-2xl' }" @update:open="(v: boolean) => !v && closeEditor()">
+      <template #content>
+        <div v-if="editingTag" class="flex flex-col max-h-[85vh]">
+          <!-- Header -->
+          <header class="flex items-start justify-between gap-4 p-6 border-b border-default">
+            <div class="flex-1 min-w-0">
+              <h2 class="text-lg font-semibold truncate">{{ editingTag.name }}</h2>
+              <p class="text-muted text-sm mt-0.5">
+                Mannschaft bearbeiten und Spieler zuordnen.
+              </p>
+            </div>
             <UButton
               variant="ghost"
               color="neutral"
-              size="xs"
-              icon="i-lucide-pencil"
-              aria-label="Umbenennen"
-              :disabled="savingId === tag.id"
-              @click="startEdit(tag)"
+              icon="i-lucide-x"
+              aria-label="Schließen"
+              @click="closeEditor"
             />
-            <UButton
-              variant="ghost"
-              color="neutral"
-              size="xs"
-              :icon="tag.active ? 'i-lucide-archive' : 'i-lucide-archive-restore'"
-              :aria-label="tag.active ? 'Archivieren' : 'Reaktivieren'"
-              :loading="savingId === tag.id"
-              @click="toggleActive(tag)"
-            />
-            <UButton
-              v-if="isAdmin"
-              variant="ghost"
-              color="error"
-              size="xs"
-              icon="i-lucide-trash-2"
-              aria-label="Löschen"
-              :loading="deletingId === tag.id"
-              @click="deleteTag(tag)"
-            />
-          </div>
-        </div>
+          </header>
 
-        <!-- PANEL: Roster (animated reveal) -->
-        <Transition name="roster">
-          <div v-if="isExpanded(tag)" class="border-t border-default bg-elevated/60">
-            <!-- Left accent rule + inset content -->
-            <div class="relative pl-5 pr-3 py-4 sm:pl-8 sm:pr-4">
-              <span
-                class="absolute left-0 top-0 bottom-0 w-[3px] bg-primary/60"
-                aria-hidden="true"
-              />
+          <!-- Body — scroll-area -->
+          <div class="flex-1 overflow-y-auto px-6 py-5 space-y-6">
+            <!-- Meta-Felder -->
+            <section class="grid grid-cols-1 sm:grid-cols-[1fr,auto,auto] gap-3 items-end">
+              <UFormField label="Name" required class="min-w-0">
+                <UInput v-model="draftName" size="md" class="w-full" :maxlength="80" />
+              </UFormField>
+              <UFormField label="Sortierung">
+                <UInput
+                  v-model.number="draftSortOrder"
+                  type="number"
+                  min="0"
+                  max="9999"
+                  size="md"
+                  class="w-24"
+                />
+              </UFormField>
+              <UFormField label="Aktiv" :help="draftActive ? 'sichtbar' : 'archiviert'">
+                <USwitch v-model="draftActive" size="md" class="mt-1" />
+              </UFormField>
+            </section>
+
+            <div v-if="metaDirty" class="flex justify-end -mt-2">
+              <UButton color="primary" size="sm" :loading="savingMeta" @click="saveMeta">
+                Änderungen speichern
+              </UButton>
+            </div>
+
+            <!-- Mitglieder -->
+            <section>
+              <div class="flex items-baseline justify-between mb-3">
+                <h3 class="text-sm font-semibold tracking-[0.04em]">Spieler</h3>
+                <span
+                  v-if="roster"
+                  class="mono text-[11px] font-medium tabular-nums text-muted"
+                >
+                  {{ roster.length }} im Team
+                </span>
+              </div>
 
               <!-- Loading -->
-              <div v-if="isRosterLoading(tag)" class="space-y-2">
+              <div v-if="rosterLoading" class="space-y-2">
                 <div
                   v-for="n in 3"
                   :key="n"
-                  class="flex items-center gap-3 py-2 px-2 rounded-md animate-pulse"
+                  class="flex items-center gap-3 py-2 px-3 rounded-md animate-pulse bg-elevated/40"
                 >
-                  <div class="size-9 rounded-full bg-default/60 shrink-0" />
-                  <div class="h-3 bg-default/60 rounded w-32" />
-                  <div class="ml-auto h-3 bg-default/40 rounded w-12" />
+                  <div class="size-9 rounded-full bg-elevated shrink-0" />
+                  <div class="h-3 bg-elevated rounded w-32" />
+                  <div class="ml-auto h-3 bg-elevated rounded w-12" />
                 </div>
               </div>
 
-              <!-- Loaded -->
               <template v-else>
-                <!-- Empty state -->
+                <!-- Empty -->
                 <p
-                  v-if="(rosterFor(tag) ?? []).length === 0"
-                  class="text-muted italic text-sm py-2 px-2"
+                  v-if="(roster ?? []).length === 0"
+                  class="text-muted italic text-sm py-3 px-2 border-l-2 border-default"
                 >
                   Noch keine Spieler in dieser Mannschaft.
                 </p>
@@ -484,9 +403,9 @@ function onPickerChange(tag: TeamTagDto, value: string | null) {
                 <!-- Roster -->
                 <ul v-else class="space-y-1">
                   <li
-                    v-for="m in rosterFor(tag)"
+                    v-for="m in roster"
                     :key="m.id"
-                    class="flex items-center gap-3 py-2 px-2 rounded-md hover:bg-default/40 transition-colors min-h-[44px]"
+                    class="flex items-center gap-3 py-2 px-3 rounded-md hover:bg-elevated/50 transition-colors min-h-[44px] group"
                   >
                     <UAvatar
                       :alt="`${m.firstName} ${m.lastName}`"
@@ -505,9 +424,7 @@ function onPickerChange(tag: TeamTagDto, value: string | null) {
                         pausiert
                       </span>
                     </div>
-                    <span
-                      class="mono text-xs font-medium tabular-nums text-primary shrink-0"
-                    >
+                    <span class="mono text-xs font-medium tabular-nums text-primary shrink-0">
                       LK {{ m.dtbLk.toFixed(1) }}
                     </span>
                     <UButton
@@ -516,63 +433,59 @@ function onPickerChange(tag: TeamTagDto, value: string | null) {
                       size="xs"
                       icon="i-lucide-x"
                       :aria-label="`${m.firstName} ${m.lastName} entfernen`"
-                      :loading="isMutating(tag)"
-                      @click="removeMember(tag, m)"
+                      :loading="rosterMutating"
+                      class="opacity-50 group-hover:opacity-100 transition-opacity"
+                      @click="removeMember(m)"
                     />
                   </li>
                 </ul>
 
-                <!-- Add picker (or archive hint) -->
-                <div class="mt-3 pt-3 border-t border-default/60">
+                <!-- Add-Picker -->
+                <div class="mt-4 pt-4 border-t border-default">
                   <p
-                    v-if="!tag.active"
+                    v-if="!editingTag.active"
                     class="mono text-[11px] font-semibold tracking-[0.12em] uppercase text-muted py-2 px-2"
                   >
                     Archiviert · neue Zuweisungen gesperrt
                   </p>
                   <USelectMenu
                     v-else
-                    :model-value="addPickerByTag[tag.id] ?? null"
-                    :items="pickerItems(tag)"
+                    v-model="addPickerValue"
+                    :items="pickerItems()"
                     value-key="value"
                     searchable
                     searchable-placeholder="Spieler suchen…"
                     placeholder="+ Spieler hinzufügen"
                     icon="i-lucide-user-plus"
                     class="w-full"
-                    :disabled="isMutating(tag)"
-                    @update:model-value="(v: string | null) => onPickerChange(tag, v)"
+                    :disabled="rosterMutating"
+                    @update:model-value="(v: string | null) => v && addMember(v)"
                   />
                 </div>
               </template>
-            </div>
+            </section>
           </div>
-        </Transition>
-      </li>
-    </ul>
+
+          <!-- Footer -->
+          <footer class="flex items-center justify-between gap-3 p-4 border-t border-default bg-elevated/30">
+            <UButton
+              v-if="isAdmin"
+              variant="ghost"
+              color="error"
+              size="sm"
+              icon="i-lucide-trash-2"
+              :loading="deleting"
+              @click="deleteCurrent"
+            >
+              Mannschaft löschen
+            </UButton>
+            <span v-else />
+            <UButton variant="solid" color="neutral" size="sm" @click="closeEditor">
+              Fertig
+            </UButton>
+          </footer>
+        </div>
+      </template>
+    </UModal>
   </UContainer>
 </template>
-
-<style scoped>
-/* Smooth height + opacity reveal for the roster panel. CSS-only via Vue
-   Transition — keeps the interaction tactile without JS measurement. */
-.roster-enter-active,
-.roster-leave-active {
-  transition:
-    grid-template-rows 200ms ease,
-    opacity 180ms ease;
-  display: grid;
-  grid-template-rows: 1fr;
-}
-
-.roster-enter-from,
-.roster-leave-to {
-  grid-template-rows: 0fr;
-  opacity: 0;
-}
-
-.roster-enter-active > *,
-.roster-leave-active > * {
-  overflow: hidden;
-}
-</style>
