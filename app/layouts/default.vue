@@ -89,6 +89,15 @@ const tabs: Tab[] = [
     requiresRole: 'trainer-or-admin',
   },
   {
+    label: 'Mannschaften',
+    to: '/team-tags',
+    icon: 'i-lucide-users',
+    activeWhen: (p) => pathHas(p, '/team-tags'),
+    group: 'area',
+    isMobile: false,
+    requiresRole: 'trainer-or-admin',
+  },
+  {
     label: 'Admin',
     to: '/admin',
     icon: 'i-lucide-shield',

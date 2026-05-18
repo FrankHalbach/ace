@@ -44,6 +44,9 @@ const MESSAGES: Record<string, string> = {
   'season.invalid-transition': 'Status-Wechsel der Saison nicht möglich.',
   'age-group.not-found': 'Altersgruppe nicht gefunden.',
   'age-group.name-taken': 'Eine Altersgruppe mit diesem Namen existiert in dieser Saison schon.',
+  'team-tag.not-found': 'Mannschaft nicht gefunden.',
+  'team-tag.duplicate-name': 'Eine Mannschaft mit diesem Namen existiert bereits.',
+  'team-tag.inactive': 'Diese Mannschaft ist archiviert und kann nicht neu zugewiesen werden.',
 
   // Auth / Rollen
   'auth.role-required': 'Du hast nicht die nötige Berechtigung.',

@@ -73,6 +73,7 @@ const items = computed<DropdownMenuItem[][]>(() => {
     const areaItems: DropdownMenuItem[] = []
     if (isStaff.value) {
       areaItems.push({ label: 'Trainer-Bereich', icon: 'i-lucide-clipboard-list', to: '/trainer' })
+      areaItems.push({ label: 'Mannschaften', icon: 'i-lucide-users', to: '/team-tags' })
     }
     if (isAdmin.value) {
       areaItems.push({ label: 'Admin-Bereich', icon: 'i-lucide-shield', to: '/admin' })
