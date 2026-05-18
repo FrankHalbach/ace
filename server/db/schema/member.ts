@@ -40,6 +40,11 @@ export const member = sqliteTable(
       .notNull()
       .default(DEFAULT_PREFERENCES),
     lastFriendlyAt: integer('last_friendly_at', { mode: 'timestamp' }),
+    deactivatedAt: integer('deactivated_at', { mode: 'timestamp' }),
+    deactivationReason: text('deactivation_reason'),
+    invitedAt: integer('invited_at', { mode: 'timestamp' }),
+    invitedBy: text('invited_by').$type<MemberId>(),
+    firstLoginAt: integer('first_login_at', { mode: 'timestamp' }),
     createdAt: integer('created_at', { mode: 'timestamp' })
       .notNull()
       .default(sql`(unixepoch())`),

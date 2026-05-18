@@ -22,6 +22,24 @@ export function requireRole(user: { roles: readonly Role[] }, role: Role): void 
 }
 
 /**
+ * Verlangt mindestens **eine** der angegebenen Rollen — Bsp. Mannschafts-Tag-
+ * Pflege ist sowohl Admin als auch Trainer erlaubt (FR-2i).
+ *
+ *   requireAnyRole(user, 'admin', 'trainer')
+ */
+export function requireAnyRole(
+  user: { roles: readonly Role[] },
+  ...roles: Role[]
+): void {
+  if (!roles.some((r) => user.roles.includes(r))) {
+    throw createError({
+      statusCode: 403,
+      statusMessage: 'auth.role-required',
+    })
+  }
+}
+
+/**
  * Convenience: parsed eine path-Param-ID als positive Integer.
  * Wirft 400, wenn der Param fehlt oder kein gültiger Integer ist.
  */
