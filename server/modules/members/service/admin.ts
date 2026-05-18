@@ -3,7 +3,9 @@ import { memberRepo } from '../repository/member-repo'
 import { MemberNotFoundError } from './profile'
 import {
   CannotRemoveLastAdminError,
+  MemberDuplicateEmailError,
   MustKeepPlayerRoleError,
+  type CreateMemberInput,
   type MemberAdminDto,
   type MemberId,
   type Role,
@@ -49,6 +51,7 @@ function countActiveAdmins(): number {
 
 export {
   CannotRemoveLastAdminError,
+  MemberDuplicateEmailError,
   MustKeepPlayerRoleError,
 }
 
@@ -65,6 +68,42 @@ export const memberAdminService = {
         const ln = a.lastName.localeCompare(b.lastName, 'de')
         return ln !== 0 ? ln : a.firstName.localeCompare(b.firstName, 'de')
       })
+  },
+
+  /**
+   * Legt ein einzelnes Mitglied manuell an (FR-60 Single-Variante).
+   * Pflichtrolle `player`, kein Magic-Link-Token, kein Email-Versand —
+   * Einladung passiert separat im naechsten Schritt.
+   */
+  create(input: CreateMemberInput, actorId: MemberId): MemberAdminDto {
+    // Zod hat email bereits lowercased; repo prueft case-insensitive.
+    if (memberRepo.findByEmail(input.email)) {
+      throw new MemberDuplicateEmailError(input.email)
+    }
+    const row = memberRepo.insert({
+      email: input.email,
+      firstName: input.firstName.trim(),
+      lastName: input.lastName.trim(),
+      birthYear: input.birthYear,
+      gender: input.gender,
+      dtbLk: input.dtbLk,
+      roles: ['player'],
+    })
+    auditService.log({
+      actorId,
+      action: 'member.created',
+      subjectKind: 'member',
+      subjectId: row.id,
+      after: {
+        firstName: row.firstName,
+        lastName: row.lastName,
+        email: row.email,
+        birthYear: row.birthYear,
+        gender: row.gender,
+        dtbLk: row.dtbLk,
+      },
+    })
+    return toAdminDto(row)
   },
 
   /**

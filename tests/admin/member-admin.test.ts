@@ -5,6 +5,7 @@ import { member } from '../../server/db/schema/member'
 import { auditService } from '../../server/modules/admin'
 import {
   CannotRemoveLastAdminError,
+  MemberDuplicateEmailError,
   MemberNotFoundError,
   MustKeepPlayerRoleError,
   memberAdminService,
@@ -162,5 +163,84 @@ describe('memberAdminService.setRoles', () => {
     )
     expect(updated.roles.length).toBe(2)
     expect(updated.roles.sort()).toEqual(['player', 'trainer'])
+  })
+})
+
+describe('memberAdminService.create', () => {
+  it('legt ein Mitglied mit Default-Rolle player an und schreibt Audit', () => {
+    const admin = insertMember('Anna', 'Admin', { roles: ['admin', 'player'] })
+
+    const m = memberAdminService.create(
+      {
+        firstName: 'Neu',
+        lastName: 'Spieler',
+        birthYear: 1995,
+        gender: 'm',
+        email: 'neu@example.de',
+        dtbLk: 12.5,
+      },
+      admin,
+    )
+
+    expect(m.id).toBeTruthy()
+    expect(m.firstName).toBe('Neu')
+    expect(m.lastName).toBe('Spieler')
+    expect(m.email).toBe('neu@example.de')
+    expect(m.dtbLk).toBe(12.5)
+    expect(m.roles).toEqual(['player'])
+    expect(m.status).toBe('aktiv')
+    expect(m.deactivatedAt).toBeNull()
+    expect(m.invitedAt).toBeNull()
+    expect(m.firstLoginAt).toBeNull()
+
+    const audits = auditService.listRecent()
+    expect(audits[0]?.action).toBe('member.created')
+    expect(audits[0]?.subjectId).toBe(m.id)
+    expect(audits[0]?.after).toMatchObject({ email: 'neu@example.de' })
+  })
+
+  it('wirft Duplicate-Email bei case-insensitiver Kollision', () => {
+    const admin = insertMember('Anna', 'Admin', { roles: ['admin', 'player'] })
+    memberAdminService.create(
+      {
+        firstName: 'Erste',
+        lastName: 'Person',
+        birthYear: 1990,
+        gender: 'w',
+        email: 'kollision@example.de',
+        dtbLk: 10,
+      },
+      admin,
+    )
+    expect(() =>
+      memberAdminService.create(
+        {
+          firstName: 'Zweite',
+          lastName: 'Person',
+          birthYear: 1991,
+          gender: 'w',
+          email: 'KOLLISION@example.de',
+          dtbLk: 11,
+        },
+        admin,
+      ),
+    ).toThrow(MemberDuplicateEmailError)
+  })
+
+  it('trimmt Whitespace in Vor- und Nachname', () => {
+    const admin = insertMember('Anna', 'Admin', { roles: ['admin', 'player'] })
+    const m = memberAdminService.create(
+      {
+        firstName: '  Max  ',
+        lastName: '  Müller ',
+        birthYear: 1985,
+        gender: 'm',
+        email: 'max.mueller@example.de',
+        dtbLk: 9,
+      },
+      admin,
+    )
+    expect(m.firstName).toBe('Max')
+    expect(m.lastName).toBe('Müller')
   })
 })

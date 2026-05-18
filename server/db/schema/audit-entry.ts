@@ -13,6 +13,7 @@ export type AuditAction =
   | 'member.lk-corrected'
   | 'member.invited'
   | 'member.imported'
+  | 'member.created'
   | 'member.team-tags-changed'
   | 'team-tag.created'
   | 'team-tag.renamed'

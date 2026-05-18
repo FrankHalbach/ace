@@ -52,6 +52,7 @@ const MESSAGES: Record<string, string> = {
   'member.not-found': 'Mitglied nicht gefunden.',
   'member.must-keep-player-role': 'Die Spieler-Rolle kann nicht entfernt werden.',
   'member.cannot-remove-last-admin': 'Mindestens ein aktiver Admin muss erhalten bleiben.',
+  'member.duplicate-email': 'Diese E-Mail-Adresse ist bereits vergeben.',
 
   // Auth / Rollen
   'auth.role-required': 'Du hast nicht die nötige Berechtigung.',

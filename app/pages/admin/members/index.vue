@@ -6,6 +6,7 @@ useHead({ title: 'Mitglieder' })
 
 const { user } = useUserSession()
 const toast = useToast()
+const currentYear = new Date().getFullYear()
 
 const { data: members, refresh, status } = await useFetch<MemberAdminDto[]>(
   '/api/admin/members',
@@ -109,6 +110,96 @@ async function saveRoles() {
   }
 }
 
+// --- Anlegen --------------------------------------------------------------
+
+type NewMemberForm = {
+  firstName: string
+  lastName: string
+  birthYear: number | null
+  gender: 'm' | 'w' | null
+  email: string
+  dtbLk: number | null
+}
+
+function emptyForm(): NewMemberForm {
+  return {
+    firstName: '',
+    lastName: '',
+    birthYear: null,
+    gender: null,
+    email: '',
+    dtbLk: null,
+  }
+}
+
+const showCreate = ref(false)
+const newForm = ref<NewMemberForm>(emptyForm())
+const creating = ref(false)
+
+const newFormValid = computed(() => {
+  const f = newForm.value
+  return (
+    f.firstName.trim().length > 0 &&
+    f.lastName.trim().length > 0 &&
+    typeof f.birthYear === 'number' &&
+    f.birthYear >= 1920 &&
+    f.birthYear <= currentYear &&
+    (f.gender === 'm' || f.gender === 'w') &&
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email.trim()) &&
+    typeof f.dtbLk === 'number' &&
+    f.dtbLk >= 1 &&
+    f.dtbLk <= 25
+  )
+})
+
+function openCreate() {
+  newForm.value = emptyForm()
+  showCreate.value = true
+}
+
+function closeCreate() {
+  if (creating.value) return
+  showCreate.value = false
+}
+
+async function submitCreate() {
+  if (!newFormValid.value) return
+  creating.value = true
+  try {
+    await $fetch('/api/admin/members', {
+      method: 'POST',
+      body: {
+        firstName: newForm.value.firstName.trim(),
+        lastName: newForm.value.lastName.trim(),
+        birthYear: newForm.value.birthYear,
+        gender: newForm.value.gender,
+        email: newForm.value.email.trim().toLowerCase(),
+        dtbLk: newForm.value.dtbLk,
+      },
+    })
+    await refresh()
+    showCreate.value = false
+    toast.add({
+      title: `${newForm.value.firstName} ${newForm.value.lastName} angelegt`,
+      description: 'Einladungs-Mail folgt im nächsten Schritt.',
+      color: 'primary',
+    })
+  } catch (err: unknown) {
+    toast.add({
+      title: 'Anlegen fehlgeschlagen',
+      description: apiError(err),
+      color: 'error',
+    })
+  } finally {
+    creating.value = false
+  }
+}
+
+const genderOptions: { value: 'm' | 'w'; label: string }[] = [
+  { value: 'm', label: 'männlich' },
+  { value: 'w', label: 'weiblich' },
+]
+
 // --- Anzeige-Helpers ------------------------------------------------------
 
 function initials(m: MemberAdminDto): string {
@@ -137,20 +228,35 @@ function roleLabels(m: MemberAdminDto): string {
 
 <template>
   <UContainer class="py-10 max-w-4xl md:py-14">
-    <header class="flex flex-wrap items-end justify-between gap-4 mb-2">
-      <div>
+    <header class="flex flex-wrap items-start justify-between gap-4 mb-2">
+      <div class="min-w-0">
         <h1 class="text-2xl font-semibold">Mitglieder</h1>
         <p class="text-muted text-sm mt-1">
           Vereinsweite Mitgliederliste. Rollen vergeben, Status nachvollziehen.
         </p>
       </div>
-      <span
-        v-if="members && members.length > 0"
-        class="mono text-[11px] font-semibold tracking-[0.14em] uppercase text-muted"
-      >
-        {{ filtered.length }} / {{ members.length }} Mitglieder
-      </span>
+      <div class="flex items-center gap-2 shrink-0">
+        <UButton
+          variant="outline"
+          color="neutral"
+          icon="i-lucide-upload"
+          disabled
+          title="folgt — CSV-Import kommt im nächsten Schritt"
+        >
+          CSV importieren
+        </UButton>
+        <UButton color="primary" icon="i-lucide-user-plus" @click="openCreate">
+          Neues Mitglied
+        </UButton>
+      </div>
     </header>
+
+    <p
+      v-if="members && members.length > 0"
+      class="mono text-[11px] font-semibold tracking-[0.14em] uppercase text-muted mt-3"
+    >
+      {{ filtered.length }} / {{ members.length }} Mitglieder
+    </p>
 
     <!-- Filter -->
     <div class="flex flex-col sm:flex-row gap-2 mb-4 mt-6">
@@ -326,6 +432,120 @@ function roleLabels(m: MemberAdminDto): string {
             </UButton>
           </div>
         </div>
+      </template>
+    </UModal>
+
+    <!-- Anlage-Modal -->
+    <UModal :open="showCreate" :ui="{ content: 'max-w-xl' }" @update:open="(v: boolean) => !v && closeCreate()">
+      <template #content>
+        <form class="flex flex-col max-h-[85vh]" @submit.prevent="submitCreate">
+          <header class="flex items-start justify-between gap-4 p-6 border-b border-default">
+            <div class="min-w-0">
+              <h2 class="text-lg font-semibold">Neues Mitglied anlegen</h2>
+              <p class="text-muted text-sm mt-0.5">
+                Pflichtfelder ausfüllen — Einladungs-Mail folgt mit dem nächsten Schritt.
+              </p>
+            </div>
+            <UButton
+              variant="ghost"
+              color="neutral"
+              icon="i-lucide-x"
+              aria-label="Abbrechen"
+              :disabled="creating"
+              @click="closeCreate"
+            />
+          </header>
+
+          <div class="flex-1 overflow-y-auto px-6 py-5 space-y-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <UFormField label="Vorname" required>
+                <UInput
+                  v-model="newForm.firstName"
+                  size="md"
+                  class="w-full"
+                  autocomplete="given-name"
+                  autofocus
+                  :maxlength="60"
+                />
+              </UFormField>
+              <UFormField label="Nachname" required>
+                <UInput
+                  v-model="newForm.lastName"
+                  size="md"
+                  class="w-full"
+                  autocomplete="family-name"
+                  :maxlength="60"
+                />
+              </UFormField>
+            </div>
+
+            <UFormField label="E-Mail" required help="Wird für Einladungs- und Login-Links verwendet.">
+              <UInput
+                v-model="newForm.email"
+                type="email"
+                size="md"
+                class="w-full"
+                autocomplete="email"
+                :maxlength="120"
+              />
+            </UFormField>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <UFormField label="Geburtsjahr" required>
+                <UInput
+                  v-model.number="newForm.birthYear"
+                  type="number"
+                  :min="1920"
+                  :max="currentYear"
+                  size="md"
+                  class="w-full"
+                  placeholder="z. B. 1990"
+                />
+              </UFormField>
+              <UFormField label="Geschlecht" required>
+                <USelectMenu
+                  v-model="newForm.gender"
+                  :items="genderOptions"
+                  value-key="value"
+                  size="md"
+                  class="w-full"
+                />
+              </UFormField>
+              <UFormField label="DTB-LK" required help="1.0–25.0">
+                <UInput
+                  v-model.number="newForm.dtbLk"
+                  type="number"
+                  :min="1"
+                  :max="25"
+                  step="0.1"
+                  size="md"
+                  class="w-full"
+                  placeholder="z. B. 10.5"
+                />
+              </UFormField>
+            </div>
+
+            <p class="text-muted text-xs mt-2">
+              Der neue Spieler bekommt automatisch die Rolle <span class="font-medium">Spieler</span>.
+              Weitere Rollen (Trainer, Admin) kannst du danach im Rollen-Editor vergeben.
+            </p>
+          </div>
+
+          <footer class="flex items-center justify-end gap-2 p-4 border-t border-default bg-elevated/30">
+            <UButton variant="ghost" color="neutral" size="sm" :disabled="creating" @click="closeCreate">
+              Abbrechen
+            </UButton>
+            <UButton
+              type="submit"
+              color="primary"
+              size="sm"
+              :disabled="!newFormValid"
+              :loading="creating"
+            >
+              Anlegen
+            </UButton>
+          </footer>
+        </form>
       </template>
     </UModal>
   </UContainer>

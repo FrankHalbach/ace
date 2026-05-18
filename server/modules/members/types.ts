@@ -61,6 +61,19 @@ export const setRolesInput = z.object({
 
 export type SetRolesInput = z.infer<typeof setRolesInput>
 
+const currentYear = new Date().getFullYear()
+
+export const createMemberInput = z.object({
+  firstName: z.string().trim().min(1).max(60),
+  lastName: z.string().trim().min(1).max(60),
+  birthYear: z.number().int().gte(1920).lte(currentYear),
+  gender: z.enum(['m', 'w']),
+  email: z.string().trim().toLowerCase().email().max(120),
+  dtbLk: z.number().min(1).max(25),
+})
+
+export type CreateMemberInput = z.infer<typeof createMemberInput>
+
 export class MustKeepPlayerRoleError extends Error {
   readonly code = 'member.must-keep-player-role' as const
   constructor() {
@@ -72,6 +85,13 @@ export class CannotRemoveLastAdminError extends Error {
   readonly code = 'member.cannot-remove-last-admin' as const
   constructor() {
     super('at least one active admin must remain')
+  }
+}
+
+export class MemberDuplicateEmailError extends Error {
+  readonly code = 'member.duplicate-email' as const
+  constructor(public readonly email: string) {
+    super(`member with email ${email} already exists`)
   }
 }
 

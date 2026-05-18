@@ -9,11 +9,13 @@ export { profileService, MemberNotFoundError } from './service/profile'
 export { getMemberProfile } from './service/player-profile'
 export {
   CannotRemoveLastAdminError,
+  MemberDuplicateEmailError,
   MustKeepPlayerRoleError,
   memberAdminService,
 } from './service/admin'
-export { setRolesInput, updateOwnProfileInput } from './types'
+export { createMemberInput, setRolesInput, updateOwnProfileInput } from './types'
 export type {
+  CreateMemberInput,
   MatchPreferences,
   MemberAdminDto,
   MemberDto,
