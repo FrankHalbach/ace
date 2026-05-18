@@ -1,5 +1,5 @@
 import { nanoid } from 'nanoid'
-import { getRouterParam, type H3Event } from 'h3'
+import type { H3Event } from 'h3'
 
 /**
  * Public-ID-Generator: 21-Zeichen-Standard-`nanoid` aus `A-Za-z0-9_-`.
@@ -26,12 +26,17 @@ const NANOID_PATTERN = /^[A-Za-z0-9_-]{16,32}$/
  *
  * Wirft 400, wenn der Param fehlt oder nicht das nanoid-Format trifft.
  * Existenz-Prüfung (404) macht der Service-Lookup.
+ *
+ * `H3Event` ist ein reiner Type-Import (wird beim Build elidiert), und
+ * `createError` kommt über Nitro-Auto-Imports — beides nötig, damit
+ * dieses Modul von tsx-CLI-Skripten (drizzle-kit, db:migrate, db:seed)
+ * geladen werden kann, ohne dass h3 als Runtime-Modul aufgelöst wird.
  */
 export function requirePublicIdParam<T extends string = string>(
   event: H3Event,
   name: string,
 ): T {
-  const raw = getRouterParam(event, name)
+  const raw = event.context.params?.[name]
   if (!raw || !NANOID_PATTERN.test(raw)) {
     throw createError({
       statusCode: 400,
