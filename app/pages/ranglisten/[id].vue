@@ -90,18 +90,30 @@ function canChallenge(targetMemberId: string, targetStatus: string): boolean {
     <!-- VIEWER STAT STRIP -->
     <section
       v-if="viewerEntry"
-      class="mb-8 grid grid-cols-2 gap-6 border-y border-default py-5"
+      class="mb-8 grid grid-cols-2 md:grid-cols-4 gap-6 border-y border-default py-5"
     >
       <div>
         <p class="text-xs text-muted font-medium tracking-wide mb-1">Deine Position</p>
         <p class="text-2xl font-semibold font-mono tabular-nums text-primary leading-none">
-          <span class="text-base text-muted font-normal">#</span>{{ viewerEntry.display.primary }}
+          {{ viewerEntry.display.primary }}
         </p>
       </div>
-      <div v-if="viewerEntry.display.secondary" class="border-l border-default pl-6">
+      <div v-if="viewerEntry.display.secondary" class="md:border-l md:border-default md:pl-6">
         <p class="text-xs text-muted font-medium tracking-wide mb-1">Punkte</p>
         <p class="text-2xl font-semibold font-mono tabular-nums leading-none">
           {{ viewerEntry.display.secondary }}
+        </p>
+      </div>
+      <div class="md:border-l md:border-default md:pl-6">
+        <p class="text-xs text-muted font-medium tracking-wide mb-1">Spiele</p>
+        <p class="text-2xl font-semibold font-mono tabular-nums leading-none">
+          {{ viewerEntry.matchesPlayed }}
+        </p>
+      </div>
+      <div class="md:border-l md:border-default md:pl-6">
+        <p class="text-xs text-muted font-medium tracking-wide mb-1">Siege</p>
+        <p class="text-2xl font-semibold font-mono tabular-nums leading-none">
+          {{ viewerEntry.matchesWon }}
         </p>
       </div>
     </section>
@@ -150,11 +162,12 @@ function canChallenge(targetMemberId: string, targetStatus: string): boolean {
             </span>
           </div>
         </NuxtLink>
-        <div
-          v-if="e.display.secondary"
-          class="font-mono tabular-nums text-sm text-muted shrink-0"
-        >
-          {{ e.display.secondary }}
+        <div class="flex items-center gap-2 font-mono tabular-nums text-sm text-muted shrink-0">
+          <span v-if="e.display.secondary">{{ e.display.secondary }}</span>
+          <span class="text-dimmed" :title="`${e.matchesPlayed} Spiele · ${e.matchesWon} Siege`">
+            <span class="text-default">{{ e.matchesWon }}</span>
+            <span class="text-dimmed">/{{ e.matchesPlayed }}</span>
+          </span>
         </div>
         <UButton
           v-if="canChallenge(e.memberId, e.member.status)"

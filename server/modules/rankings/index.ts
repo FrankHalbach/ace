@@ -15,6 +15,7 @@ export type {
 export type {
   AgeGroupId,
   MemberId,
+  MemberMatchStats,
   MemberRankingStandingDto,
   RankingConfig,
   RankingDetailDto,
