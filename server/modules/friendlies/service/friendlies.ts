@@ -1,4 +1,5 @@
 import { profileService, type MemberId } from '../../members'
+import { seasonsService } from '../../seasons'
 import { friendlyRepo } from '../repository/friendly-repo'
 import { friendlyInviteeRepo } from '../repository/friendly-invitee-repo'
 import {
@@ -28,7 +29,31 @@ import { applyFriendlyMutation, loadFriendlyMatch } from './match-adapter'
 function reloadDetail(id: FriendlyId): FriendlyDetailDto {
   const row = friendlyRepo.findById(id)!
   const invitees = friendlyInviteeRepo.listByFriendly(id)
-  return { ...toDto(row), invitees: invitees.map(toInviteeDto) }
+  const windowMs = currentLateCancellationWindowMs()
+  return { ...toDto(row, windowMs), invitees: invitees.map(toInviteeDto) }
+}
+
+/**
+ * Liest die Late-Cancel-Fenster-Spanne (ms) aus der aktiven Saison.
+ * Einmal pro Service-Aufruf — pro Row wäre N+1 auf der season-Tabelle.
+ */
+function currentLateCancellationWindowMs(): number {
+  return seasonsService.getFriendlyTimingConfig().lateCancellationWindowHours * 60 * 60 * 1000
+}
+
+/**
+ * Wirft, wenn `now` bereits innerhalb des Late-Cancel-Fensters vor
+ * `scheduledAt` liegt (N-05). Verhindert peinliche kurzfristige Absagen.
+ */
+function assertNotInLateCancellationWindow(scheduledAt: Date, now: Date): void {
+  const windowMs = currentLateCancellationWindowMs()
+  const lockedAt = scheduledAt.getTime() - windowMs
+  if (now.getTime() >= lockedAt) {
+    throw new FriendlyValidationError(
+      'friendly.late-cancellation',
+      `Absage nicht mehr möglich — der Termin liegt in weniger als ${windowMs / (60 * 60 * 1000)} Stunden.`,
+    )
+  }
 }
 
 const SCHEDULED_TOLERANCE_MS = 60 * 60 * 1000 // 1 Stunde Vergangenheit toleriert
@@ -47,7 +72,7 @@ const germanDateTime = new Intl.DateTimeFormat('de-DE', {
   minute: '2-digit',
 })
 
-function toDto(row: FriendlyRow): FriendlyDto {
+function toDto(row: FriendlyRow, lateCancellationWindowMs: number): FriendlyDto {
   return {
     id: row.id,
     initiatorId: row.initiatorId,
@@ -64,6 +89,7 @@ function toDto(row: FriendlyRow): FriendlyDto {
     playedAt: row.playedAt,
     completedAt: row.completedAt,
     disputedAt: row.disputedAt,
+    cancellationLockedAt: new Date(row.scheduledAt.getTime() - lateCancellationWindowMs),
   }
 }
 
@@ -92,8 +118,9 @@ function attachInvitees(rows: FriendlyRow[]): FriendlyDetailDto[] {
     if (bucket) bucket.push(inv)
     else byFriendly.set(inv.friendlyId, [inv])
   }
+  const windowMs = currentLateCancellationWindowMs()
   return rows.map((row) => ({
-    ...toDto(row),
+    ...toDto(row, windowMs),
     invitees: (byFriendly.get(row.id) ?? []).map(toInviteeDto),
   }))
 }
@@ -105,7 +132,7 @@ export const friendliesService = {
 
   findById(id: FriendlyId): FriendlyDto | undefined {
     const row = friendlyRepo.findById(id)
-    return row ? toDto(row) : undefined
+    return row ? toDto(row, currentLateCancellationWindowMs()) : undefined
   },
 
   getDetail(id: FriendlyId, memberId: MemberId): FriendlyDetailDto {
@@ -115,7 +142,10 @@ export const friendliesService = {
     if (!isParticipant(row, invitees, memberId)) {
       throw new FriendlyNotParticipantError()
     }
-    return { ...toDto(row), invitees: invitees.map(toInviteeDto) }
+    return {
+      ...toDto(row, currentLateCancellationWindowMs()),
+      invitees: invitees.map(toInviteeDto),
+    }
   },
 
   listForMember(memberId: MemberId): FriendlyDetailDto[] {
@@ -258,7 +288,10 @@ export const friendliesService = {
           ],
     )
 
-    return { ...toDto(friendlyRow), invitees: inviteeRows.map(toInviteeDto) }
+    return {
+      ...toDto(friendlyRow, currentLateCancellationWindowMs()),
+      invitees: inviteeRows.map(toInviteeDto),
+    }
   },
 
   // ───────────────────────────────────────────────────────────────────────
@@ -300,6 +333,8 @@ export const friendliesService = {
     if (!(match instanceof ProposedFriendly)) {
       throw new FriendlyInvalidTransitionError(match._state as FriendlyStatus, 'DECLINED')
     }
+    // N-05: keine kurzfristige Absage innerhalb des Late-Cancel-Fensters.
+    assertNotInLateCancellationWindow(match.scheduledAt, now)
     const actor: Actor = { memberId, isTrainer: false }
     try {
       applyFriendlyMutation(match.decline(actor, now))
@@ -328,6 +363,12 @@ export const friendliesService = {
       match instanceof AcceptedFriendly ||
       match instanceof PlayedFriendly
     ) {
+      // N-05: Late-Cancel-Fenster greift nur in PROPOSED/CONFIRMED. Bei
+      // PLAYED ist der Termin per Definition vorbei — Cancel wirkt dann
+      // als Recovery („wir haben doch nicht gespielt"), nicht als Absage.
+      if (match instanceof ProposedFriendly || match instanceof AcceptedFriendly) {
+        assertNotInLateCancellationWindow(match.scheduledAt, now)
+      }
       try {
         applyFriendlyMutation(match.cancel(actor, now))
       } catch (err) {
@@ -375,10 +416,11 @@ export const friendliesService = {
       throw new FriendlyInvalidTransitionError(match._state as FriendlyStatus, 'CANCELLED')
     }
     // Service ist hier der Trainer-Endpoint — Trainer-Flag explizit setzen.
+    // Trainer-Override umgeht das Late-Cancel-Fenster bewusst (N-05).
     const actor: Actor = { memberId: '' as MemberId, isTrainer: true }
     applyFriendlyMutation(match.trainerCancel(actor, now))
     const updated = friendlyRepo.findById(id)!
-    return toDto(updated)
+    return toDto(updated, currentLateCancellationWindowMs())
   },
 }
 

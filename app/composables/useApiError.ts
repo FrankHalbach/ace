@@ -11,6 +11,7 @@ const MESSAGES: Record<string, string> = {
   'friendly.before-scheduled': 'Das Match liegt noch in der Zukunft — Ergebnis erst nach dem Termin eintragen.',
   'friendly.has-pending-result': 'Es liegt schon ein gemeldetes Ergebnis vor — Absagen ist nicht mehr möglich.',
   'friendly.schedule-conflict': 'Termin-Konflikt: zu dieser Zeit gibt es schon ein anderes Match.',
+  'friendly.late-cancellation': 'Absage zu kurzfristig — der Termin liegt zu nah.',
   'friendly.scheduled-in-past': 'Der gewählte Termin liegt zu weit in der Vergangenheit.',
   'friendly.not-winner': 'Nur Spieler aus dem Sieger-Team dürfen das Ergebnis melden.',
   'friendly.not-loser': 'Nur Spieler aus dem Verlierer-Team dürfen bestätigen oder widersprechen.',

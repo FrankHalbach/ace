@@ -3,6 +3,7 @@ import { seasonRepo } from '../repository/season-repo'
 import {
   AgeGroupNameTakenError,
   AgeGroupNotFoundError,
+  parseFriendlyTimingConfig,
   SeasonFrozenError,
   SeasonInvalidTransitionError,
   SeasonNameTakenError,
@@ -11,6 +12,7 @@ import {
   type AgeGroupId,
   type CreateAgeGroupInput,
   type CreateSeasonInput,
+  type FriendlyTimingConfig,
   type SeasonDetailDto,
   type SeasonDto,
   type SeasonId,
@@ -158,6 +160,25 @@ export const seasonsService = {
     const parent = loadSeason(existing.seasonId)
     assertPlanned(parent)
     ageGroupRepo.deleteById(id)
+  },
+
+  // --- Lookups für andere Module ----------------------------------------
+
+  /** Liefert die aktuell aktive Saison oder `undefined`, wenn keine läuft. */
+  findActive(): SeasonDto | undefined {
+    const row = seasonRepo.findFirstByStatus('ACTIVE')
+    return row ? seasonToDto(row) : undefined
+  },
+
+  /**
+   * Friendly-Timing-Defaults aus der aktiven Saison (N-05). Fällt auf den
+   * Code-Default zurück, wenn keine ACTIVE Saison existiert — so behält das
+   * Friendly-Modul vorhersehbares Verhalten, auch wenn der Admin noch keine
+   * Saison angelegt/gestartet hat.
+   */
+  getFriendlyTimingConfig(): FriendlyTimingConfig {
+    const active = seasonRepo.findFirstByStatus('ACTIVE')
+    return parseFriendlyTimingConfig(active?.config ?? {})
   },
 }
 

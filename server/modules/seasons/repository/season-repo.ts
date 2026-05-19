@@ -15,6 +15,21 @@ export const seasonRepo = {
     return useDb().select().from(season).where(eq(season.name, name)).get()
   },
 
+  /**
+   * Erste Saison mit dem gegebenen Status, geordnet nach `createdAt` —
+   * praktisch ein „get active": es soll im Regelbetrieb genau eine ACTIVE
+   * Saison geben, aber wir wählen deterministisch die älteste, falls es
+   * (versehentlich) mehrere gibt.
+   */
+  findFirstByStatus(status: SeasonStatus): SeasonRow | undefined {
+    return useDb()
+      .select()
+      .from(season)
+      .where(eq(season.status, status))
+      .orderBy(season.createdAt)
+      .get()
+  },
+
   insert(values: SeasonInsert): SeasonRow {
     const rows = useDb().insert(season).values(values).returning().all()
     return rows[0]!
