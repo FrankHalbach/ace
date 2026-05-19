@@ -91,6 +91,13 @@ export type FriendlyDto = {
   playedAt: Date | null
   completedAt: Date | null
   disputedAt: Date | null
+  /**
+   * Zeitpunkt, ab dem Decline/Cancel verboten ist (N-05) — `scheduledAt`
+   * minus die in der aktiven Saison konfigurierte Late-Cancel-Spanne.
+   * Frontend kann dagegen `Date.now()` vergleichen, um den Absagen-Button
+   * zu disablen.
+   */
+  cancellationLockedAt: Date
 }
 
 export type FriendlyInviteeDto = {

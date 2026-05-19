@@ -90,6 +90,22 @@ const isInFuture = computed(
   () => friendly.value !== null && friendly.value !== undefined && new Date(friendly.value.scheduledAt).getTime() > Date.now(),
 )
 
+/**
+ * N-05: Sind wir innerhalb des Late-Cancel-Fensters? Wenn ja, sind
+ * Decline-/Cancel-Buttons disabled. Server lehnt sowieso ab — der Check
+ * hier ist eine UX-Vorwegnahme. Reaktiviert sich nicht live (kein Ticker);
+ * wer 30min wartet und es trotzdem klickt, kriegt den Toast-Fehler.
+ */
+const isLateCancellation = computed(() => {
+  if (!friendly.value) return false
+  return Date.now() >= new Date(friendly.value.cancellationLockedAt).getTime()
+})
+
+const lateCancelTooltip = computed(() => {
+  if (!friendly.value) return ''
+  return `Absage nicht mehr möglich — Deadline war ${formatDate(friendly.value.cancellationLockedAt)}.`
+})
+
 async function callAction(path: string, body?: Record<string, unknown>): Promise<boolean> {
   submitting.value = true
   try {
@@ -274,21 +290,58 @@ async function markPlayed() {
       <h2 class="font-semibold mb-3">Was willst du tun?</h2>
       <div class="flex gap-2">
         <UButton color="primary" :loading="submitting" @click="accept">Annehmen</UButton>
-        <UButton variant="soft" color="neutral" :loading="submitting" @click="decline">Ablehnen</UButton>
+        <UTooltip v-if="isLateCancellation" :text="lateCancelTooltip">
+          <UButton variant="soft" color="neutral" disabled>Ablehnen</UButton>
+        </UTooltip>
+        <UButton
+          v-else
+          variant="soft"
+          color="neutral"
+          :loading="submitting"
+          @click="decline"
+        >
+          Ablehnen
+        </UButton>
       </div>
+      <p v-if="isLateCancellation" class="text-xs text-muted mt-2">
+        {{ lateCancelTooltip }}
+      </p>
     </UCard>
 
     <!-- Initiator: Absagen, solange nicht COMPLETED/DISPUTED/CANCELLED/DECLINED
          und solange noch kein Result gemeldet wurde (Domain lehnt Cancel auf
-         ReportedFriendly ab — Button wäre tote UI; siehe #48). -->
+         ReportedFriendly ab — Button wäre tote UI; siehe #48).
+         N-05: Disable + Tooltip innerhalb des Late-Cancel-Fensters. PLAYED ist
+         „Recovery", für das das Fenster nicht greift — daher Disable nur für
+         PROPOSED/CONFIRMED. -->
     <UCard
       v-if="isInitiator && !result && !['COMPLETED', 'DISPUTED', 'CANCELLED', 'DECLINED'].includes(friendly.status)"
       class="mb-6"
     >
       <h2 class="font-semibold mb-3">Aktionen</h2>
       <div class="flex flex-wrap gap-2">
-        <UButton variant="soft" color="error" :loading="submitting" @click="cancel">Absagen</UButton>
+        <UTooltip
+          v-if="isLateCancellation && (friendly.status === 'PROPOSED' || friendly.status === 'CONFIRMED')"
+          :text="lateCancelTooltip"
+        >
+          <UButton variant="soft" color="error" disabled>Absagen</UButton>
+        </UTooltip>
+        <UButton
+          v-else
+          variant="soft"
+          color="error"
+          :loading="submitting"
+          @click="cancel"
+        >
+          Absagen
+        </UButton>
       </div>
+      <p
+        v-if="isLateCancellation && (friendly.status === 'PROPOSED' || friendly.status === 'CONFIRMED')"
+        class="text-xs text-muted mt-2"
+      >
+        {{ lateCancelTooltip }}
+      </p>
     </UCard>
 
     <!-- CONFIRMED: Ergebnis melden oder „nur gespielt" -->

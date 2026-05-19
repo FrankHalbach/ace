@@ -255,3 +255,67 @@ deutschsprachigen Begründung („{Name} hat bereits ein Match am {Datum, Uhrzei
   v2-Spielraum.
 - **Konfigurierbares Fenster pro Saison/AgeGroup**: nicht im Scope; ±2h
   passt für alle aktuellen Match-Modi.
+
+## N-05 · Kurzfristige Absage / Decline blockieren
+
+**Status**: umgesetzt
+**Datum**: 2026-05-19
+**Quelle**: Produktentscheidung (GitHub Issue #59) — Vertrauensschutz vor
+Mitglieder-Launch.
+**Berührte FR-IDs**: ergänzt FR-91 / FR-92 (Friendlies Lebenszyklus)
+
+### Anforderung
+
+Spec § 9 (Friendlies) erlaubt heute jederzeit Decline und Cancel im Status
+`PROPOSED`/`CONFIRMED`. Real-world-Problem: Eingeladene können fünf Minuten
+vor dem Termin kommentarlos ablehnen — der Initiator hat den Slot blockiert
+und steht ohne Match da. Genau das beschädigt das Vertrauen in die Plattform.
+
+**Regel**: Wenn `now ≥ scheduledAt − LATE_CANCELLATION_WINDOW` ist, sind
+sowohl Decline (Eingeladener) als auch Cancel (Initiator) verboten und werfen
+HTTP 409 mit Code `friendly.late-cancellation`. Greift in den Status
+`PROPOSED` und `CONFIRMED`. Der Trainer-Override (`cancelByTrainer` für
+DISPUTED) ignoriert das Fenster bewusst — sonst gäbe es keinen
+Notausgang.
+
+`LATE_CANCELLATION_WINDOW` ist pro aktiver Saison konfigurierbar
+(`Season.config.lateCancellationWindowHours`, Default 2). Ohne ACTIVE Saison
+greift der Code-Default.
+
+### Konkret in dieser Iteration umgesetzt
+
+- Helper [`parseFriendlyTimingConfig`](../../server/modules/seasons/types.ts)
+  liest `lateCancellationWindowHours` aus `Season.config` mit Fallback auf
+  `DEFAULT_LATE_CANCELLATION_WINDOW_HOURS = 2`.
+- `seasonsService.getFriendlyTimingConfig()` liefert die effektive Spanne
+  aus der aktuell aktiven Saison.
+- `friendliesService.decline` und `friendliesService.cancel` rufen
+  `assertNotInLateCancellationWindow(scheduledAt, now)` vor der State-
+  Transition. Bei `cancel` greift der Check nur in
+  `PROPOSED`/`CONFIRMED` — `PLAYED` ist Recovery („wir haben doch nicht
+  gespielt") und bleibt erlaubt.
+- DTO-Feld `FriendlyDto.cancellationLockedAt: Date` — vorgekochter
+  Zeitstempel für die Frontend-UI. Frontend disabled die Absagen-Buttons,
+  sobald `Date.now() ≥ cancellationLockedAt`, und zeigt einen Tooltip mit
+  der ursprünglichen Deadline.
+- HTTP-Mapping in
+  [`server/api/friendlies/[id]/decline.post.ts`](../../server/api/friendlies/%5Bid%5D/decline.post.ts)
+  und `cancel.post.ts`: `FriendlyValidationError` → 409 mit dem Code als
+  `statusMessage` und der deutschsprachigen Begründung im `data.message`.
+- Tests in [`tests/friendlies/late-cancellation.test.ts`](../../tests/friendlies/late-cancellation.test.ts)
+  decken Default-Fenster, Saison-Override (kleiner/größer/0), Trainer-Override,
+  PLAYED-Recovery und das DTO-Feld ab.
+
+### Out of Scope dieses Nachtrags
+
+- **Soft-Block mit Pflicht-Begründung**: aktuell Hard-Block. „Kurzfristige
+  Absage mit Grund" (Pflicht-Text, Initiator sieht ihn) wäre v2-Spielraum.
+- **Walk-over-Logik**: wenn jemand nicht erscheint, kann der Initiator das
+  heute nur über das normale Result-Reporting (`outcome: 'walkover'`)
+  abbilden. Eine eigene „Gegner nicht erschienen"-Aktion ist Backlog.
+- **No-show-Statistik / Reputations-Folge** für wiederholt kurzfristig
+  absagende Mitglieder.
+- **Challenges**: haben heute kein `scheduledAt`. Sobald sie einen Termin
+  bekommen, gilt N-05 sinngemäß.
+- **Pro-Altersgruppe-Konfiguration**: Aktuell nur pro Saison; eine
+  strengere Regel für Jugend wäre denkbar, ist aber nicht im Scope.

@@ -35,6 +35,9 @@ function insertMembers(n: number): MemberId[] {
 // 1h-Toleranz von friendliesService.create und erlaubt direkten Result-
 // Report (validateSetsForMode/AcceptedFriendly braucht now >= scheduledAt).
 const tomorrow = () => new Date(Date.now() - 30 * 60 * 1000)
+// Echter Zukunfts-Termin für Decline/Cancel-Tests: außerhalb des
+// Late-Cancel-Fensters (N-05, Default 2h vor `scheduledAt`).
+const future = () => new Date(Date.now() + 24 * 60 * 60 * 1000)
 
 describe('Friendly-Validierung', () => {
   it('verbietet Selbst-Einladung', () => {
@@ -193,7 +196,7 @@ describe('Lifecycle Singles: Create → Accept → Result → Confirm', () => {
     const [a, b] = insertMembers(2)
     const f = friendliesService.create(a, {
       format: 'singles',
-      scheduledAt: tomorrow(),
+      scheduledAt: future(),
       opponentIds: [b],
       matchMode: 'two-sets-match-tiebreak',
     })
@@ -205,7 +208,7 @@ describe('Lifecycle Singles: Create → Accept → Result → Confirm', () => {
     const [a, b] = insertMembers(2)
     const f = friendliesService.create(a, {
       format: 'singles',
-      scheduledAt: tomorrow(),
+      scheduledAt: future(),
       opponentIds: [b],
       matchMode: 'two-sets-match-tiebreak',
     })
@@ -262,7 +265,7 @@ describe('Lifecycle Doubles: Create → 3x Accept → Result → Confirm', () =>
     const [a, p, o1, o2] = insertMembers(4)
     const f = friendliesService.create(a, {
       format: 'doubles',
-      scheduledAt: tomorrow(),
+      scheduledAt: future(),
       partnerId: p,
       opponentIds: [o1, o2],
       matchMode: 'two-sets-match-tiebreak',
@@ -462,7 +465,7 @@ describe('Domain-Modell: Bug-Fixes #48 (Cancel nach Result-Report)', () => {
     const [a, b] = insertMembers(2)
     const f = friendliesService.create(a, {
       format: 'singles',
-      scheduledAt: tomorrow(),
+      scheduledAt: future(),
       opponentIds: [b],
       matchMode: 'two-sets-match-tiebreak',
     })

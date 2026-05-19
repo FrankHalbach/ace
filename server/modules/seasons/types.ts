@@ -4,16 +4,44 @@ import type { SeasonConfig, SeasonId, SeasonStatus } from '../../db/schema/seaso
 
 export type { AgeGroupGender, AgeGroupId, SeasonId, SeasonStatus, SeasonConfig }
 
+// -- Friendly Timing (N-05) ----------------------------------------------------
+
+export type FriendlyTimingConfig = {
+  /** Stunden vor `scheduledAt`, ab denen Decline/Cancel verboten wird. */
+  lateCancellationWindowHours: number
+}
+
+export const DEFAULT_LATE_CANCELLATION_WINDOW_HOURS = 2
+
+/**
+ * Liest die Friendly-Timing-Konfiguration aus einem `SeasonConfig`-JSON.
+ * Unbekannte/fehlende Werte fallen auf den Default zurück, sodass alte
+ * Saisons ohne explizite Setzung weiterlaufen.
+ */
+export function parseFriendlyTimingConfig(config: SeasonConfig): FriendlyTimingConfig {
+  const raw = (config as { lateCancellationWindowHours?: unknown }).lateCancellationWindowHours
+  const parsed = typeof raw === 'number' && Number.isFinite(raw) && raw >= 0 ? raw : undefined
+  return {
+    lateCancellationWindowHours: parsed ?? DEFAULT_LATE_CANCELLATION_WINDOW_HOURS,
+  }
+}
+
 // -- Zod-Schemas ---------------------------------------------------------------
 
 export const createSeasonInput = z.object({
   name: z.string().min(3).max(80),
 })
 
+const seasonConfigSchema = z
+  .object({
+    lateCancellationWindowHours: z.number().min(0).max(168).optional(),
+  })
+  .catchall(z.unknown())
+
 export const updateSeasonInput = z
   .object({
     name: z.string().min(3).max(80),
-    config: z.record(z.string(), z.unknown()),
+    config: seasonConfigSchema,
   })
   .partial()
   .strict()
