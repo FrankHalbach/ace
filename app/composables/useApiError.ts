@@ -57,6 +57,11 @@ const MESSAGES: Record<string, string> = {
   'member.already-deactivated': 'Dieses Mitglied ist bereits deaktiviert.',
   'member.not-deactivated': 'Dieses Mitglied ist nicht admin-deaktiviert (Selbst-Pause löst der Spieler im Profil auf).',
   'lk.out-of-range': 'LK muss zwischen 1.0 und 25.0 liegen.',
+  'import.no-file': 'Keine Datei hochgeladen.',
+  'import.file-too-large': 'Datei zu groß — Maximum 2 MB.',
+  'import.parse-error': 'CSV konnte nicht gelesen werden — Header oder Trennzeichen prüfen.',
+  'import.encoding-error': 'CSV ist nicht UTF-8 — bitte als „CSV UTF-8 (durch Trennzeichen getrennt) (*.csv)" speichern.',
+  'import.row-validation-failed': 'Mindestens eine Zeile ist ungültig — siehe Detail-Report.',
 
   // Auth / Rollen
   'auth.role-required': 'Du hast nicht die nötige Berechtigung.',

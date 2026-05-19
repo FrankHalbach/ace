@@ -1,6 +1,9 @@
+import { useDb } from '../../../db'
+import { member } from '../../../db/schema/member'
 import { auditService } from '../../admin'
 import { memberRepo } from '../repository/member-repo'
 import { MemberNotFoundError } from './profile'
+import type { ImportRow } from './csv-import'
 import {
   CannotRemoveLastAdminError,
   LkOutOfRangeError,
@@ -239,6 +242,65 @@ export const memberAdminService = {
       },
     })
     return toAdminDto(updated)
+  },
+
+  /**
+   * Bulk-Import (FR-60). Setzt alle Zeilen in einer Transaction ein;
+   * existierende Email-Adressen (case-insensitiv) werden uebersprungen
+   * (kein Update). Liefert pro Zeile, ob importiert oder skipped — die
+   * Validierung der Felder ist Aufgabe des Parsers.
+   *
+   * Schreibt EINEN Audit-Eintrag pro Run mit Summary in `after`.
+   */
+  bulkCreate(
+    rows: ImportRow[],
+    actorId: MemberId,
+  ): { importedIds: MemberId[]; skippedEmails: string[] } {
+    const importedIds: MemberId[] = []
+    const skippedEmails: string[] = []
+
+    useDb().transaction((tx) => {
+      // Bestehende Emails einmalig laden, danach pro Insert die `seen`-Menge
+      // pflegen — fängt auch Duplikate INNERHALB der CSV ab.
+      const existing = new Set(
+        tx.select({ email: member.email }).from(member).all().map((r) => r.email.toLowerCase()),
+      )
+      for (const r of rows) {
+        if (existing.has(r.email)) {
+          skippedEmails.push(r.email)
+          continue
+        }
+        const inserted = tx
+          .insert(member)
+          .values({
+            email: r.email,
+            firstName: r.firstName,
+            lastName: r.lastName,
+            birthYear: r.birthYear,
+            gender: r.gender,
+            dtbLk: r.dtbLk,
+            roles: ['player'],
+          })
+          .returning()
+          .get()!
+        importedIds.push(inserted.id)
+        existing.add(r.email)
+      }
+    })
+
+    auditService.log({
+      actorId,
+      action: 'member.imported',
+      subjectKind: 'member',
+      subjectId: undefined,
+      after: {
+        imported: importedIds.length,
+        skipped: skippedEmails.length,
+        importedIds,
+      },
+    })
+
+    return { importedIds, skippedEmails }
   },
 
   /**
