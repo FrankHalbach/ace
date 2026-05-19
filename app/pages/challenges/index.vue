@@ -10,14 +10,16 @@ const { data: challenges } = await useFetch<ChallengeDto[]>('/api/challenges', {
   default: () => [],
 })
 
+const me = computed(() => user.value?.memberId ?? null)
+
 const incoming = computed(() =>
   (challenges.value ?? []).filter(
-    (c) => c.challengedId === user.value?.memberId && c.status === 'PROPOSED',
+    (c) => c.challengedId === me.value && c.status === 'PROPOSED',
   ),
 )
 const outgoing = computed(() =>
   (challenges.value ?? []).filter(
-    (c) => c.challengerId === user.value?.memberId && c.status === 'PROPOSED',
+    (c) => c.challengerId === me.value && c.status === 'PROPOSED',
   ),
 )
 const active = computed(() =>
@@ -27,6 +29,14 @@ const history = computed(() =>
   (challenges.value ?? []).filter((c) =>
     ['COMPLETED', 'DECLINED', 'EXPIRED', 'DISPUTED', 'CANCELLED'].includes(c.status),
   ),
+)
+
+const totalCount = computed(
+  () =>
+    incoming.value.length
+    + outgoing.value.length
+    + active.value.length
+    + history.value.length,
 )
 
 const statusLabel: Record<ChallengeStatus, string> = {
@@ -39,130 +49,187 @@ const statusLabel: Record<ChallengeStatus, string> = {
   CANCELLED: 'Storniert',
 }
 
-const statusColor: Record<ChallengeStatus, string> = {
-  PROPOSED: 'bg-stone-200 text-stone-700 dark:bg-stone-800 dark:text-stone-200',
-  ACCEPTED: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200',
-  DECLINED: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
-  EXPIRED: 'bg-stone-100 text-stone-500 dark:bg-stone-900 dark:text-stone-400',
-  COMPLETED: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200',
-  DISPUTED: 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200',
-  CANCELLED: 'bg-stone-100 text-stone-500 dark:bg-stone-900 dark:text-stone-400',
+type StatusTone = 'success' | 'warning' | 'danger' | 'neutral' | 'dimmed'
+const statusTone: Record<ChallengeStatus, StatusTone> = {
+  PROPOSED: 'neutral',
+  ACCEPTED: 'warning',
+  DECLINED: 'danger',
+  EXPIRED: 'dimmed',
+  COMPLETED: 'success',
+  DISPUTED: 'warning',
+  CANCELLED: 'dimmed',
 }
 
 function otherParty(c: ChallengeDto): string {
-  return c.challengerId === user.value?.memberId ? c.challengedId : c.challengerId
+  return c.challengerId === me.value ? c.challengedId : c.challengerId
+}
+
+function relativeDe(d: string | Date): string {
+  const date = new Date(d)
+  const days = Math.floor((Date.now() - date.getTime()) / 86400000)
+  if (days <= 0) return 'heute'
+  if (days === 1) return 'gestern'
+  return `vor ${days} Tagen`
+}
+
+function historyDate(c: ChallengeDto): string {
+  const d = c.completedAt ?? c.declinedAt ?? c.expiredAt ?? c.cancelledAt ?? c.disputedAt ?? c.createdAt
+  return new Date(d).toLocaleDateString('de-DE', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  })
 }
 </script>
 
 <template>
-  <UContainer class="py-6 max-w-3xl">
-    <h1 class="text-2xl font-semibold mb-6">Forderungen</h1>
+  <UContainer class="py-10 max-w-2xl md:max-w-3xl md:py-14">
+    <!-- HERO -->
+    <header class="anim anim-1 mb-10 md:mb-12">
+      <h1 class="text-3xl md:text-4xl font-semibold tracking-[-0.02em] leading-tight">
+        Forderungen
+      </h1>
+      <p v-if="totalCount > 0" class="text-sm text-muted mt-2">
+        {{ totalCount }} {{ totalCount === 1 ? 'Forderung' : 'Forderungen' }} insgesamt.
+      </p>
+    </header>
 
-    <section v-if="incoming.length > 0" class="mb-8">
-      <h2 class="text-lg font-semibold mb-3">📥 Eingehend ({{ incoming.length }})</h2>
-      <div class="space-y-2">
-        <NuxtLink
-          v-for="c in incoming"
-          :key="c.id"
-          :to="`/challenges/${c.id}`"
-          class="block p-3 border border-default rounded-lg hover:border-primary transition"
-        >
-          <div class="flex items-center justify-between">
-            <div>
-              <div class="font-medium">{{ memberName(otherParty(c)) }} fordert dich</div>
-              <div class="text-xs text-muted">
-                {{ c.rankingName }} · {{ new Date(c.createdAt).toLocaleDateString('de-DE') }}
+    <!-- EINGEHEND -->
+    <section v-if="incoming.length > 0" class="anim anim-2 mb-12">
+      <div class="section-head__wrap mb-3">
+        <h2 class="section-head">Eingehend · {{ incoming.length }}</h2>
+      </div>
+      <ul class="divide-y divide-default border-y border-default">
+        <li v-for="c in incoming" :key="c.id">
+          <NuxtLink :to="`/challenges/${c.id}`" class="list-row group">
+            <span class="lead-icon lead-icon--challenge shrink-0">
+              <UIcon name="i-lucide-swords" class="size-[18px]" />
+            </span>
+            <div class="flex-1 min-w-0">
+              <div class="text-[15px] font-semibold truncate tracking-[-0.005em] group-hover:text-primary transition-colors">
+                {{ memberName(otherParty(c)) }} fordert dich
+              </div>
+              <div class="text-xs text-muted truncate mt-0.5 inline-flex items-center gap-1.5">
+                <span class="badge-new" aria-label="Neu">
+                  <span class="badge-new__dot" aria-hidden="true" />
+                  Neu
+                </span>
+                <span class="dot-sep" aria-hidden="true" />
+                <span class="truncate">{{ c.rankingName }} · {{ relativeDe(c.createdAt) }}</span>
               </div>
             </div>
-            <span
-              class="inline-block px-2 py-0.5 rounded-full text-xs font-mono"
-              :class="statusColor[c.status]"
-            >
-              {{ statusLabel[c.status] }}
-            </span>
-          </div>
-        </NuxtLink>
-      </div>
+            <UIcon name="i-lucide-chevron-right" class="size-4 text-dimmed shrink-0 group-hover:text-primary group-hover:translate-x-0.5 transition" />
+          </NuxtLink>
+        </li>
+      </ul>
     </section>
 
-    <section v-if="outgoing.length > 0" class="mb-8">
-      <h2 class="text-lg font-semibold mb-3">📤 Ausgehend ({{ outgoing.length }})</h2>
-      <div class="space-y-2">
-        <NuxtLink
-          v-for="c in outgoing"
-          :key="c.id"
-          :to="`/challenges/${c.id}`"
-          class="block p-3 border border-default rounded-lg hover:border-primary transition"
-        >
-          <div class="flex items-center justify-between">
-            <div>
-              <div class="font-medium">Du forderst {{ memberName(otherParty(c)) }}</div>
-              <div class="text-xs text-muted">
+    <!-- AUSGEHEND -->
+    <section v-if="outgoing.length > 0" class="anim anim-3 mb-12">
+      <div class="section-head__wrap mb-3">
+        <h2 class="section-head">Ausgehend · {{ outgoing.length }}</h2>
+      </div>
+      <ul class="divide-y divide-default border-y border-default">
+        <li v-for="c in outgoing" :key="c.id">
+          <NuxtLink :to="`/challenges/${c.id}`" class="list-row group">
+            <span class="lead-icon lead-icon--challenge shrink-0">
+              <UIcon name="i-lucide-swords" class="size-[18px]" />
+            </span>
+            <div class="flex-1 min-w-0">
+              <div class="text-[15px] font-semibold truncate tracking-[-0.005em] group-hover:text-primary transition-colors">
+                Du forderst {{ memberName(otherParty(c)) }}
+              </div>
+              <div class="text-xs text-muted truncate mt-0.5">
                 {{ c.rankingName }} · wartet auf Antwort
               </div>
             </div>
-            <span class="inline-block px-2 py-0.5 rounded-full text-xs font-mono" :class="statusColor[c.status]">
-              {{ statusLabel[c.status] }}
-            </span>
-          </div>
-        </NuxtLink>
-      </div>
+            <UIcon name="i-lucide-chevron-right" class="size-4 text-dimmed shrink-0 group-hover:text-primary group-hover:translate-x-0.5 transition" />
+          </NuxtLink>
+        </li>
+      </ul>
     </section>
 
-    <section v-if="active.length > 0" class="mb-8">
-      <h2 class="text-lg font-semibold mb-3">🎾 Aktive Spiele ({{ active.length }})</h2>
-      <div class="space-y-2">
-        <NuxtLink
-          v-for="c in active"
-          :key="c.id"
-          :to="`/challenges/${c.id}`"
-          class="block p-3 border border-default rounded-lg hover:border-primary transition"
-        >
-          <div class="flex items-center justify-between">
-            <div>
-              <div class="font-medium">vs {{ memberName(otherParty(c)) }}</div>
-              <div class="text-xs text-muted">
-                {{ c.rankingName }} · spielen und Ergebnis melden
+    <!-- AKTIV -->
+    <section v-if="active.length > 0" class="anim anim-4 mb-12">
+      <div class="section-head__wrap mb-3">
+        <h2 class="section-head">Aktiv · {{ active.length }}</h2>
+      </div>
+      <ul class="divide-y divide-default border-y border-default">
+        <li v-for="c in active" :key="c.id">
+          <NuxtLink :to="`/challenges/${c.id}`" class="list-row group">
+            <span class="lead-icon lead-icon--challenge shrink-0">
+              <UIcon name="i-lucide-swords" class="size-[18px]" />
+            </span>
+            <div class="flex-1 min-w-0">
+              <div class="text-[15px] font-semibold truncate tracking-[-0.005em] group-hover:text-primary transition-colors">
+                vs {{ memberName(otherParty(c)) }}
+              </div>
+              <div class="text-xs text-muted truncate mt-0.5">
+                {{ c.rankingName }} · Ergebnis melden
               </div>
             </div>
-            <span class="inline-block px-2 py-0.5 rounded-full text-xs font-mono" :class="statusColor[c.status]">
+            <span
+              class="mono text-[10px] font-semibold tracking-[0.14em] uppercase shrink-0 text-[color:var(--warning)]"
+            >
               {{ statusLabel[c.status] }}
             </span>
-          </div>
-        </NuxtLink>
-      </div>
+            <UIcon name="i-lucide-chevron-right" class="size-4 text-dimmed shrink-0 group-hover:text-primary group-hover:translate-x-0.5 transition ml-1" />
+          </NuxtLink>
+        </li>
+      </ul>
     </section>
 
-    <section v-if="history.length > 0">
-      <h2 class="text-lg font-semibold mb-3">Historie</h2>
-      <div class="space-y-2">
-        <NuxtLink
-          v-for="c in history"
-          :key="c.id"
-          :to="`/challenges/${c.id}`"
-          class="block p-3 border border-default rounded-lg hover:border-muted transition opacity-75"
-        >
-          <div class="flex items-center justify-between">
-            <div>
-              <div class="font-medium">vs {{ memberName(otherParty(c)) }}</div>
-              <div class="text-xs text-muted">
-                {{ c.rankingName }} ·
-                {{ new Date(c.completedAt ?? c.declinedAt ?? c.expiredAt ?? c.createdAt).toLocaleDateString('de-DE') }}
+    <!-- HISTORIE -->
+    <section v-if="history.length > 0" class="anim anim-5 mb-12">
+      <div class="section-head__wrap mb-3">
+        <h2 class="section-head">Historie · {{ history.length }}</h2>
+      </div>
+      <ul class="divide-y divide-default border-y border-default">
+        <li v-for="c in history" :key="c.id">
+          <NuxtLink :to="`/challenges/${c.id}`" class="list-row group">
+            <span class="lead-icon lead-icon--challenge shrink-0 opacity-60">
+              <UIcon name="i-lucide-swords" class="size-[18px]" />
+            </span>
+            <div class="flex-1 min-w-0">
+              <div class="text-[15px] font-semibold truncate tracking-[-0.005em] text-muted group-hover:text-primary transition-colors">
+                vs {{ memberName(otherParty(c)) }}
+              </div>
+              <div class="text-xs text-dimmed truncate mt-0.5">
+                {{ c.rankingName }} · {{ historyDate(c) }}
               </div>
             </div>
-            <span class="inline-block px-2 py-0.5 rounded-full text-xs font-mono" :class="statusColor[c.status]">
+            <span
+              class="mono text-[10px] font-semibold tracking-[0.14em] uppercase shrink-0"
+              :class="{
+                'text-[color:var(--success)]': statusTone[c.status] === 'success',
+                'text-[color:var(--warning)]': statusTone[c.status] === 'warning',
+                'text-[color:var(--danger)]': statusTone[c.status] === 'danger',
+                'text-muted': statusTone[c.status] === 'neutral',
+                'text-dimmed': statusTone[c.status] === 'dimmed',
+              }"
+            >
               {{ statusLabel[c.status] }}
             </span>
-          </div>
-        </NuxtLink>
-      </div>
+            <UIcon name="i-lucide-chevron-right" class="size-4 text-dimmed shrink-0 group-hover:text-primary group-hover:translate-x-0.5 transition ml-1" />
+          </NuxtLink>
+        </li>
+      </ul>
     </section>
 
-    <p
-      v-if="incoming.length === 0 && outgoing.length === 0 && active.length === 0 && history.length === 0"
-      class="text-muted italic"
-    >
-      Du hast noch keine Forderungen. Gehe zu einer Rangliste und fordere jemanden heraus.
-    </p>
+    <!-- EMPTY -->
+    <div v-if="totalCount === 0" class="anim anim-2 mt-16 text-center">
+      <p class="text-base text-muted mb-4">
+        Noch keine Forderungen.
+      </p>
+      <UButton
+        to="/ranglisten"
+        size="md"
+        color="primary"
+        icon="i-lucide-swords"
+        class="rounded-full"
+      >
+        Spieler fordern
+      </UButton>
+    </div>
   </UContainer>
 </template>
