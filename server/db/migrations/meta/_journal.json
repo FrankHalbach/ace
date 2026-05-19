@@ -99,6 +99,13 @@
       "when": 1779648000000,
       "tag": "0013_furry_lockheed",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "6",
+      "when": 1779212177046,
+      "tag": "0014_member_preferences_rename",
+      "breakpoints": true
     }
   ]
 }
