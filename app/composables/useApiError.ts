@@ -53,6 +53,7 @@ const MESSAGES: Record<string, string> = {
   'member.must-keep-player-role': 'Die Spieler-Rolle kann nicht entfernt werden.',
   'member.cannot-remove-last-admin': 'Mindestens ein aktiver Admin muss erhalten bleiben.',
   'member.duplicate-email': 'Diese E-Mail-Adresse ist bereits vergeben.',
+  'lk.out-of-range': 'LK muss zwischen 1.0 und 25.0 liegen.',
 
   // Auth / Rollen
   'auth.role-required': 'Du hast nicht die nötige Berechtigung.',

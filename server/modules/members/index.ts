@@ -9,11 +9,17 @@ export { profileService, MemberNotFoundError } from './service/profile'
 export { getMemberProfile } from './service/player-profile'
 export {
   CannotRemoveLastAdminError,
+  LkOutOfRangeError,
   MemberDuplicateEmailError,
   MustKeepPlayerRoleError,
   memberAdminService,
 } from './service/admin'
-export { createMemberInput, setRolesInput, updateOwnProfileInput } from './types'
+export {
+  createMemberInput,
+  setLkInput,
+  setRolesInput,
+  updateOwnProfileInput,
+} from './types'
 export type {
   CreateMemberInput,
   MatchPreferences,
@@ -22,6 +28,7 @@ export type {
   MemberId,
   PlayerProfileDto,
   Role,
+  SetLkInput,
   SetRolesInput,
   UpdateOwnProfileInput,
 } from './types'

@@ -110,6 +110,61 @@ async function saveRoles() {
   }
 }
 
+// --- LK-Editor (Modal) ----------------------------------------------------
+
+const editingLkMember = ref<MemberAdminDto | null>(null)
+const editingLk = ref<number | null>(null)
+const editingLkNote = ref('')
+const savingLk = ref(false)
+
+function openLkEditor(m: MemberAdminDto) {
+  editingLkMember.value = m
+  editingLk.value = m.dtbLk
+  editingLkNote.value = ''
+}
+
+function closeLkEditor() {
+  if (savingLk.value) return
+  editingLkMember.value = null
+  editingLk.value = null
+  editingLkNote.value = ''
+}
+
+const lkValid = computed(() => {
+  const v = editingLk.value
+  return typeof v === 'number' && Number.isFinite(v) && v >= 1 && v <= 25
+})
+
+const lkChanged = computed(
+  () => editingLkMember.value != null && editingLk.value !== editingLkMember.value.dtbLk,
+)
+
+async function saveLk() {
+  if (!editingLkMember.value || !lkValid.value) return
+  const targetId = editingLkMember.value.id
+  savingLk.value = true
+  try {
+    await $fetch(`/api/admin/members/${targetId}/lk`, {
+      method: 'PATCH',
+      body: {
+        dtbLk: editingLk.value,
+        note: editingLkNote.value.trim() || undefined,
+      },
+    })
+    await refresh()
+    toast.add({ title: 'LK aktualisiert', color: 'primary' })
+    closeLkEditor()
+  } catch (err: unknown) {
+    toast.add({
+      title: 'LK-Aenderung fehlgeschlagen',
+      description: apiError(err),
+      color: 'error',
+    })
+  } finally {
+    savingLk.value = false
+  }
+}
+
 // --- Anlegen --------------------------------------------------------------
 
 type NewMemberForm = {
@@ -351,6 +406,14 @@ function roleLabels(m: MemberAdminDto): string {
           variant="ghost"
           color="neutral"
           size="sm"
+          icon="i-lucide-gauge"
+          aria-label="LK ändern"
+          @click="openLkEditor(m)"
+        />
+        <UButton
+          variant="ghost"
+          color="neutral"
+          size="sm"
           icon="i-lucide-shield"
           aria-label="Rollen bearbeiten"
           @click="openRolesEditor(m)"
@@ -432,6 +495,60 @@ function roleLabels(m: MemberAdminDto): string {
             </UButton>
           </div>
         </div>
+      </template>
+    </UModal>
+
+    <!-- LK-Editor-Modal -->
+    <UModal :open="editingLkMember != null" :ui="{ content: 'max-w-md' }" @update:open="(v: boolean) => !v && closeLkEditor()">
+      <template #content>
+        <form v-if="editingLkMember" class="p-6" @submit.prevent="saveLk">
+          <h2 class="text-lg font-semibold mb-1">
+            LK ändern · {{ editingLkMember.firstName }} {{ editingLkMember.lastName }}
+          </h2>
+          <p class="text-muted text-sm mb-5">
+            DTB-LK zwischen 1.0 und 25.0. Die Änderung wird im Audit-Log
+            protokolliert; eine optionale Begründung landet dort als Notiz.
+          </p>
+
+          <div class="space-y-4">
+            <UFormField label="DTB-LK" required help="z. B. 8.3">
+              <UInput
+                v-model.number="editingLk"
+                type="number"
+                :min="1"
+                :max="25"
+                step="0.1"
+                size="md"
+                class="w-full"
+                autofocus
+              />
+            </UFormField>
+
+            <UFormField label="Begründung (optional)" help="Wird im Audit-Log gespeichert.">
+              <UInput
+                v-model="editingLkNote"
+                size="md"
+                class="w-full"
+                :maxlength="500"
+                placeholder="z. B. DTB-Jahresupdate"
+              />
+            </UFormField>
+          </div>
+
+          <div class="flex gap-2 mt-6 justify-end">
+            <UButton variant="ghost" color="neutral" :disabled="savingLk" @click="closeLkEditor">
+              Abbrechen
+            </UButton>
+            <UButton
+              type="submit"
+              color="primary"
+              :disabled="!lkValid || !lkChanged"
+              :loading="savingLk"
+            >
+              Speichern
+            </UButton>
+          </div>
+        </form>
       </template>
     </UModal>
 
