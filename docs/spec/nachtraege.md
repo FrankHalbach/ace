@@ -247,9 +247,13 @@ deutschsprachigen Begründung („{Name} hat bereits ein Match am {Datum, Uhrzei
 
 ### Out of Scope dieses Nachtrags
 
-- **Challenges**: haben heute kein `scheduledAt`-Feld. Wenn Challenges einen
-  Termin bekommen (Backlog), gilt N-04 sinngemäß; bis dahin blockt der
-  Friendly-Check nur Friendly↔Friendly-Konflikte.
+- **Challenges termin-los in v1** (Entscheidung 2026-05-19, GitHub Issue #63):
+  Eine Challenge bleibt eine reine „Aufforderung zum Spiel" und trägt
+  kein `scheduledAt`. Der Termin wird zwischen den Spielern offline
+  abgesprochen, sobald die Challenge angenommen ist. Konsequenz: der
+  Friendly-Konflikt-Check bleibt rein Friendly↔Friendly, keine
+  Cross-Aggregat-Logik nötig. Sobald (post-v1) Challenges einen Termin
+  bekommen sollten, gilt N-04 sinngemäß.
 - **Soft-Warning statt Hard-Block**: aktuell hard-blocked. Ein UI-seitiges
   „du hast schon ein Match — trotzdem anlegen?" wäre denkbar, ist aber
   v2-Spielraum.
