@@ -17,6 +17,17 @@ export {
   memberAdminService,
 } from './service/admin'
 export {
+  CsvEncodingError,
+  CsvParseError,
+  importRowSchema,
+  parseMembersCsv,
+} from './service/csv-import'
+export type {
+  CsvImportError,
+  CsvParseResult,
+  ImportRow,
+} from './service/csv-import'
+export {
   createMemberInput,
   deactivateMemberInput,
   setLkInput,
