@@ -165,6 +165,66 @@ async function saveLk() {
   }
 }
 
+// --- Deaktivierung / Reaktivierung ---------------------------------------
+
+const deactivatingMember = ref<MemberAdminDto | null>(null)
+const deactivationReason = ref('')
+const savingDeactivation = ref(false)
+
+function openDeactivate(m: MemberAdminDto) {
+  deactivatingMember.value = m
+  deactivationReason.value = ''
+}
+
+function closeDeactivate() {
+  if (savingDeactivation.value) return
+  deactivatingMember.value = null
+  deactivationReason.value = ''
+}
+
+async function confirmDeactivate() {
+  if (!deactivatingMember.value) return
+  const targetId = deactivatingMember.value.id
+  const name = `${deactivatingMember.value.firstName} ${deactivatingMember.value.lastName}`
+  savingDeactivation.value = true
+  try {
+    await $fetch(`/api/admin/members/${targetId}/deactivate`, {
+      method: 'POST',
+      body: { reason: deactivationReason.value.trim() || undefined },
+    })
+    await refresh()
+    toast.add({ title: `${name} deaktiviert`, color: 'primary' })
+    closeDeactivate()
+  } catch (err: unknown) {
+    toast.add({
+      title: 'Deaktivierung fehlgeschlagen',
+      description: apiError(err),
+      color: 'error',
+    })
+  } finally {
+    savingDeactivation.value = false
+  }
+}
+
+const reactivatingId = ref<string | null>(null)
+
+async function reactivate(m: MemberAdminDto) {
+  reactivatingId.value = m.id
+  try {
+    await $fetch(`/api/admin/members/${m.id}/reactivate`, { method: 'POST' })
+    await refresh()
+    toast.add({ title: `${m.firstName} ${m.lastName} reaktiviert`, color: 'primary' })
+  } catch (err: unknown) {
+    toast.add({
+      title: 'Reaktivierung fehlgeschlagen',
+      description: apiError(err),
+      color: 'error',
+    })
+  } finally {
+    reactivatingId.value = null
+  }
+}
+
 // --- Anlegen --------------------------------------------------------------
 
 type NewMemberForm = {
@@ -418,6 +478,25 @@ function roleLabels(m: MemberAdminDto): string {
           aria-label="Rollen bearbeiten"
           @click="openRolesEditor(m)"
         />
+        <UButton
+          v-if="m.deactivatedAt == null"
+          variant="ghost"
+          color="neutral"
+          size="sm"
+          icon="i-lucide-user-x"
+          aria-label="Deaktivieren"
+          @click="openDeactivate(m)"
+        />
+        <UButton
+          v-else
+          variant="ghost"
+          color="neutral"
+          size="sm"
+          icon="i-lucide-user-check"
+          aria-label="Reaktivieren"
+          :loading="reactivatingId === m.id"
+          @click="reactivate(m)"
+        />
       </li>
     </ul>
 
@@ -546,6 +625,43 @@ function roleLabels(m: MemberAdminDto): string {
               :loading="savingLk"
             >
               Speichern
+            </UButton>
+          </div>
+        </form>
+      </template>
+    </UModal>
+
+    <!-- Deaktivierungs-Modal -->
+    <UModal :open="deactivatingMember != null" :ui="{ content: 'max-w-md' }" @update:open="(v: boolean) => !v && closeDeactivate()">
+      <template #content>
+        <form v-if="deactivatingMember" class="p-6" @submit.prevent="confirmDeactivate">
+          <h2 class="text-lg font-semibold mb-1">
+            Mitglied deaktivieren · {{ deactivatingMember.firstName }} {{ deactivatingMember.lastName }}
+          </h2>
+          <p class="text-muted text-sm mb-5">
+            Soft-Delete: das Mitglied bleibt in der Mitgliederliste und in
+            Match-Historien sichtbar, kann sich aber nicht mehr anmelden und
+            taucht in keinen neuen Vorschlägen mehr auf. Du kannst die
+            Deaktivierung jederzeit aufheben.
+          </p>
+
+          <UFormField label="Begründung (optional)" help="Wird im Audit-Log gespeichert.">
+            <UInput
+              v-model="deactivationReason"
+              size="md"
+              class="w-full"
+              :maxlength="500"
+              placeholder="z. B. Austritt 2026-Q2"
+              autofocus
+            />
+          </UFormField>
+
+          <div class="flex gap-2 mt-6 justify-end">
+            <UButton variant="ghost" color="neutral" :disabled="savingDeactivation" @click="closeDeactivate">
+              Abbrechen
+            </UButton>
+            <UButton type="submit" color="error" :loading="savingDeactivation">
+              Deaktivieren
             </UButton>
           </div>
         </form>
