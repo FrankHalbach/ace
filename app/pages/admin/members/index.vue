@@ -352,11 +352,10 @@ function roleLabels(m: MemberAdminDto): string {
       </div>
       <div class="flex items-center gap-2 shrink-0">
         <UButton
+          to="/admin/members/import"
           variant="outline"
           color="neutral"
           icon="i-lucide-upload"
-          disabled
-          title="folgt — CSV-Import kommt im nächsten Schritt"
         >
           CSV importieren
         </UButton>
