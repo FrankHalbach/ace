@@ -31,6 +31,14 @@ export type RankingEntryDto = {
   points: number | null
   eloRating: number | null
   lastMatchAt: Date | null
+  /**
+   * Anzahl bestätigter Match-Ergebnisse, an denen das Mitglied in dieser
+   * Rangliste beteiligt war. Walk-Over zählt für beide Spieler — der
+   * Sieger hat „gewonnen", der Verlierer hat „gespielt" aber nicht gewonnen.
+   * (#73)
+   */
+  matchesPlayed: number
+  matchesWon: number
   // Angereichert für die UI
   member: {
     firstName: string
@@ -42,6 +50,12 @@ export type RankingEntryDto = {
     primary: string
     secondary?: string
   }
+}
+
+/** Match-Statistik je Mitglied innerhalb einer Rangliste (#73). */
+export type MemberMatchStats = {
+  played: number
+  won: number
 }
 
 export type RankingSummaryDto = RankingDto & {
