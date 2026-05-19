@@ -19,7 +19,7 @@ const { data: result, refresh: refreshResult } = await useFetch<MatchResultDto |
   { default: () => null, watch: [() => challenge.value?.status] },
 )
 
-useHead({ title: () => (challenge.value ? `Forderung #${challenge.value.id}` : 'Forderung') })
+useHead({ title: 'Forderung' })
 
 const statusLabel: Record<ChallengeStatus, string> = {
   PROPOSED: 'Offen',
@@ -207,10 +207,10 @@ const isLoser = computed(() => {
       <NuxtLink to="/challenges" class="text-sm text-muted hover:text-default">
         ← Alle Forderungen
       </NuxtLink>
-      <h1 class="text-2xl font-semibold mt-2">Forderung #{{ challenge.id }}</h1>
+      <h1 class="text-2xl font-semibold mt-2">Forderung</h1>
       <div class="text-sm text-muted mt-1">
         Status: <strong>{{ statusLabel[challenge.status] }}</strong> ·
-        Rangliste #{{ challenge.rankingId }}
+        Rangliste: {{ challenge.rankingName }}
       </div>
     </header>
 

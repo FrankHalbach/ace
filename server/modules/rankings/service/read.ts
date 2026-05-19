@@ -1,4 +1,4 @@
-import { and, eq, sql } from 'drizzle-orm'
+import { and, eq, inArray, sql } from 'drizzle-orm'
 import { useDb } from '../../../db'
 import { ageGroup } from '../../../db/schema/age-group'
 import { ranking } from '../../../db/schema/ranking'
@@ -117,6 +117,31 @@ export const rankingReadService = {
       seasonName: meta.seasonName,
       entries,
     }
+  },
+
+  /**
+   * Anzeige-Labels für eine Menge an Ranglisten — `"<AgeGroup> · <Season>"`.
+   * Für Aufrufer aus anderen Modulen (z. B. Forderungs-/Friendly-Listen)
+   * die Ranking-IDs lesbar darstellen wollen. Eine Query, keine N+1.
+   */
+  getDisplayNames(ids: RankingId[]): Map<RankingId, string> {
+    const out = new Map<RankingId, string>()
+    if (ids.length === 0) return out
+    const rows = useDb()
+      .select({
+        id: ranking.id,
+        ageGroupName: ageGroup.name,
+        seasonName: season.name,
+      })
+      .from(ranking)
+      .innerJoin(ageGroup, eq(ranking.ageGroupId, ageGroup.id))
+      .innerJoin(season, eq(ranking.seasonId, season.id))
+      .where(inArray(ranking.id, ids))
+      .all()
+    for (const r of rows) {
+      out.set(r.id, `${r.ageGroupName} · ${r.seasonName}`)
+    }
+    return out
   },
 
   /**
