@@ -4,7 +4,9 @@ import { MemberNotFoundError } from './profile'
 import {
   CannotRemoveLastAdminError,
   LkOutOfRangeError,
+  MemberAlreadyDeactivatedError,
   MemberDuplicateEmailError,
+  MemberNotDeactivatedError,
   MustKeepPlayerRoleError,
   type CreateMemberInput,
   type MemberAdminDto,
@@ -53,7 +55,9 @@ function countActiveAdmins(): number {
 export {
   CannotRemoveLastAdminError,
   LkOutOfRangeError,
+  MemberAlreadyDeactivatedError,
   MemberDuplicateEmailError,
+  MemberNotDeactivatedError,
   MustKeepPlayerRoleError,
 }
 
@@ -184,6 +188,92 @@ export const memberAdminService = {
       before: { dtbLk: member.dtbLk },
       after: { dtbLk: updated.dtbLk },
       note,
+    })
+    return toAdminDto(updated)
+  },
+
+  /**
+   * Admin-Deaktivierung (Soft-Delete, FR-60b). Setzt `status='pausiert'`
+   * plus `deactivatedAt` als Marker, der Admin-Deaktivierung von einer
+   * Selbst-Pausierung unterscheidet. Wenn der zu Deaktivierende der
+   * letzte aktive Admin ist, wird die Aktion blockiert (Lock-out-Schutz).
+   */
+  deactivate(
+    memberId: MemberId,
+    reason: string | undefined,
+    actorId: MemberId,
+    now: Date = new Date(),
+  ): MemberAdminDto {
+    const member = memberRepo.findById(memberId)
+    if (!member) throw new MemberNotFoundError(memberId)
+    if (member.deactivatedAt != null) {
+      throw new MemberAlreadyDeactivatedError(memberId)
+    }
+
+    // Lock-out-Schutz: wenn dieses Mitglied ein aktiver Admin ist, muss
+    // mindestens ein weiterer aktiver Admin uebrig bleiben.
+    if (member.roles.includes('admin')) {
+      const remaining = countActiveAdmins() - 1
+      if (remaining < 1) throw new CannotRemoveLastAdminError()
+    }
+
+    const updated = memberRepo.updateById(memberId, {
+      status: 'pausiert',
+      deactivatedAt: now,
+      deactivationReason: reason ?? null,
+    })!
+    auditService.log({
+      actorId,
+      action: 'member.deactivated',
+      subjectKind: 'member',
+      subjectId: memberId,
+      before: {
+        status: member.status,
+        deactivatedAt: member.deactivatedAt,
+        deactivationReason: member.deactivationReason,
+      },
+      after: {
+        status: updated.status,
+        deactivatedAt: updated.deactivatedAt,
+        deactivationReason: updated.deactivationReason,
+      },
+    })
+    return toAdminDto(updated)
+  },
+
+  /**
+   * Hebt eine Admin-Deaktivierung auf. Setzt `status='aktiv'` und nullt
+   * `deactivatedAt` + `deactivationReason`. Wirft, wenn das Mitglied
+   * nicht admin-deaktiviert war (Self-Pause wird ueber das Profil
+   * aufgehoben, nicht hier).
+   */
+  reactivate(memberId: MemberId, actorId: MemberId): MemberAdminDto {
+    const member = memberRepo.findById(memberId)
+    if (!member) throw new MemberNotFoundError(memberId)
+    if (member.deactivatedAt == null) {
+      throw new MemberNotDeactivatedError(memberId)
+    }
+
+    const updated = memberRepo.updateById(memberId, {
+      status: 'aktiv',
+      deactivatedAt: null,
+      deactivationReason: null,
+    })!
+    auditService.log({
+      actorId,
+      action: 'member.reactivated',
+      subjectKind: 'member',
+      subjectId: memberId,
+      before: {
+        status: member.status,
+        deactivatedAt: member.deactivatedAt,
+        deactivationReason: member.deactivationReason,
+      },
+      after: {
+        status: updated.status,
+        deactivatedAt: updated.deactivatedAt,
+        deactivationReason: updated.deactivationReason,
+      },
     })
     return toAdminDto(updated)
   },

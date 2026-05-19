@@ -6,7 +6,9 @@ import { auditService } from '../../server/modules/admin'
 import {
   CannotRemoveLastAdminError,
   LkOutOfRangeError,
+  MemberAlreadyDeactivatedError,
   MemberDuplicateEmailError,
+  MemberNotDeactivatedError,
   MemberNotFoundError,
   MustKeepPlayerRoleError,
   memberAdminService,
@@ -299,5 +301,106 @@ describe('memberAdminService.setLk', () => {
     const actor = insertMember('Admin', 'In', { roles: ['player', 'admin'] })
     expect(() => memberAdminService.setLk('xxxxxxxxxxxxxxxxx' as MemberId, 12, actor))
       .toThrowError(MemberNotFoundError)
+  })
+})
+
+describe('memberAdminService.deactivate', () => {
+  it('setzt status=pausiert + deactivatedAt + reason und schreibt Audit', () => {
+    const actor = insertMember('Anna', 'Admin', { roles: ['player', 'admin'] })
+    const target = insertMember('Raus', 'Aus')
+
+    const before = new Date()
+    const out = memberAdminService.deactivate(target, 'Austritt 2026-Q2', actor)
+
+    expect(out.status).toBe('pausiert')
+    expect(out.deactivatedAt).toBeInstanceOf(Date)
+    expect(out.deactivatedAt!.getTime()).toBeGreaterThanOrEqual(
+      Math.floor(before.getTime() / 1000) * 1000,
+    )
+    expect(out.deactivationReason).toBe('Austritt 2026-Q2')
+
+    const log = auditService.listRecent().find((e) => e.action === 'member.deactivated')
+    expect(log).toBeDefined()
+    expect(log!.actorId).toBe(actor)
+    expect(log!.subjectId).toBe(target)
+    expect((log!.after as { status: string }).status).toBe('pausiert')
+  })
+
+  it('erlaubt Deaktivierung ohne Begruendung', () => {
+    const actor = insertMember('Anna', 'Admin', { roles: ['player', 'admin'] })
+    const target = insertMember('Raus', 'Aus')
+    const out = memberAdminService.deactivate(target, undefined, actor)
+    expect(out.deactivationReason).toBeNull()
+  })
+
+  it('wirft MemberAlreadyDeactivatedError bei doppelter Deaktivierung', () => {
+    const actor = insertMember('Anna', 'Admin', { roles: ['player', 'admin'] })
+    const target = insertMember('Raus', 'Aus', { deactivated: true })
+    expect(() => memberAdminService.deactivate(target, 'nochmal', actor))
+      .toThrowError(MemberAlreadyDeactivatedError)
+  })
+
+  it('blockt Deaktivierung des letzten aktiven Admins (Lock-out)', () => {
+    const onlyAdmin = insertMember('Anna', 'Admin', { roles: ['player', 'admin'] })
+    expect(() => memberAdminService.deactivate(onlyAdmin, 'austritt', onlyAdmin))
+      .toThrowError(CannotRemoveLastAdminError)
+  })
+
+  it('erlaubt Deaktivierung eines Admins, wenn ein weiterer aktiver Admin uebrigbleibt', () => {
+    const a1 = insertMember('Anna', 'Admin', { roles: ['player', 'admin'] })
+    const a2 = insertMember('Boris', 'Backup', { roles: ['player', 'admin'] })
+    const out = memberAdminService.deactivate(a1, 'austritt', a2)
+    expect(out.deactivatedAt).not.toBeNull()
+  })
+
+  it('zaehlt deaktivierte Admins nicht zum Lock-out-Schutz beim Deaktivieren', () => {
+    const a1 = insertMember('Anna', 'Admin', { roles: ['player', 'admin'] })
+    insertMember('Boris', 'Backup', {
+      roles: ['player', 'admin'],
+      deactivated: true,
+    })
+    expect(() => memberAdminService.deactivate(a1, 'austritt', a1))
+      .toThrowError(CannotRemoveLastAdminError)
+  })
+
+  it('wirft MemberNotFoundError fuer unbekannte ID', () => {
+    const actor = insertMember('Anna', 'Admin', { roles: ['player', 'admin'] })
+    expect(() => memberAdminService.deactivate('xxxxxxxxxxxxxxxxx' as MemberId, undefined, actor))
+      .toThrowError(MemberNotFoundError)
+  })
+})
+
+describe('memberAdminService.reactivate', () => {
+  it('nullt deactivatedAt + reason und setzt status=aktiv', () => {
+    const actor = insertMember('Anna', 'Admin', { roles: ['player', 'admin'] })
+    const target = insertMember('Raus', 'Aus', { deactivated: true })
+
+    const out = memberAdminService.reactivate(target, actor)
+    expect(out.status).toBe('aktiv')
+    expect(out.deactivatedAt).toBeNull()
+    expect(out.deactivationReason).toBeNull()
+
+    const log = auditService.listRecent().find((e) => e.action === 'member.reactivated')
+    expect(log).toBeDefined()
+    expect((log!.after as { status: string }).status).toBe('aktiv')
+  })
+
+  it('wirft MemberNotDeactivatedError, wenn das Mitglied aktiv ist', () => {
+    const actor = insertMember('Anna', 'Admin', { roles: ['player', 'admin'] })
+    const target = insertMember('Aktiv', 'Spieler')
+    expect(() => memberAdminService.reactivate(target, actor))
+      .toThrowError(MemberNotDeactivatedError)
+  })
+
+  it('wirft MemberNotDeactivatedError bei Self-Pause (status=pausiert, deactivatedAt=null)', () => {
+    const actor = insertMember('Anna', 'Admin', { roles: ['player', 'admin'] })
+    const target = insertMember('Selbst', 'Pause')
+    useDb()
+      .update(member)
+      .set({ status: 'pausiert' })
+      .where(eq(member.id, target))
+      .run()
+    expect(() => memberAdminService.reactivate(target, actor))
+      .toThrowError(MemberNotDeactivatedError)
   })
 })

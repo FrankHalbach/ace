@@ -10,18 +10,22 @@ export { getMemberProfile } from './service/player-profile'
 export {
   CannotRemoveLastAdminError,
   LkOutOfRangeError,
+  MemberAlreadyDeactivatedError,
   MemberDuplicateEmailError,
+  MemberNotDeactivatedError,
   MustKeepPlayerRoleError,
   memberAdminService,
 } from './service/admin'
 export {
   createMemberInput,
+  deactivateMemberInput,
   setLkInput,
   setRolesInput,
   updateOwnProfileInput,
 } from './types'
 export type {
   CreateMemberInput,
+  DeactivateMemberInput,
   MatchPreferences,
   MemberAdminDto,
   MemberDto,
