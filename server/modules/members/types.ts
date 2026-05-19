@@ -61,6 +61,13 @@ export const setRolesInput = z.object({
 
 export type SetRolesInput = z.infer<typeof setRolesInput>
 
+export const setLkInput = z.object({
+  dtbLk: z.number().min(1).max(25),
+  note: z.string().trim().max(500).optional(),
+})
+
+export type SetLkInput = z.infer<typeof setLkInput>
+
 const currentYear = new Date().getFullYear()
 
 export const createMemberInput = z.object({
@@ -92,6 +99,13 @@ export class MemberDuplicateEmailError extends Error {
   readonly code = 'member.duplicate-email' as const
   constructor(public readonly email: string) {
     super(`member with email ${email} already exists`)
+  }
+}
+
+export class LkOutOfRangeError extends Error {
+  readonly code = 'lk.out-of-range' as const
+  constructor(public readonly value: number) {
+    super(`LK ${value} out of range (1.0–25.0)`)
   }
 }
 

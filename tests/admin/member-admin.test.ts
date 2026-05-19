@@ -5,6 +5,7 @@ import { member } from '../../server/db/schema/member'
 import { auditService } from '../../server/modules/admin'
 import {
   CannotRemoveLastAdminError,
+  LkOutOfRangeError,
   MemberDuplicateEmailError,
   MemberNotFoundError,
   MustKeepPlayerRoleError,
@@ -242,5 +243,61 @@ describe('memberAdminService.create', () => {
     )
     expect(m.firstName).toBe('Max')
     expect(m.lastName).toBe('Müller')
+  })
+})
+
+describe('memberAdminService.setLk', () => {
+  it('aktualisiert die LK und schreibt einen Audit-Eintrag', () => {
+    const actor = insertMember('Admin', 'In', { roles: ['player', 'admin'] })
+    const target = insertMember('Tom', 'Target')
+    const before = memberAdminService.listAll().find((m) => m.id === target)!
+    expect(before.dtbLk).toBe(10)
+
+    const updated = memberAdminService.setLk(target, 8.5, actor)
+    expect(updated.dtbLk).toBe(8.5)
+
+    const log = auditService.listRecent().find((e) => e.action === 'member.lk-corrected')
+    expect(log).toBeDefined()
+    expect(log!.actorId).toBe(actor)
+    expect(log!.subjectId).toBe(target)
+    expect(log!.before).toEqual({ dtbLk: 10 })
+    expect(log!.after).toEqual({ dtbLk: 8.5 })
+  })
+
+  it('legt die Note in den Audit-Eintrag', () => {
+    const actor = insertMember('Trainer', 'In', { roles: ['player', 'trainer'] })
+    const target = insertMember('Lk', 'Test')
+    memberAdminService.setLk(target, 12, actor, 'jährlicher DTB-Sync')
+
+    const log = auditService.listRecent().find((e) => e.action === 'member.lk-corrected')
+    expect(log!.note).toBe('jährlicher DTB-Sync')
+  })
+
+  it('ist no-op bei identischer LK — kein Audit-Eintrag', () => {
+    const actor = insertMember('Admin', 'In', { roles: ['player', 'admin'] })
+    const target = insertMember('Same', 'Lk')
+    memberAdminService.setLk(target, 10, actor) // = Default-LK des Seeds
+    const log = auditService.listRecent().find((e) => e.action === 'member.lk-corrected')
+    expect(log).toBeUndefined()
+  })
+
+  it('wirft LkOutOfRangeError unter 1.0', () => {
+    const actor = insertMember('Admin', 'In', { roles: ['player', 'admin'] })
+    const target = insertMember('Tom', 'Target')
+    expect(() => memberAdminService.setLk(target, 0.5, actor))
+      .toThrowError(LkOutOfRangeError)
+  })
+
+  it('wirft LkOutOfRangeError über 25.0', () => {
+    const actor = insertMember('Admin', 'In', { roles: ['player', 'admin'] })
+    const target = insertMember('Tom', 'Target')
+    expect(() => memberAdminService.setLk(target, 25.1, actor))
+      .toThrowError(LkOutOfRangeError)
+  })
+
+  it('wirft MemberNotFoundError fuer unbekannte ID', () => {
+    const actor = insertMember('Admin', 'In', { roles: ['player', 'admin'] })
+    expect(() => memberAdminService.setLk('xxxxxxxxxxxxxxxxx' as MemberId, 12, actor))
+      .toThrowError(MemberNotFoundError)
   })
 })

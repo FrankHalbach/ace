@@ -3,6 +3,7 @@ import { memberRepo } from '../repository/member-repo'
 import { MemberNotFoundError } from './profile'
 import {
   CannotRemoveLastAdminError,
+  LkOutOfRangeError,
   MemberDuplicateEmailError,
   MustKeepPlayerRoleError,
   type CreateMemberInput,
@@ -51,6 +52,7 @@ function countActiveAdmins(): number {
 
 export {
   CannotRemoveLastAdminError,
+  LkOutOfRangeError,
   MemberDuplicateEmailError,
   MustKeepPlayerRoleError,
 }
@@ -147,6 +149,41 @@ export const memberAdminService = {
       subjectId: memberId,
       before: { roles: member.roles },
       after: { roles: updated.roles },
+    })
+    return toAdminDto(updated)
+  },
+
+  /**
+   * Korrigiert die DTB-LK eines Mitglieds (FR-63, Spec §4.1).
+   * Admin und Trainer duerfen. Wenn `note` gesetzt ist, landet sie im
+   * Audit-Eintrag als Begruendung. Identische LK ist ein No-op, kein
+   * Audit-Eintrag.
+   */
+  setLk(
+    memberId: MemberId,
+    dtbLk: number,
+    actorId: MemberId,
+    note?: string,
+  ): MemberAdminDto {
+    if (!Number.isFinite(dtbLk) || dtbLk < 1 || dtbLk > 25) {
+      throw new LkOutOfRangeError(dtbLk)
+    }
+    const member = memberRepo.findById(memberId)
+    if (!member) throw new MemberNotFoundError(memberId)
+
+    if (member.dtbLk === dtbLk) {
+      return toAdminDto(member)
+    }
+
+    const updated = memberRepo.updateById(memberId, { dtbLk })!
+    auditService.log({
+      actorId,
+      action: 'member.lk-corrected',
+      subjectKind: 'member',
+      subjectId: memberId,
+      before: { dtbLk: member.dtbLk },
+      after: { dtbLk: updated.dtbLk },
+      note,
     })
     return toAdminDto(updated)
   },
