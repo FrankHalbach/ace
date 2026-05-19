@@ -25,7 +25,7 @@ const { data: result, refresh: refreshResult } = await useFetch<FriendlyResultDt
   { default: () => null, watch: [() => friendly.value?.status] },
 )
 
-useHead({ title: () => (friendly.value ? `Freundschaftsspiel #${friendly.value.id}` : 'Freundschaftsspiel') })
+useHead({ title: 'Freundschaftsspiel' })
 
 const me = computed(() => user.value?.memberId)
 

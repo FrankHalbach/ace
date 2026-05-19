@@ -26,6 +26,7 @@ export type ChallengeDto = {
   challengerId: MemberId
   challengedId: MemberId
   rankingId: RankingId
+  rankingName: string // "<ageGroupName> · <seasonName>", z. B. "Herren · Saison 2024"
   status: ChallengeStatus
   createdAt: Date
   acceptedAt: Date | null

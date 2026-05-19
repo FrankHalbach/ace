@@ -71,7 +71,7 @@ function otherParty(c: ChallengeDto): string {
             <div>
               <div class="font-medium">{{ memberName(otherParty(c)) }} fordert dich</div>
               <div class="text-xs text-muted">
-                Rangliste #{{ c.rankingId }} · {{ new Date(c.createdAt).toLocaleDateString('de-DE') }}
+                {{ c.rankingName }} · {{ new Date(c.createdAt).toLocaleDateString('de-DE') }}
               </div>
             </div>
             <span
@@ -98,7 +98,7 @@ function otherParty(c: ChallengeDto): string {
             <div>
               <div class="font-medium">Du forderst {{ memberName(otherParty(c)) }}</div>
               <div class="text-xs text-muted">
-                Rangliste #{{ c.rankingId }} · wartet auf Antwort
+                {{ c.rankingName }} · wartet auf Antwort
               </div>
             </div>
             <span class="inline-block px-2 py-0.5 rounded-full text-xs font-mono" :class="statusColor[c.status]">
@@ -122,7 +122,7 @@ function otherParty(c: ChallengeDto): string {
             <div>
               <div class="font-medium">vs {{ memberName(otherParty(c)) }}</div>
               <div class="text-xs text-muted">
-                Rangliste #{{ c.rankingId }} · spielen und Ergebnis melden
+                {{ c.rankingName }} · spielen und Ergebnis melden
               </div>
             </div>
             <span class="inline-block px-2 py-0.5 rounded-full text-xs font-mono" :class="statusColor[c.status]">
@@ -146,7 +146,7 @@ function otherParty(c: ChallengeDto): string {
             <div>
               <div class="font-medium">vs {{ memberName(otherParty(c)) }}</div>
               <div class="text-xs text-muted">
-                Rangliste #{{ c.rankingId }} ·
+                {{ c.rankingName }} ·
                 {{ new Date(c.completedAt ?? c.declinedAt ?? c.expiredAt ?? c.createdAt).toLocaleDateString('de-DE') }}
               </div>
             </div>

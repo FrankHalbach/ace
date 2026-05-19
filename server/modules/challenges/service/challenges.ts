@@ -2,6 +2,7 @@ import { profileService, type MemberId } from '../../members'
 import {
   getRankingEntries,
   getRankingMeta,
+  rankingReadService,
   strategyFor,
   type RankingId,
 } from '../../rankings'
@@ -31,12 +32,13 @@ const COOLDOWN_MS = 14 * 24 * 60 * 60 * 1000 // 14 Tage (FR-26)
 const MAX_ACTIVE_PER_MEMBER = 2 // FR-27 / FR-111
 const MAX_NEW_PER_DAY = 3 // FR-110
 
-function toDto(row: ChallengeRow): ChallengeDto {
+function toDto(row: ChallengeRow, rankingName: string): ChallengeDto {
   return {
     id: row.id,
     challengerId: row.challengerId,
     challengedId: row.challengedId,
     rankingId: row.rankingId,
+    rankingName,
     status: row.status,
     createdAt: row.createdAt,
     acceptedAt: row.acceptedAt,
@@ -50,9 +52,24 @@ function toDto(row: ChallengeRow): ChallengeDto {
   }
 }
 
+/** Lookup eines einzelnen Ranking-Display-Namens; leerer String wenn unbekannt. */
+function lookupRankingName(rankingId: RankingId): string {
+  return rankingReadService.getDisplayNames([rankingId]).get(rankingId) ?? ''
+}
+
+function enrichOne(row: ChallengeRow): ChallengeDto {
+  return toDto(row, lookupRankingName(row.rankingId))
+}
+
+function enrichMany(rows: ChallengeRow[]): ChallengeDto[] {
+  const ids = Array.from(new Set(rows.map((r) => r.rankingId)))
+  const names = rankingReadService.getDisplayNames(ids)
+  return rows.map((r) => toDto(r, names.get(r.rankingId) ?? ''))
+}
+
 /** Helper für „Detail erneut frisch laden" nach Mutation. */
 function reloadDto(id: ChallengeId): ChallengeDto {
-  return toDto(challengeRepo.findById(id)!)
+  return enrichOne(challengeRepo.findById(id)!)
 }
 
 export const challengesService = {
@@ -62,7 +79,7 @@ export const challengesService = {
 
   findById(id: ChallengeId): ChallengeDto | undefined {
     const row = challengeRepo.findById(id)
-    return row ? toDto(row) : undefined
+    return row ? enrichOne(row) : undefined
   },
 
   getForParticipant(id: ChallengeId, memberId: MemberId): ChallengeDto {
@@ -71,15 +88,15 @@ export const challengesService = {
     if (row.challengerId !== memberId && row.challengedId !== memberId) {
       throw new ChallengeNotParticipantError()
     }
-    return toDto(row)
+    return enrichOne(row)
   },
 
   listForMember(memberId: MemberId): ChallengeDto[] {
-    return challengeRepo.listForMember(memberId).map(toDto)
+    return enrichMany(challengeRepo.listForMember(memberId))
   },
 
   listDisputed(): ChallengeDto[] {
-    return challengeRepo.listByStatus('DISPUTED').map(toDto)
+    return enrichMany(challengeRepo.listByStatus('DISPUTED'))
   },
 
   // ───────────────────────────────────────────────────────────────────────
@@ -183,7 +200,7 @@ export const challengesService = {
       status: 'PROPOSED',
       createdAt: now,
     })
-    return toDto(row)
+    return enrichOne(row)
   },
 
   // ───────────────────────────────────────────────────────────────────────
