@@ -68,6 +68,12 @@ export const setLkInput = z.object({
 
 export type SetLkInput = z.infer<typeof setLkInput>
 
+export const deactivateMemberInput = z.object({
+  reason: z.string().trim().max(500).optional(),
+})
+
+export type DeactivateMemberInput = z.infer<typeof deactivateMemberInput>
+
 const currentYear = new Date().getFullYear()
 
 export const createMemberInput = z.object({
@@ -106,6 +112,20 @@ export class LkOutOfRangeError extends Error {
   readonly code = 'lk.out-of-range' as const
   constructor(public readonly value: number) {
     super(`LK ${value} out of range (1.0–25.0)`)
+  }
+}
+
+export class MemberAlreadyDeactivatedError extends Error {
+  readonly code = 'member.already-deactivated' as const
+  constructor(public readonly memberId: MemberId) {
+    super(`member ${memberId} is already deactivated`)
+  }
+}
+
+export class MemberNotDeactivatedError extends Error {
+  readonly code = 'member.not-deactivated' as const
+  constructor(public readonly memberId: MemberId) {
+    super(`member ${memberId} is not admin-deactivated`)
   }
 }
 

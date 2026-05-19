@@ -1,10 +1,15 @@
+import { useDb } from '../../../db'
+import { member } from '../../../db/schema/member'
 import { auditService } from '../../admin'
 import { memberRepo } from '../repository/member-repo'
 import { MemberNotFoundError } from './profile'
+import type { ImportRow } from './csv-import'
 import {
   CannotRemoveLastAdminError,
   LkOutOfRangeError,
+  MemberAlreadyDeactivatedError,
   MemberDuplicateEmailError,
+  MemberNotDeactivatedError,
   MustKeepPlayerRoleError,
   type CreateMemberInput,
   type MemberAdminDto,
@@ -53,7 +58,9 @@ function countActiveAdmins(): number {
 export {
   CannotRemoveLastAdminError,
   LkOutOfRangeError,
+  MemberAlreadyDeactivatedError,
   MemberDuplicateEmailError,
+  MemberNotDeactivatedError,
   MustKeepPlayerRoleError,
 }
 
@@ -184,6 +191,151 @@ export const memberAdminService = {
       before: { dtbLk: member.dtbLk },
       after: { dtbLk: updated.dtbLk },
       note,
+    })
+    return toAdminDto(updated)
+  },
+
+  /**
+   * Admin-Deaktivierung (Soft-Delete, FR-60b). Setzt `status='pausiert'`
+   * plus `deactivatedAt` als Marker, der Admin-Deaktivierung von einer
+   * Selbst-Pausierung unterscheidet. Wenn der zu Deaktivierende der
+   * letzte aktive Admin ist, wird die Aktion blockiert (Lock-out-Schutz).
+   */
+  deactivate(
+    memberId: MemberId,
+    reason: string | undefined,
+    actorId: MemberId,
+    now: Date = new Date(),
+  ): MemberAdminDto {
+    const member = memberRepo.findById(memberId)
+    if (!member) throw new MemberNotFoundError(memberId)
+    if (member.deactivatedAt != null) {
+      throw new MemberAlreadyDeactivatedError(memberId)
+    }
+
+    // Lock-out-Schutz: wenn dieses Mitglied ein aktiver Admin ist, muss
+    // mindestens ein weiterer aktiver Admin uebrig bleiben.
+    if (member.roles.includes('admin')) {
+      const remaining = countActiveAdmins() - 1
+      if (remaining < 1) throw new CannotRemoveLastAdminError()
+    }
+
+    const updated = memberRepo.updateById(memberId, {
+      status: 'pausiert',
+      deactivatedAt: now,
+      deactivationReason: reason ?? null,
+    })!
+    auditService.log({
+      actorId,
+      action: 'member.deactivated',
+      subjectKind: 'member',
+      subjectId: memberId,
+      before: {
+        status: member.status,
+        deactivatedAt: member.deactivatedAt,
+        deactivationReason: member.deactivationReason,
+      },
+      after: {
+        status: updated.status,
+        deactivatedAt: updated.deactivatedAt,
+        deactivationReason: updated.deactivationReason,
+      },
+    })
+    return toAdminDto(updated)
+  },
+
+  /**
+   * Bulk-Import (FR-60). Setzt alle Zeilen in einer Transaction ein;
+   * existierende Email-Adressen (case-insensitiv) werden uebersprungen
+   * (kein Update). Liefert pro Zeile, ob importiert oder skipped — die
+   * Validierung der Felder ist Aufgabe des Parsers.
+   *
+   * Schreibt EINEN Audit-Eintrag pro Run mit Summary in `after`.
+   */
+  bulkCreate(
+    rows: ImportRow[],
+    actorId: MemberId,
+  ): { importedIds: MemberId[]; skippedEmails: string[] } {
+    const importedIds: MemberId[] = []
+    const skippedEmails: string[] = []
+
+    useDb().transaction((tx) => {
+      // Bestehende Emails einmalig laden, danach pro Insert die `seen`-Menge
+      // pflegen — fängt auch Duplikate INNERHALB der CSV ab.
+      const existing = new Set(
+        tx.select({ email: member.email }).from(member).all().map((r) => r.email.toLowerCase()),
+      )
+      for (const r of rows) {
+        if (existing.has(r.email)) {
+          skippedEmails.push(r.email)
+          continue
+        }
+        const inserted = tx
+          .insert(member)
+          .values({
+            email: r.email,
+            firstName: r.firstName,
+            lastName: r.lastName,
+            birthYear: r.birthYear,
+            gender: r.gender,
+            dtbLk: r.dtbLk,
+            roles: ['player'],
+          })
+          .returning()
+          .get()!
+        importedIds.push(inserted.id)
+        existing.add(r.email)
+      }
+    })
+
+    auditService.log({
+      actorId,
+      action: 'member.imported',
+      subjectKind: 'member',
+      subjectId: undefined,
+      after: {
+        imported: importedIds.length,
+        skipped: skippedEmails.length,
+        importedIds,
+      },
+    })
+
+    return { importedIds, skippedEmails }
+  },
+
+  /**
+   * Hebt eine Admin-Deaktivierung auf. Setzt `status='aktiv'` und nullt
+   * `deactivatedAt` + `deactivationReason`. Wirft, wenn das Mitglied
+   * nicht admin-deaktiviert war (Self-Pause wird ueber das Profil
+   * aufgehoben, nicht hier).
+   */
+  reactivate(memberId: MemberId, actorId: MemberId): MemberAdminDto {
+    const member = memberRepo.findById(memberId)
+    if (!member) throw new MemberNotFoundError(memberId)
+    if (member.deactivatedAt == null) {
+      throw new MemberNotDeactivatedError(memberId)
+    }
+
+    const updated = memberRepo.updateById(memberId, {
+      status: 'aktiv',
+      deactivatedAt: null,
+      deactivationReason: null,
+    })!
+    auditService.log({
+      actorId,
+      action: 'member.reactivated',
+      subjectKind: 'member',
+      subjectId: memberId,
+      before: {
+        status: member.status,
+        deactivatedAt: member.deactivatedAt,
+        deactivationReason: member.deactivationReason,
+      },
+      after: {
+        status: updated.status,
+        deactivatedAt: updated.deactivatedAt,
+        deactivationReason: updated.deactivationReason,
+      },
     })
     return toAdminDto(updated)
   },
