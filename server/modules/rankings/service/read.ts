@@ -1,6 +1,8 @@
 import { and, eq, inArray, sql } from 'drizzle-orm'
 import { useDb } from '../../../db'
 import { ageGroup } from '../../../db/schema/age-group'
+import { challenge } from '../../../db/schema/challenge'
+import { matchResult } from '../../../db/schema/match-result'
 import { ranking } from '../../../db/schema/ranking'
 import { rankingEntry } from '../../../db/schema/ranking-entry'
 import { season } from '../../../db/schema/season'
@@ -9,14 +11,15 @@ import { rankingRepo } from '../repository/ranking-repo'
 import { strategyFor } from '../strategy'
 import {
   RankingNotFoundError,
+  type AgeGroupId,
   type MemberId,
+  type MemberMatchStats,
   type MemberRankingStandingDto,
   type RankingDetailDto,
   type RankingEntryDto,
   type RankingId,
   type RankingSummaryDto,
   type SeasonId,
-  type AgeGroupId,
 } from '../types'
 
 export type RankingFilter = {
@@ -82,29 +85,35 @@ export const rankingReadService = {
 
     const rows = rankingEntryRepo.listByRankingWithMember(id)
     const strategy = strategyFor(rank.mode)
+    const stats = this.getMatchStats(id)
 
     const entries: RankingEntryDto[] = rows
       .filter((r) => !options.onlyActive || r.memberStatus === 'aktiv')
-      .map((r) => ({
-        id: r.entry.id,
-        rankingId: r.entry.rankingId,
-        memberId: r.entry.memberId,
-        position: r.entry.position,
-        points: r.entry.points,
-        eloRating: r.entry.eloRating,
-        lastMatchAt: r.entry.lastMatchAt,
-        member: {
-          firstName: r.memberFirstName,
-          lastName: r.memberLastName,
-          dtbLk: r.memberLk,
-          status: r.memberStatus,
-        },
-        display: strategy.getDisplayInfo({
+      .map((r) => {
+        const s = stats.get(r.entry.memberId) ?? { played: 0, won: 0 }
+        return {
+          id: r.entry.id,
+          rankingId: r.entry.rankingId,
+          memberId: r.entry.memberId,
           position: r.entry.position,
           points: r.entry.points,
           eloRating: r.entry.eloRating,
-        }),
-      }))
+          lastMatchAt: r.entry.lastMatchAt,
+          matchesPlayed: s.played,
+          matchesWon: s.won,
+          member: {
+            firstName: r.memberFirstName,
+            lastName: r.memberLastName,
+            dtbLk: r.memberLk,
+            status: r.memberStatus,
+          },
+          display: strategy.getDisplayInfo({
+            position: r.entry.position,
+            points: r.entry.points,
+            eloRating: r.entry.eloRating,
+          }),
+        }
+      })
 
     return {
       id: rank.id,
@@ -117,6 +126,51 @@ export const rankingReadService = {
       seasonName: meta.seasonName,
       entries,
     }
+  },
+
+  /**
+   * Match-Statistik je Mitglied innerhalb einer Rangliste (#73).
+   *
+   * Zählt bestätigte Match-Ergebnisse, an denen das Mitglied beteiligt
+   * war — sowohl als Challenger als auch als Challenged. Walk-Over zählt
+   * als Spiel + Sieg für den Anwesenden (winner_id ist gesetzt; der
+   * abwesende Verlierer hat zwar „gespielt" im DB-Sinn aber nicht
+   * gewonnen — wir liefern die Zahlen, die Strategy entscheidet später,
+   * ob das fair ist).
+   *
+   * Eine Query, In-Memory-Aggregation. Bei einigen 100 Matches pro
+   * Saison völlig ausreichend; wenn das pro Page-Load knapp wird, wäre
+   * das ein Cache-Kandidat.
+   */
+  getMatchStats(rankingId: RankingId): Map<MemberId, MemberMatchStats> {
+    const rows = useDb()
+      .select({
+        challengerId: challenge.challengerId,
+        challengedId: challenge.challengedId,
+        winnerId: matchResult.winnerId,
+      })
+      .from(matchResult)
+      .innerJoin(challenge, eq(matchResult.challengeId, challenge.id))
+      .where(
+        and(
+          eq(challenge.rankingId, rankingId),
+          eq(matchResult.confirmationStatus, 'confirmed'),
+        ),
+      )
+      .all()
+
+    const stats = new Map<MemberId, MemberMatchStats>()
+    function bump(id: MemberId, didWin: boolean) {
+      const cur = stats.get(id) ?? { played: 0, won: 0 }
+      cur.played += 1
+      if (didWin) cur.won += 1
+      stats.set(id, cur)
+    }
+    for (const r of rows) {
+      bump(r.challengerId, r.winnerId === r.challengerId)
+      bump(r.challengedId, r.winnerId === r.challengedId)
+    }
+    return stats
   },
 
   /**
