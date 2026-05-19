@@ -66,9 +66,13 @@ export const pointsTableStrategy: RankingStrategy = {
   },
 
   getDisplayInfo(entry: EntryDisplayInput): DisplayInfo {
+    // Konvention wie bei pyramid/elo/hybrid: primary = Position, secondary
+    // = optionale Statistik. Vorher waren die Felder vertauscht (#72) —
+    // das UI in `ranglisten/[id].vue` rendert primary als Position-Badge
+    // und secondary rechts, war damit visuell gespiegelt.
     return {
-      primary: `${entry.points ?? 0} Pkt`,
-      secondary: `#${entry.position}`,
+      primary: `#${entry.position}`,
+      secondary: `${entry.points ?? 0} Pkt`,
     }
   },
 

@@ -137,10 +137,11 @@ describe('PointsTableStrategy', () => {
     expect(strategy.initialEntryFields(makeMember(1, 10))).toEqual({ points: 0, eloRating: null })
   })
 
-  it('getDisplayInfo: Punkte primär, Position sekundär', () => {
+  it('getDisplayInfo: Position primär, Punkte sekundär (#72)', () => {
+    // Konvention parallel zu pyramid/elo/hybrid: primary ist die Position.
     expect(strategy.getDisplayInfo({ position: 7, points: 15, eloRating: null })).toEqual({
-      primary: '15 Pkt',
-      secondary: '#7',
+      primary: '#7',
+      secondary: '15 Pkt',
     })
   })
 
