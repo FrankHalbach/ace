@@ -38,10 +38,13 @@ useHead({ title: 'Admin' })
         <div class="text-sm text-muted">Liste, Rollen pflegen — CSV-Import und Einladungen folgen</div>
       </NuxtLink>
 
-      <div class="block p-4 border border-default rounded-lg opacity-50">
+      <NuxtLink
+        to="/admin/audit"
+        class="block p-4 border border-default rounded-lg hover:border-primary hover:bg-elevated transition"
+      >
         <div class="font-medium text-default">Audit-Log</div>
-        <div class="text-sm text-muted">folgt mit dem admin-Feature</div>
-      </div>
+        <div class="text-sm text-muted">Wer hat wann was geändert — filterbar nach Aktion, Akteur und Zeitraum</div>
+      </NuxtLink>
     </div>
   </UContainer>
 </template>

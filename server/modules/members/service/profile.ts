@@ -3,9 +3,13 @@ import type {
   MemberDto,
   MemberId,
   Recipient,
+  Role,
+  SessionView,
   UpdateOwnProfileInput,
 } from '../types'
 import type { MemberRow } from '../../../db/schema/member'
+
+export type { Role, SessionView }
 
 function toDto(row: MemberRow): MemberDto {
   return {
@@ -108,5 +112,20 @@ export const profileService = {
     if (!row) return
     if (row.firstLoginAt != null) return
     memberRepo.updateById(id, { firstLoginAt: at })
+  },
+
+  /**
+   * Kompakter Read-Path für die Session-Refresh-Middleware (#90). Liefert
+   * Rollen plus den Admin-Deaktivierungs-Marker; Self-Pause ist davon
+   * abgegrenzt — pausierte Mitglieder dürfen sich weiter einloggen.
+   */
+  loadSessionView(id: MemberId): SessionView | undefined {
+    const row = memberRepo.findById(id)
+    if (!row) return undefined
+    return {
+      id: row.id,
+      roles: row.roles,
+      adminDeactivated: row.deactivatedAt != null,
+    }
   },
 }

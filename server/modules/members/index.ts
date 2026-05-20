@@ -49,6 +49,7 @@ export type {
   PlayerProfileDto,
   Recipient,
   Role,
+  SessionView,
   SetLkInput,
   SetRolesInput,
   UpdateOwnProfileInput,
