@@ -10,8 +10,8 @@ import { requirePublicIdParam } from '../../../../shared/public-id'
 /**
  * POST /api/admin/members/:id/invite — Einladungs-Mail mit Magic-Link
  * (FR-60a). Wiederholt aufrufbar, generiert jeweils einen neuen 30-Tage-
- * Token. Liefert `emailSent: false` plus `fallbackLink`, wenn Brevo
- * fehlschlägt — der Audit-Eintrag wird in beiden Fällen geschrieben.
+ * Token. Liefert `emailSent: false` plus `fallbackLink`, wenn der SMTP-
+ * Versand fehlschlägt — der Audit-Eintrag wird in beiden Fällen geschrieben.
  */
 export default defineEventHandler(async (event) => {
   const { user } = await requireUserSession(event)

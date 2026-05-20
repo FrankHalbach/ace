@@ -312,7 +312,7 @@ export const memberAdminService = {
    * Erst-Einladung als auch wiederholtes Versenden — alle alten Tokens
    * bleiben gültig, der neue Token hat 30-Tage-TTL.
    *
-   * Bei Brevo-Fehlern wird der Fallback-Link zurückgegeben, damit der
+   * Bei SMTP-Fehlern wird der Fallback-Link zurückgegeben, damit der
    * Admin ihn manuell weitergeben kann (Audit-Eintrag + invitedAt
    * werden trotzdem gesetzt — Design-Doc Edge Case).
    *

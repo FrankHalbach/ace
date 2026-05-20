@@ -23,7 +23,7 @@ Ergänzungen seit v1.0 stehen in [`docs/spec/nachtraege.md`](docs/spec/nachtraeg
 - **Datenbank**: SQLite via `better-sqlite3` (lokal und produktiv)
 - **ORM / Migrations**: Drizzle ORM + Drizzle Kit
 - **Auth**: `nuxt-auth-utils` mit Email-Magic-Link
-- **Email-Versand**: Brevo (300 Mails/Tag kostenlos, EU-gehostet)
+- **Email-Versand**: SMTP via nodemailer — lokal Papercut, produktiv Brevo SMTP-Relay (300 Mails/Tag kostenlos, EU-gehostet)
 - **Validation**: Zod (gleiche Schemas Backend/Frontend)
 - **Tests**: Vitest
 - **Lint**: ESLint (`@nuxt/eslint`) + Prettier
@@ -74,12 +74,18 @@ Dann `.env` editieren und ausfüllen:
 | Variable | Pflicht | Beschreibung |
 | --- | --- | --- |
 | `NUXT_SESSION_PASSWORD` | ja | 32+ Bytes Zufallsstring für Session-Cookie. Generieren: `openssl rand -base64 32` |
-| `NUXT_BREVO_API_KEY` | für Mail-Versand | API-Key aus [Brevo](https://app.brevo.com) → SMTP & API |
+| `NUXT_SMTP_HOST` | für Mail-Versand | SMTP-Host. Lokal `localhost` (Papercut), produktiv `smtp-relay.brevo.com` |
+| `NUXT_SMTP_PORT` | nein | SMTP-Port. Default `25` (Papercut). Brevo verlangt `587` |
+| `NUXT_SMTP_USER` / `NUXT_SMTP_PASS` | für Brevo | SMTP-Login + SMTP-Key aus dem [Brevo-Dashboard](https://app.brevo.com) → SMTP & API → SMTP. Papercut braucht keine Auth |
+| `NUXT_SMTP_SECURE` | nein | `true` für TLS-from-start (Port 465). Default `false`, STARTTLS auf 587 funktioniert damit |
+| `NUXT_MAIL_FROM` | nein | Absender, z. B. `"ace · TuS Neureut <no-reply@tus-neureut.de>"` |
 | `NUXT_DB_PATH` | nein | Pfad zur SQLite-Datei (Default `./data/ace.db`) |
 | `NUXT_PUBLIC_BASE_URL` | ja | Lokal `http://localhost:3000`, Demo/Prod entsprechend |
 | `NUXT_AUTH_MAGIC_LINK_LIMIT_PER_HOUR` | nein | Magic-Link-Rate-Limit pro Email/Stunde (Default lokal 100) |
 
-Ohne `NUXT_BREVO_API_KEY` läuft die App, aber Magic-Links werden nicht per Mail versendet. Für lokale Logins gibt es stattdessen `pnpm db:login` (siehe unten).
+Ohne `NUXT_SMTP_HOST` läuft die App, aber Magic-Links und Invites werden nicht per Mail versendet, sondern auf die Konsole geloggt. Für lokale Logins gibt es zusätzlich `pnpm db:login` (siehe unten).
+
+**Lokal Mails sehen mit Papercut**: [Papercut-SMTP](https://github.com/ChangemakerStudios/Papercut-SMTP) installieren, starten, dann in `.env` `NUXT_SMTP_HOST=localhost` und `NUXT_SMTP_PORT=25` setzen. Alle ausgehenden Mails landen im Papercut-Inbox-Fenster, gehen aber nicht ins echte Internet.
 
 ### 3. Datenbank initialisieren
 
@@ -103,7 +109,7 @@ pnpm db:login <email>
 ```
 
 Gibt eine Magic-Link-URL auf der Konsole aus, die im Browser geöffnet werden kann.
-Bypasst Rate-Limit und Brevo komplett — nur für lokale Entwicklung.
+Bypasst Rate-Limit und SMTP-Versand komplett — nur für lokale Entwicklung.
 
 ## pnpm-Scripts im Überblick
 

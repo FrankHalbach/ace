@@ -34,8 +34,8 @@ export default defineNuxtConfig({
       baseUrl: 'http://localhost:3000',
     },
     // Server-only runtime config (NUXT_SESSION_PASSWORD wird von nuxt-auth-utils
-    // direkt aus der env gelesen; NUXT_BREVO_API_KEY und NUXT_DB_PATH lesen
-    // wir via process.env in den jeweiligen Modulen).
+    // direkt aus der env gelesen; NUXT_SMTP_* und NUXT_DB_PATH lesen wir via
+    // process.env in den jeweiligen Modulen).
   },
 
   nitro: {
