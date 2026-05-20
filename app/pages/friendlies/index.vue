@@ -12,24 +12,11 @@ const { data: friendlies } = await useFetch<FriendlyDetailDto[]>('/api/friendlie
 
 const me = computed(() => user.value?.memberId)
 
-function inviteeStatus(f: FriendlyDetailDto): {
-  total: number
-  accepted: number
-  declined: number
-  pending: number
-} {
-  const total = f.invitees.length
-  const accepted = f.invitees.filter((i) => i.status === 'accepted').length
-  const declined = f.invitees.filter((i) => i.status === 'declined').length
-  const pending = f.invitees.filter((i) => i.status === 'pending').length
-  return { total, accepted, declined, pending }
-}
-
 const incoming = computed(() =>
   (friendlies.value ?? []).filter(
     (f) =>
-      f.status === 'PROPOSED' &&
-      f.invitees.some((i) => i.memberId === me.value && i.status === 'pending'),
+      f.status === 'PROPOSED'
+      && f.invitees.some((i) => i.memberId === me.value && i.status === 'pending'),
   ),
 )
 const outgoingPending = computed(() =>
@@ -46,156 +33,232 @@ const past = computed(() =>
   ),
 )
 
+const totalCount = computed(
+  () =>
+    incoming.value.length
+    + outgoingPending.value.length
+    + upcoming.value.length
+    + past.value.length,
+)
+
 const statusLabel: Record<FriendlyStatus, string> = {
   PROPOSED: 'Offen',
   CONFIRMED: 'Bestätigt',
   DECLINED: 'Abgelehnt',
   CANCELLED: 'Abgesagt',
-  PLAYED: 'Gespielt',
+  PLAYED: 'Ergebnis fehlt',
   COMPLETED: 'Abgeschlossen',
   DISPUTED: 'Strittig',
 }
 
-const statusColor: Record<FriendlyStatus, string> = {
-  PROPOSED: 'bg-stone-200 text-stone-700 dark:bg-stone-800 dark:text-stone-200',
-  CONFIRMED: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200',
-  DECLINED: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
-  CANCELLED: 'bg-stone-100 text-stone-500 dark:bg-stone-900 dark:text-stone-400',
-  PLAYED: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200',
-  COMPLETED: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200',
-  DISPUTED: 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200',
+type StatusTone = 'success' | 'warning' | 'danger' | 'neutral' | 'dimmed'
+const statusTone: Record<FriendlyStatus, StatusTone> = {
+  PROPOSED: 'neutral',
+  CONFIRMED: 'success',
+  DECLINED: 'danger',
+  CANCELLED: 'dimmed',
+  PLAYED: 'warning',
+  COMPLETED: 'success',
+  DISPUTED: 'warning',
 }
 
-function formatDate(d: Date | string): string {
-  return new Date(d).toLocaleString('de-DE', {
-    weekday: 'short',
+function inviteeSummary(f: FriendlyDetailDto): string {
+  const total = f.invitees.length
+  const accepted = f.invitees.filter((i) => i.status === 'accepted').length
+  return `${accepted}/${total} angenommen`
+}
+
+function opponents(f: FriendlyDetailDto): string {
+  const myId = me.value
+  if (!myId) return f.invitees.map((i) => memberName(i.memberId)).join(', ')
+  if (f.initiatorId === myId) {
+    return f.invitees.map((i) => memberName(i.memberId)).join(', ')
+  }
+  return memberName(f.initiatorId)
+}
+
+const dayMonthFmt = new Intl.DateTimeFormat('de-DE', { day: '2-digit', month: '2-digit' })
+const timeFmt = new Intl.DateTimeFormat('de-DE', { hour: '2-digit', minute: '2-digit' })
+
+function dateChip(d: Date | string): { dm: string; time: string } {
+  const date = new Date(d)
+  return { dm: dayMonthFmt.format(date), time: timeFmt.format(date) }
+}
+
+function pastDate(d: Date | string): string {
+  return new Date(d).toLocaleDateString('de-DE', {
     day: '2-digit',
     month: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
+    year: 'numeric',
   })
 }
 </script>
 
 <template>
-  <UContainer class="py-6 max-w-3xl">
-    <header class="flex items-center justify-between mb-6">
-      <h1 class="text-2xl font-semibold">Freundschaftsspiele</h1>
-      <UButton color="primary" to="/friendlies/new">+ Anbieten</UButton>
+  <UContainer class="py-10 max-w-2xl md:max-w-3xl md:py-14">
+    <!-- HERO -->
+    <header class="anim anim-1 mb-10 md:mb-12 flex items-start justify-between gap-4 flex-wrap">
+      <div class="min-w-0">
+        <h1 class="text-3xl md:text-4xl font-semibold tracking-[-0.02em] leading-tight">
+          Freundschaftsspiele
+        </h1>
+        <p v-if="totalCount > 0" class="text-sm text-muted mt-2">
+          {{ totalCount }} {{ totalCount === 1 ? 'Spiel' : 'Spiele' }} insgesamt.
+        </p>
+      </div>
+      <UButton to="/friendlies/new" color="primary" icon="i-lucide-plus" class="rounded-full">
+        Anbieten
+      </UButton>
     </header>
 
-    <section v-if="incoming.length > 0" class="mb-8">
-      <h2 class="text-lg font-semibold mb-3">📥 Eingehend ({{ incoming.length }})</h2>
-      <div class="space-y-2">
-        <NuxtLink
-          v-for="f in incoming"
-          :key="f.id"
-          :to="`/friendlies/${f.id}`"
-          class="block p-3 border border-default rounded-lg hover:border-primary transition"
-        >
-          <div class="flex items-center justify-between">
-            <div>
-              <div class="font-medium">
-                {{ memberName(f.initiatorId) }} lädt dich ein —
-                {{ f.format === 'singles' ? 'Einzel' : 'Doppel' }}
+    <!-- EINGEHEND -->
+    <section v-if="incoming.length > 0" class="anim anim-2 mb-12">
+      <div class="section-head__wrap mb-3">
+        <h2 class="section-head">Eingehend · {{ incoming.length }}</h2>
+      </div>
+      <ul class="divide-y divide-default border-y border-default">
+        <li v-for="f in incoming" :key="f.id">
+          <NuxtLink :to="`/friendlies/${f.id}`" class="list-row group">
+            <span class="date-chip font-mono shrink-0">
+              <span class="text-xs font-semibold tabular-nums leading-none">
+                {{ dateChip(f.scheduledAt).dm }}
+              </span>
+              <span class="text-[10px] text-dimmed tabular-nums leading-none mt-1">
+                {{ dateChip(f.scheduledAt).time }}
+              </span>
+            </span>
+            <div class="flex-1 min-w-0">
+              <div class="text-[15px] font-semibold truncate tracking-[-0.005em] group-hover:text-primary transition-colors">
+                {{ memberName(f.initiatorId) }} lädt dich ein
               </div>
-              <div class="text-xs text-muted">
-                {{ formatDate(f.scheduledAt) }}<span v-if="f.courtInfo"> · {{ f.courtInfo }}</span>
+              <div class="text-xs text-muted truncate mt-0.5 inline-flex items-center gap-1.5">
+                <span class="badge-new" aria-label="Neu">
+                  <span class="badge-new__dot" aria-hidden="true" />
+                  Neu
+                </span>
+                <span class="dot-sep" aria-hidden="true" />
+                <span class="truncate">
+                  {{ f.format === 'singles' ? 'Einzel' : 'Doppel' }}<template v-if="f.courtInfo"> · {{ f.courtInfo }}</template>
+                </span>
               </div>
             </div>
-            <span class="inline-block px-2 py-0.5 rounded-full text-xs font-mono" :class="statusColor[f.status]">
-              {{ statusLabel[f.status] }}
-            </span>
-          </div>
-        </NuxtLink>
-      </div>
+            <UIcon name="i-lucide-chevron-right" class="size-4 text-dimmed shrink-0 group-hover:text-primary group-hover:translate-x-0.5 transition" />
+          </NuxtLink>
+        </li>
+      </ul>
     </section>
 
-    <section v-if="outgoingPending.length > 0" class="mb-8">
-      <h2 class="text-lg font-semibold mb-3">📤 Ausgehend ({{ outgoingPending.length }})</h2>
-      <div class="space-y-2">
-        <NuxtLink
-          v-for="f in outgoingPending"
-          :key="f.id"
-          :to="`/friendlies/${f.id}`"
-          class="block p-3 border border-default rounded-lg hover:border-primary transition"
-        >
-          <div class="flex items-center justify-between">
-            <div>
-              <div class="font-medium">
-                {{ f.format === 'singles' ? 'Einzel' : 'Doppel' }} —
-                {{ inviteeStatus(f).accepted }}/{{ inviteeStatus(f).total }} angenommen
+    <!-- AUSGEHEND -->
+    <section v-if="outgoingPending.length > 0" class="anim anim-3 mb-12">
+      <div class="section-head__wrap mb-3">
+        <h2 class="section-head">Ausgehend · {{ outgoingPending.length }}</h2>
+      </div>
+      <ul class="divide-y divide-default border-y border-default">
+        <li v-for="f in outgoingPending" :key="f.id">
+          <NuxtLink :to="`/friendlies/${f.id}`" class="list-row group">
+            <span class="date-chip font-mono shrink-0">
+              <span class="text-xs font-semibold tabular-nums leading-none">
+                {{ dateChip(f.scheduledAt).dm }}
+              </span>
+              <span class="text-[10px] text-dimmed tabular-nums leading-none mt-1">
+                {{ dateChip(f.scheduledAt).time }}
+              </span>
+            </span>
+            <div class="flex-1 min-w-0">
+              <div class="text-[15px] font-semibold truncate tracking-[-0.005em] group-hover:text-primary transition-colors">
+                {{ f.format === 'singles' ? 'Einzel' : 'Doppel' }} · {{ opponents(f) }}
               </div>
-              <div class="text-xs text-muted">
-                {{ formatDate(f.scheduledAt) }}<span v-if="f.courtInfo"> · {{ f.courtInfo }}</span>
+              <div class="text-xs text-muted truncate mt-0.5">
+                {{ inviteeSummary(f) }}<template v-if="f.courtInfo"> · {{ f.courtInfo }}</template>
               </div>
             </div>
-            <span class="inline-block px-2 py-0.5 rounded-full text-xs font-mono" :class="statusColor[f.status]">
-              {{ statusLabel[f.status] }}
-            </span>
-          </div>
-        </NuxtLink>
-      </div>
+            <UIcon name="i-lucide-chevron-right" class="size-4 text-dimmed shrink-0 group-hover:text-primary group-hover:translate-x-0.5 transition" />
+          </NuxtLink>
+        </li>
+      </ul>
     </section>
 
-    <section v-if="upcoming.length > 0" class="mb-8">
-      <h2 class="text-lg font-semibold mb-3">🎾 Bestätigt ({{ upcoming.length }})</h2>
-      <div class="space-y-2">
-        <NuxtLink
-          v-for="f in upcoming"
-          :key="f.id"
-          :to="`/friendlies/${f.id}`"
-          class="block p-3 border border-default rounded-lg hover:border-primary transition"
-        >
-          <div class="flex items-center justify-between">
-            <div>
-              <div class="font-medium">
-                {{ f.format === 'singles' ? 'Einzel' : 'Doppel' }}
+    <!-- BESTÄTIGT -->
+    <section v-if="upcoming.length > 0" class="anim anim-4 mb-12">
+      <div class="section-head__wrap mb-3">
+        <h2 class="section-head">Bestätigt · {{ upcoming.length }}</h2>
+      </div>
+      <ul class="divide-y divide-default border-y border-default">
+        <li v-for="f in upcoming" :key="f.id">
+          <NuxtLink :to="`/friendlies/${f.id}`" class="list-row group">
+            <span class="date-chip font-mono shrink-0">
+              <span class="text-xs font-semibold tabular-nums leading-none">
+                {{ dateChip(f.scheduledAt).dm }}
+              </span>
+              <span class="text-[10px] text-dimmed tabular-nums leading-none mt-1">
+                {{ dateChip(f.scheduledAt).time }}
+              </span>
+            </span>
+            <div class="flex-1 min-w-0">
+              <div class="text-[15px] font-semibold truncate tracking-[-0.005em] group-hover:text-primary transition-colors">
+                {{ f.format === 'singles' ? 'Einzel' : 'Doppel' }} · {{ opponents(f) }}
               </div>
-              <div class="text-xs text-muted">
-                {{ formatDate(f.scheduledAt) }}<span v-if="f.courtInfo"> · {{ f.courtInfo }}</span>
+              <div class="text-xs text-muted truncate mt-0.5">
+                <template v-if="f.courtInfo">{{ f.courtInfo }} · </template>{{ statusLabel[f.status] }}
               </div>
             </div>
-            <span class="inline-block px-2 py-0.5 rounded-full text-xs font-mono" :class="statusColor[f.status]">
-              {{ statusLabel[f.status] }}
-            </span>
-          </div>
-        </NuxtLink>
-      </div>
+            <UIcon name="i-lucide-chevron-right" class="size-4 text-dimmed shrink-0 group-hover:text-primary group-hover:translate-x-0.5 transition" />
+          </NuxtLink>
+        </li>
+      </ul>
     </section>
 
-    <section v-if="past.length > 0">
-      <h2 class="text-lg font-semibold mb-3">Vergangen</h2>
-      <div class="space-y-2">
-        <NuxtLink
-          v-for="f in past"
-          :key="f.id"
-          :to="`/friendlies/${f.id}`"
-          class="block p-3 border border-default rounded-lg hover:border-muted transition opacity-75"
-        >
-          <div class="flex items-center justify-between">
-            <div>
-              <div class="font-medium">
-                {{ f.format === 'singles' ? 'Einzel' : 'Doppel' }}
+    <!-- HISTORIE -->
+    <section v-if="past.length > 0" class="anim anim-5 mb-12">
+      <div class="section-head__wrap mb-3">
+        <h2 class="section-head">Historie · {{ past.length }}</h2>
+      </div>
+      <ul class="divide-y divide-default border-y border-default">
+        <li v-for="f in past" :key="f.id">
+          <NuxtLink :to="`/friendlies/${f.id}`" class="list-row group">
+            <span class="lead-icon lead-icon--friendly shrink-0 opacity-60">
+              <UIcon name="i-lucide-handshake" class="size-[18px]" />
+            </span>
+            <div class="flex-1 min-w-0">
+              <div class="text-[15px] font-semibold truncate tracking-[-0.005em] text-muted group-hover:text-primary transition-colors">
+                {{ f.format === 'singles' ? 'Einzel' : 'Doppel' }} · {{ opponents(f) }}
               </div>
-              <div class="text-xs text-muted">
-                {{ formatDate(f.scheduledAt) }}
+              <div class="text-xs text-dimmed truncate mt-0.5">
+                {{ pastDate(f.scheduledAt) }}
               </div>
             </div>
-            <span class="inline-block px-2 py-0.5 rounded-full text-xs font-mono" :class="statusColor[f.status]">
+            <span
+              class="mono text-[10px] font-semibold tracking-[0.14em] uppercase shrink-0"
+              :class="{
+                'text-[color:var(--success)]': statusTone[f.status] === 'success',
+                'text-[color:var(--warning)]': statusTone[f.status] === 'warning',
+                'text-[color:var(--danger)]': statusTone[f.status] === 'danger',
+                'text-muted': statusTone[f.status] === 'neutral',
+                'text-dimmed': statusTone[f.status] === 'dimmed',
+              }"
+            >
               {{ statusLabel[f.status] }}
             </span>
-          </div>
-        </NuxtLink>
-      </div>
+            <UIcon name="i-lucide-chevron-right" class="size-4 text-dimmed shrink-0 group-hover:text-primary group-hover:translate-x-0.5 transition ml-1" />
+          </NuxtLink>
+        </li>
+      </ul>
     </section>
 
-    <p
-      v-if="incoming.length === 0 && outgoingPending.length === 0 && upcoming.length === 0 && past.length === 0"
-      class="text-muted italic"
-    >
-      Du hast noch keine Freundschaftsspiele.
-      <NuxtLink to="/friendlies/new" class="text-primary underline">Lade jemanden ein →</NuxtLink>
-    </p>
+    <!-- EMPTY -->
+    <div v-if="totalCount === 0" class="anim anim-2 mt-16 text-center">
+      <p class="text-base text-muted mb-4">
+        Noch keine Freundschaftsspiele.
+      </p>
+      <UButton
+        to="/friendlies/new"
+        size="md"
+        color="primary"
+        icon="i-lucide-handshake"
+        class="rounded-full"
+      >
+        Spiel anbieten
+      </UButton>
+    </div>
   </UContainer>
 </template>
