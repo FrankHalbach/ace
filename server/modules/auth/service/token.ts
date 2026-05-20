@@ -5,6 +5,9 @@ import { InvalidTokenError, type MemberId } from '../types'
 /** 15 Minuten — siehe ADR-003 und Spec NFR-2. */
 export const MAGIC_LINK_TTL_MS = 15 * 60 * 1000
 
+/** 30 Tage — Invite-Tokens bekommen einen längeren Lebenszyklus als Login-Links (Admin-Design-Doc). */
+export const INVITE_TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000
+
 /** 32 Bytes Entropie → 64 hex-Zeichen. */
 const TOKEN_BYTES = 32
 
@@ -16,6 +19,18 @@ export const tokenService = {
   issue(memberId: MemberId, now: Date = new Date()): string {
     const token = randomBytes(TOKEN_BYTES).toString('hex')
     const expiresAt = new Date(now.getTime() + MAGIC_LINK_TTL_MS)
+    tokenRepo.insert({ token, memberId, createdAt: now, expiresAt })
+    return token
+  },
+
+  /**
+   * Invite-Variante: gleicher Token-Typ, gleiches Konsum-Verfahren, nur TTL
+   * länger (30 Tage statt 15 min) — Einladungs-Mails überleben einen
+   * Urlaub. Konsum setzt zusätzlich `firstLoginAt` im Member, falls leer.
+   */
+  issueInvite(memberId: MemberId, now: Date = new Date()): string {
+    const token = randomBytes(TOKEN_BYTES).toString('hex')
+    const expiresAt = new Date(now.getTime() + INVITE_TOKEN_TTL_MS)
     tokenRepo.insert({ token, memberId, createdAt: now, expiresAt })
     return token
   },

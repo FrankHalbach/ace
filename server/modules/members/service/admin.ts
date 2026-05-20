@@ -1,6 +1,7 @@
 import { useDb } from '../../../db'
 import { member } from '../../../db/schema/member'
 import { auditService } from '../../admin'
+import { sendInviteEmail, tokenService } from '../../auth'
 import { memberRepo } from '../repository/member-repo'
 import { MemberNotFoundError } from './profile'
 import type { ImportRow } from './csv-import'
@@ -8,10 +9,12 @@ import {
   CannotRemoveLastAdminError,
   LkOutOfRangeError,
   MemberAlreadyDeactivatedError,
+  MemberDeactivatedError,
   MemberDuplicateEmailError,
   MemberNotDeactivatedError,
   MustKeepPlayerRoleError,
   type CreateMemberInput,
+  type InviteResult,
   type MemberAdminDto,
   type MemberId,
   type Role,
@@ -59,6 +62,7 @@ export {
   CannotRemoveLastAdminError,
   LkOutOfRangeError,
   MemberAlreadyDeactivatedError,
+  MemberDeactivatedError,
   MemberDuplicateEmailError,
   MemberNotDeactivatedError,
   MustKeepPlayerRoleError,
@@ -301,6 +305,63 @@ export const memberAdminService = {
     })
 
     return { importedIds, skippedEmails }
+  },
+
+  /**
+   * Schickt eine Einladungs-Mail an ein Mitglied (FR-60a). Erlaubt sowohl
+   * Erst-Einladung als auch wiederholtes Versenden — alle alten Tokens
+   * bleiben gültig, der neue Token hat 30-Tage-TTL.
+   *
+   * Bei Brevo-Fehlern wird der Fallback-Link zurückgegeben, damit der
+   * Admin ihn manuell weitergeben kann (Audit-Eintrag + invitedAt
+   * werden trotzdem gesetzt — Design-Doc Edge Case).
+   *
+   * Deaktivierte Mitglieder dürfen nicht eingeladen werden.
+   */
+  async invite(
+    memberId: MemberId,
+    actorId: MemberId,
+    baseUrl: string,
+    now: Date = new Date(),
+  ): Promise<InviteResult> {
+    const target = memberRepo.findById(memberId)
+    if (!target) throw new MemberNotFoundError(memberId)
+    if (target.deactivatedAt != null) throw new MemberDeactivatedError(memberId)
+
+    const inviter = memberRepo.findById(actorId)
+    if (!inviter) throw new MemberNotFoundError(actorId)
+
+    const token = tokenService.issueInvite(memberId, now)
+    const link = `${baseUrl.replace(/\/$/, '')}/api/auth/confirm/${token}`
+
+    const updated = memberRepo.updateById(memberId, {
+      invitedAt: now,
+      invitedBy: actorId,
+    })!
+
+    auditService.log({
+      actorId,
+      action: 'member.invited',
+      subjectKind: 'member',
+      subjectId: memberId,
+      before: { invitedAt: target.invitedAt, invitedBy: target.invitedBy },
+      after: { invitedAt: updated.invitedAt, invitedBy: updated.invitedBy },
+    })
+
+    const inviterName = `${inviter.firstName} ${inviter.lastName}`.trim()
+    try {
+      await sendInviteEmail({
+        to: { email: target.email, firstName: target.firstName },
+        link,
+        inviterName,
+      })
+      return { member: toAdminDto(updated), emailSent: true }
+    } catch (err) {
+      // Email-Versand fehlgeschlagen — Audit + invitedAt bleiben gesetzt,
+      // damit der Admin per Copy-Link manuell weiterleiten kann.
+      console.error(`[invite] sendInviteEmail failed for ${memberId}:`, err)
+      return { member: toAdminDto(updated), emailSent: false, fallbackLink: link }
+    }
   },
 
   /**

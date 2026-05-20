@@ -41,5 +41,6 @@ export function confirmMagicLink(token: string): SessionUser {
     // wegen FK-Cascade — defensive return.
     throw new Error(`member ${memberId} disappeared between token issue and confirm`)
   }
+  profileService.markFirstLoginIfMissing(member.id)
   return { memberId: member.id, roles: member.roles }
 }

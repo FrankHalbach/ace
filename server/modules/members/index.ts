@@ -11,6 +11,7 @@ export {
   CannotRemoveLastAdminError,
   LkOutOfRangeError,
   MemberAlreadyDeactivatedError,
+  MemberDeactivatedError,
   MemberDuplicateEmailError,
   MemberNotDeactivatedError,
   MustKeepPlayerRoleError,
@@ -37,6 +38,7 @@ export {
 export type {
   CreateMemberInput,
   DeactivateMemberInput,
+  InviteResult,
   MatchPreferences,
   MemberAdminDto,
   MemberDto,

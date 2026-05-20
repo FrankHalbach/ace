@@ -129,6 +129,20 @@ export class MemberNotDeactivatedError extends Error {
   }
 }
 
+export class MemberDeactivatedError extends Error {
+  readonly code = 'member.deactivated' as const
+  constructor(public readonly memberId: MemberId) {
+    super(`member ${memberId} is deactivated`)
+  }
+}
+
+export type InviteResult = {
+  member: MemberAdminDto
+  emailSent: boolean
+  /** Nur gesetzt, wenn `emailSent === false` — Copy-Link-Fallback. */
+  fallbackLink?: string
+}
+
 // Set-Score (lokal redefiniert, um keine Cross-Modul-Type-Imports zu erzwingen).
 type SetScore = { a: number; b: number }
 
