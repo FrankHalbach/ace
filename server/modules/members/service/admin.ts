@@ -33,6 +33,7 @@ function toAdminDto(row: MemberRow): MemberAdminDto {
     status: row.status,
     roles: row.roles,
     preferences: row.preferences,
+    notificationPrefs: row.notificationPrefs,
     deactivatedAt: row.deactivatedAt,
     deactivationReason: row.deactivationReason,
     invitedAt: row.invitedAt,

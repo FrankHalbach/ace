@@ -1,4 +1,5 @@
 import { profileService, type MemberId } from '../../members'
+import { notifyService } from '../../notifications'
 import { seasonsService } from '../../seasons'
 import { friendlyRepo } from '../repository/friendly-repo'
 import { friendlyInviteeRepo } from '../repository/friendly-invitee-repo'
@@ -288,6 +289,18 @@ export const friendliesService = {
           ],
     )
 
+    // FR-70: jeden Eingeladenen einzeln benachrichtigen.
+    void notifyService.dispatchMany(
+      inviteeRows.map((inv) => ({
+        key: 'friendly.invited' as const,
+        recipientId: inv.memberId,
+        friendlyId: friendlyRow.id,
+        initiatorId: initiatorId,
+        format: friendlyRow.format,
+        scheduledAt: friendlyRow.scheduledAt,
+      })),
+    )
+
     return {
       ...toDto(friendlyRow, currentLateCancellationWindowMs()),
       invitees: inviteeRows.map(toInviteeDto),
@@ -325,7 +338,18 @@ export const friendliesService = {
       }
       throw err
     }
-    return reloadDetail(id)
+    const detail = reloadDetail(id)
+    // FR-70: Initiator informieren. Andere Eingeladene (Doppel) bleiben
+    // außen vor — die sehen den Statuswechsel im UI; eine Pflicht-Mail an
+    // sie ist von der Spec nicht gefordert und würde nur Rauschen sein.
+    void notifyService.dispatch({
+      key: 'friendly.accepted',
+      recipientId: detail.initiatorId,
+      friendlyId: id,
+      responderId: memberId,
+      scheduledAt: detail.scheduledAt,
+    })
+    return detail
   },
 
   decline(id: FriendlyId, memberId: MemberId, now: Date = new Date()): FriendlyDetailDto {
@@ -346,7 +370,15 @@ export const friendliesService = {
       }
       throw err
     }
-    return reloadDetail(id)
+    const detail = reloadDetail(id)
+    void notifyService.dispatch({
+      key: 'friendly.declined',
+      recipientId: detail.initiatorId,
+      friendlyId: id,
+      responderId: memberId,
+      scheduledAt: detail.scheduledAt,
+    })
+    return detail
   },
 
   // ───────────────────────────────────────────────────────────────────────
@@ -380,7 +412,19 @@ export const friendliesService = {
     } else {
       throw new FriendlyInvalidTransitionError(match._state as FriendlyStatus, 'CANCELLED')
     }
-    return reloadDetail(id)
+    const detail = reloadDetail(id)
+    // FR-70: alle eingeladenen Spieler informieren. Initiator selbst steht
+    // nicht in `invitees` (Schema: invitees = die Anderen).
+    void notifyService.dispatchMany(
+      detail.invitees.map((inv) => ({
+        key: 'friendly.cancelled' as const,
+        recipientId: inv.memberId,
+        friendlyId: id,
+        initiatorId: detail.initiatorId,
+        scheduledAt: detail.scheduledAt,
+      })),
+    )
+    return detail
   },
 
   // ───────────────────────────────────────────────────────────────────────

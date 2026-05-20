@@ -1,6 +1,54 @@
 <script setup lang="ts">
 import { z } from 'zod'
-import type { MemberDto, UpdateOwnProfileInput } from '~~/server/modules/members'
+import type {
+  MemberDto,
+  NotificationKey,
+  NotificationPrefs,
+  UpdateOwnProfileInput,
+} from '~~/server/modules/members'
+
+// FR-72: für UI-Zwecke gruppiert. Pro Sektion ein Header und eine Liste der
+// Backend-Keys, die der Toggle steuert. Wird im Frontend dupliziert, damit
+// der Server-Index nicht in den Client-Bundle gezogen wird.
+const NOTIFICATION_GROUPS: Array<{
+  title: string
+  items: Array<{ key: NotificationKey; label: string }>
+}> = [
+  {
+    title: 'Challenges',
+    items: [
+      { key: 'challenge.received', label: 'Neue Herausforderung erhalten' },
+      { key: 'challenge.accepted', label: 'Deine Forderung wurde angenommen' },
+      { key: 'challenge.declined', label: 'Deine Forderung wurde abgelehnt' },
+      { key: 'challenge.expired', label: 'Forderung abgelaufen' },
+      { key: 'challenge.result_reported', label: 'Ergebnis gemeldet — bitte bestätigen' },
+      { key: 'challenge.result_confirmed', label: 'Ergebnis bestätigt' },
+      { key: 'challenge.result_disputed', label: 'Ergebnis strittig' },
+    ],
+  },
+  {
+    title: 'Freundschaftsspiele',
+    items: [
+      { key: 'friendly.invited', label: 'Einladung erhalten' },
+      { key: 'friendly.accepted', label: 'Deine Einladung wurde angenommen' },
+      { key: 'friendly.declined', label: 'Deine Einladung wurde abgelehnt' },
+      { key: 'friendly.cancelled', label: 'Einladung zurückgezogen' },
+      { key: 'friendly.result_reported', label: 'Ergebnis gemeldet — bitte bestätigen' },
+      { key: 'friendly.result_confirmed', label: 'Ergebnis bestätigt' },
+      { key: 'friendly.result_disputed', label: 'Ergebnis strittig' },
+    ],
+  },
+]
+
+function defaultNotificationPrefs(): NotificationPrefs {
+  return NOTIFICATION_GROUPS.flatMap((g) => g.items).reduce(
+    (acc, { key }) => {
+      acc[key] = true
+      return acc
+    },
+    {} as NotificationPrefs,
+  )
+}
 
 definePageMeta({
   middleware: 'auth',
@@ -45,6 +93,7 @@ const form = reactive<Required<UpdateOwnProfileInput>>({
     mixedFriendly: false,
     ageGroupFriendly: false,
   },
+  notificationPrefs: defaultNotificationPrefs(),
 })
 
 const errors = reactive<Partial<Record<ValidatedField, string>>>({})
@@ -59,6 +108,7 @@ watchEffect(() => {
       dtbLk: profile.value.dtbLk,
       status: profile.value.status,
       preferences: { ...profile.value.preferences },
+      notificationPrefs: { ...defaultNotificationPrefs(), ...profile.value.notificationPrefs },
     })
   }
 })
@@ -187,6 +237,22 @@ async function save() {
           <UCheckbox v-model="form.preferences.doublesFriendly" label="Doppel-Freundschaftsspiele" />
           <UCheckbox v-model="form.preferences.mixedFriendly" label="Mixed-Freundschaftsspiele" />
           <UCheckbox v-model="form.preferences.ageGroupFriendly" label="Altersklassen-Freundschaftsspiele" />
+        </fieldset>
+
+        <fieldset class="space-y-4">
+          <legend class="text-sm font-medium text-default mb-1">Email-Benachrichtigungen</legend>
+          <p class="text-xs text-dimmed mb-2">
+            Steuere pro Ereignis, wann du eine Mail bekommst. Standard: alles an.
+          </p>
+          <div v-for="group in NOTIFICATION_GROUPS" :key="group.title" class="space-y-2">
+            <h3 class="text-xs uppercase tracking-wider text-dimmed mt-2">{{ group.title }}</h3>
+            <UCheckbox
+              v-for="item in group.items"
+              :key="item.key"
+              v-model="form.notificationPrefs[item.key]"
+              :label="item.label"
+            />
+          </div>
         </fieldset>
 
         <UButton type="submit" color="primary" size="lg" block :loading="saving">

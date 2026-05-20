@@ -23,6 +23,33 @@ export const DEFAULT_PREFERENCES: MatchPreferences = {
   ageGroupFriendly: false,
 }
 
+// FR-70: alle Lifecycle-Events, für die ein Spieler Email bekommt.
+// Konsumiert vom notifications-Modul; hier definiert, weil Default-Werte
+// auf der Schema-Spalte hängen.
+export const NOTIFICATION_KEYS = [
+  'challenge.received',
+  'challenge.accepted',
+  'challenge.declined',
+  'challenge.expired',
+  'challenge.result_reported',
+  'challenge.result_confirmed',
+  'challenge.result_disputed',
+  'friendly.invited',
+  'friendly.accepted',
+  'friendly.declined',
+  'friendly.cancelled',
+  'friendly.result_reported',
+  'friendly.result_confirmed',
+  'friendly.result_disputed',
+] as const
+
+export type NotificationKey = (typeof NOTIFICATION_KEYS)[number]
+export type NotificationPrefs = Record<NotificationKey, boolean>
+
+export const DEFAULT_NOTIFICATION_PREFS: NotificationPrefs = Object.fromEntries(
+  NOTIFICATION_KEYS.map((k) => [k, true]),
+) as NotificationPrefs
+
 export const member = sqliteTable(
   'member',
   {
@@ -39,6 +66,10 @@ export const member = sqliteTable(
       .$type<MatchPreferences>()
       .notNull()
       .default(DEFAULT_PREFERENCES),
+    notificationPrefs: text('notification_prefs', { mode: 'json' })
+      .$type<NotificationPrefs>()
+      .notNull()
+      .default(DEFAULT_NOTIFICATION_PREFS),
     lastFriendlyAt: integer('last_friendly_at', { mode: 'timestamp' }),
     deactivatedAt: integer('deactivated_at', { mode: 'timestamp' }),
     deactivationReason: text('deactivation_reason'),

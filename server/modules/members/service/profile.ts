@@ -2,6 +2,7 @@ import { memberRepo } from '../repository/member-repo'
 import type {
   MemberDto,
   MemberId,
+  Recipient,
   Role,
   SessionView,
   UpdateOwnProfileInput,
@@ -22,6 +23,7 @@ function toDto(row: MemberRow): MemberDto {
     status: row.status,
     roles: row.roles,
     preferences: row.preferences,
+    notificationPrefs: row.notificationPrefs,
   }
 }
 
@@ -54,9 +56,40 @@ export const profileService = {
   },
 
   updateOwnProfile(id: MemberId, input: UpdateOwnProfileInput): MemberDto {
-    const updated = memberRepo.updateById(id, input)
+    // notificationPrefs sind partiell — vorhandene Werte müssen bestehen
+    // bleiben, damit der UI-Toggle für einen einzelnen Key nicht den Rest
+    // verliert.
+    const { notificationPrefs, ...rest } = input
+    let patch: Parameters<typeof memberRepo.updateById>[1] = rest
+    if (notificationPrefs) {
+      const existing = memberRepo.findById(id)
+      if (!existing) throw new MemberNotFoundError(id)
+      patch = { ...patch, notificationPrefs: { ...existing.notificationPrefs, ...notificationPrefs } }
+    }
+    const updated = memberRepo.updateById(id, patch)
     if (!updated) throw new MemberNotFoundError(id)
     return toDto(updated)
+  },
+
+  /**
+   * Liefert die für Email-Versand nötigen Felder. Wird ausschließlich vom
+   * notifications-Modul konsumiert. Deaktivierte Mitglieder werden nicht
+   * gefiltert — die Filterung ist Caller-Verantwortung (über `isActive`).
+   */
+  findRecipient(id: MemberId): Recipient | undefined {
+    const row = memberRepo.findById(id)
+    if (!row) return undefined
+    return {
+      id: row.id,
+      email: row.email,
+      firstName: row.firstName,
+      lastName: row.lastName,
+      // Pausierte Spieler bekommen weiterhin Mails — sie sind nicht
+      // unerreichbar, nur spielfrei. Deaktivierung dagegen ist endgültig
+      // und unterdrückt jede Notifikation.
+      isActive: row.deactivatedAt == null,
+      prefs: row.notificationPrefs,
+    }
   },
 
   /**

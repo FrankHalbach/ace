@@ -1,16 +1,10 @@
 /**
- * Email-Versand für Magic-Links und Invites.
+ * Email-Versand für Magic-Links und Admin-Invites.
  *
- * Transport-Auswahl per Env:
- *   `NUXT_SMTP_HOST` gesetzt → SMTP via nodemailer
- *                              (Dev: Papercut · Prod: smtp-relay.brevo.com)
- *   sonst                    → Console-Stub mit klickbarem Link
- *
- * Wenn das `notifications`-Modul existiert, wandert diese Logik dort hin.
+ * Transport-Auswahl per Env passiert in `server/shared/email-transport.ts`.
+ * Diese Datei rendert nur noch Templates.
  */
-import nodemailer, { type Transporter } from 'nodemailer'
-
-const DEFAULT_FROM = 'ace · TuS Neureut <no-reply@tus-neureut.de>'
+import { escapeHtml, sendEmail } from '../../../shared/email-transport'
 
 export type MagicLinkEmail = {
   to: { email: string; firstName: string }
@@ -25,83 +19,26 @@ export type InviteEmail = {
 
 export async function sendMagicLinkEmail(payload: MagicLinkEmail): Promise<void> {
   const { html, text } = renderMagicLinkTemplate(payload)
-  await deliver({
+  await sendEmail({
     kind: 'Magic-Link',
     to: payload.to,
     subject: 'Dein Login-Link für ace',
     html,
     text,
-    link: payload.link,
+    logHint: payload.link,
   })
 }
 
 export async function sendInviteEmail(payload: InviteEmail): Promise<void> {
   const { html, text } = renderInviteTemplate(payload)
-  await deliver({
+  await sendEmail({
     kind: 'Invite',
     to: payload.to,
     subject: 'Willkommen bei ace – deine Einladung',
     html,
     text,
-    link: payload.link,
+    logHint: payload.link,
   })
-}
-
-type DeliverInput = {
-  kind: 'Magic-Link' | 'Invite'
-  to: { email: string; firstName: string }
-  subject: string
-  html: string
-  text: string
-  link: string
-}
-
-async function deliver(input: DeliverInput): Promise<void> {
-  const transport = getTransport()
-  if (!transport) {
-    logStub(input.kind, input.to.email, input.link)
-    return
-  }
-
-  await transport.sendMail({
-    from: process.env.NUXT_MAIL_FROM?.trim() || DEFAULT_FROM,
-    to: { name: input.to.firstName, address: input.to.email },
-    subject: input.subject,
-    html: input.html,
-    text: input.text,
-  })
-}
-
-let cachedTransport: Transporter | null | undefined
-
-function getTransport(): Transporter | null {
-  if (cachedTransport !== undefined) return cachedTransport
-
-  const host = process.env.NUXT_SMTP_HOST?.trim()
-  if (!host) {
-    cachedTransport = null
-    return null
-  }
-
-  const port = Number(process.env.NUXT_SMTP_PORT?.trim() || '25')
-  const secure = process.env.NUXT_SMTP_SECURE?.trim() === 'true'
-  const user = process.env.NUXT_SMTP_USER?.trim()
-  const pass = process.env.NUXT_SMTP_PASS?.trim()
-
-  cachedTransport = nodemailer.createTransport({
-    host,
-    port,
-    secure,
-    auth: user && pass ? { user, pass } : undefined,
-  })
-  return cachedTransport
-}
-
-function logStub(kind: 'Magic-Link' | 'Invite', email: string, link: string): void {
-  console.log('─'.repeat(72))
-  console.log(`[Email Stub] ${kind} für ${email}`)
-  console.log(`             ${link}`)
-  console.log('─'.repeat(72))
 }
 
 function renderMagicLinkTemplate(p: MagicLinkEmail): { html: string; text: string } {
@@ -210,13 +147,4 @@ Der Link ist 30 Tage gültig und nur einmal nutzbar.
 ace · TuS Neureut · Tennisabteilung`
 
   return { html, text }
-}
-
-function escapeHtml(input: string): string {
-  return input
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#39;')
 }

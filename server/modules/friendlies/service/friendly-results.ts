@@ -1,4 +1,7 @@
 import type { MemberId } from '../../members'
+import { notifyService } from '../../notifications'
+import { friendlyInviteeRepo } from '../repository/friendly-invitee-repo'
+import { friendlyRepo } from '../repository/friendly-repo'
 import { friendlyResultRepo } from '../repository/friendly-result-repo'
 import {
   AlreadyConfirmedError,
@@ -23,6 +26,18 @@ import {
 import { applyFriendlyMutation, loadFriendlyMatch } from './match-adapter'
 
 const PENDING_DISPUTE_AFTER_MS = 3 * 24 * 60 * 60 * 1000 // 3 Tage (FR-32)
+
+/**
+ * Liefert alle Mitglieder, die in einem Friendly mitspielen (Initiator + alle
+ * Invitees). Wird für die Notif-Empfängerlisten gebraucht; geht direkt auf
+ * die beiden Repositories, weil das ein modulinterner Lookup ist.
+ */
+function participantIds(friendlyId: FriendlyId): MemberId[] {
+  const row = friendlyRepo.findById(friendlyId)
+  if (!row) return []
+  const invitees = friendlyInviteeRepo.listByFriendly(friendlyId)
+  return [row.initiatorId, ...invitees.map((i) => i.memberId)]
+}
 
 function toDto(row: FriendlyResultRow): FriendlyResultDto {
   return {
@@ -102,6 +117,20 @@ export const friendlyResultsService = {
       mapReportError(err)
     }
     const row = friendlyResultRepo.findByFriendly(friendlyId)!
+    // FR-70: alle Verlierer-Team-Spieler bestätigen das Ergebnis — sie
+    // brauchen die Mail. Das Sieger-Team (inkl. Reporter) ist informiert.
+    const winnerSet = new Set<MemberId>(row.winnerMemberIds)
+    void notifyService.dispatchMany(
+      participantIds(friendlyId)
+        .filter((id) => !winnerSet.has(id))
+        .map((recipientId) => ({
+          key: 'friendly.result_reported' as const,
+          recipientId,
+          friendlyId,
+          resultId: row.id,
+          reporterId,
+        })),
+    )
     return toDto(row)
   },
 
@@ -131,7 +160,20 @@ export const friendlyResultsService = {
       if (code === 'friendly.not-loser') throw new NotLoserError()
       throw err
     }
-    return toDto(friendlyResultRepo.findById(id)!)
+    const updated = friendlyResultRepo.findById(id)!
+    // FR-70: alle Teilnehmer außer dem Bestätigenden bekommen die Bestätigung.
+    void notifyService.dispatchMany(
+      participantIds(updated.friendlyId)
+        .filter((pid) => pid !== memberId)
+        .map((recipientId) => ({
+          key: 'friendly.result_confirmed' as const,
+          recipientId,
+          friendlyId: updated.friendlyId,
+          resultId: id,
+          confirmerId: memberId,
+        })),
+    )
+    return toDto(updated)
   },
 
   dispute(
@@ -156,7 +198,20 @@ export const friendlyResultsService = {
       if (code === 'friendly.not-loser') throw new NotLoserError()
       throw err
     }
-    return toDto(friendlyResultRepo.findById(id)!)
+    const updated = friendlyResultRepo.findById(id)!
+    void notifyService.dispatchMany(
+      participantIds(updated.friendlyId)
+        .filter((pid) => pid !== memberId)
+        .map((recipientId) => ({
+          key: 'friendly.result_disputed' as const,
+          recipientId,
+          friendlyId: updated.friendlyId,
+          resultId: id,
+          disputerId: memberId,
+          auto: false,
+        })),
+    )
+    return toDto(updated)
   },
 
   /**
@@ -199,6 +254,17 @@ export const friendlyResultsService = {
               'Automatisch: keine Reaktion innerhalb von 3 Tagen',
               now,
             ),
+          )
+          // FR-70: alle Teilnehmer informieren über den Auto-Dispute.
+          void notifyService.dispatchMany(
+            participantIds(r.friendlyId).map((recipientId) => ({
+              key: 'friendly.result_disputed' as const,
+              recipientId,
+              friendlyId: r.friendlyId,
+              resultId: r.id,
+              disputerId: null,
+              auto: true,
+            })),
           )
           updated++
         }

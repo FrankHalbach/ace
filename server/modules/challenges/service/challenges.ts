@@ -1,4 +1,5 @@
 import { profileService, type MemberId } from '../../members'
+import { notifyService } from '../../notifications'
 import {
   getRankingEntries,
   getRankingMeta,
@@ -200,7 +201,16 @@ export const challengesService = {
       status: 'PROPOSED',
       createdAt: now,
     })
-    return enrichOne(row)
+    const dto = enrichOne(row)
+    // FR-70: Geforderter bekommt sofort eine Mail.
+    void notifyService.dispatch({
+      key: 'challenge.received',
+      recipientId: challengedId,
+      challengeId: row.id,
+      challengerId,
+      rankingName: dto.rankingName,
+    })
+    return dto
   },
 
   // ───────────────────────────────────────────────────────────────────────
@@ -221,7 +231,16 @@ export const challengesService = {
       }
       throw err
     }
-    return reloadDto(id)
+    const dto = reloadDto(id)
+    // FR-70: Forderer wird über die Annahme informiert.
+    void notifyService.dispatch({
+      key: 'challenge.accepted',
+      recipientId: dto.challengerId,
+      challengeId: id,
+      accepterId: memberId,
+      rankingName: dto.rankingName,
+    })
+    return dto
   },
 
   decline(
@@ -245,7 +264,17 @@ export const challengesService = {
       }
       throw err
     }
-    return reloadDto(id)
+    const dto = reloadDto(id)
+    void notifyService.dispatch({
+      key: 'challenge.declined',
+      recipientId: dto.challengerId,
+      challengeId: id,
+      declinerId: memberId,
+      rankingName: dto.rankingName,
+      reason: input.reason ?? null,
+      note: input.note ?? null,
+    })
+    return dto
   },
 
   // ───────────────────────────────────────────────────────────────────────
@@ -298,6 +327,26 @@ export const challengesService = {
       const match = loadChallenge(c.id)
       if (!(match instanceof ProposedChallenge)) continue
       applyChallengeMutation(match.expire(now))
+      // FR-70: beide Spieler über das Ablaufen informieren.
+      const rankingName = lookupRankingName(c.rankingId)
+      void notifyService.dispatchMany([
+        {
+          key: 'challenge.expired',
+          recipientId: c.challengerId,
+          challengeId: c.id,
+          counterpartyId: c.challengedId,
+          rankingName,
+          role: 'challenger',
+        },
+        {
+          key: 'challenge.expired',
+          recipientId: c.challengedId,
+          challengeId: c.id,
+          counterpartyId: c.challengerId,
+          rankingName,
+          role: 'challenged',
+        },
+      ])
       expired++
     }
     return expired
@@ -313,6 +362,10 @@ export const challengesService = {
       if (!(match instanceof AcceptedChallenge)) continue
       applyChallengeMutation(match.markStaleDisputed(now))
       updated++
+      // Hinweis: Keine Notif hier — die 21-Tage-Stale-Konversion landet im
+      // Trainer-Streitfall-Inbox. Eine Spieler-Mail dazu führen wir mit einem
+      // dedizierten Event-Key ein, sobald das Wording mit dem Vereins-
+      // Schiedsrichter abgestimmt ist (eigener PR).
     }
     return updated
   },
