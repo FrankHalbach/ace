@@ -225,6 +225,67 @@ async function reactivate(m: MemberAdminDto) {
   }
 }
 
+// --- Einladung -----------------------------------------------------------
+
+type InviteResponse = {
+  member: MemberAdminDto
+  emailSent: boolean
+  fallbackLink?: string
+}
+
+const invitingId = ref<string | null>(null)
+const fallbackInvite = ref<{ name: string; link: string } | null>(null)
+
+async function sendInvite(m: MemberAdminDto): Promise<InviteResponse | null> {
+  invitingId.value = m.id
+  try {
+    const res = await $fetch<InviteResponse>(
+      `/api/admin/members/${m.id}/invite`,
+      { method: 'POST' },
+    )
+    if (res.emailSent) {
+      toast.add({
+        title: `Einladung an ${m.firstName} ${m.lastName} verschickt`,
+        color: 'primary',
+      })
+    } else if (res.fallbackLink) {
+      fallbackInvite.value = {
+        name: `${m.firstName} ${m.lastName}`,
+        link: res.fallbackLink,
+      }
+      toast.add({
+        title: 'E-Mail-Versand fehlgeschlagen',
+        description: 'Link kann manuell weitergegeben werden.',
+        color: 'warning',
+      })
+    }
+    return res
+  } catch (err: unknown) {
+    toast.add({
+      title: 'Einladung fehlgeschlagen',
+      description: apiError(err),
+      color: 'error',
+    })
+    return null
+  } finally {
+    invitingId.value = null
+  }
+}
+
+async function copyFallbackLink() {
+  if (!fallbackInvite.value) return
+  try {
+    await navigator.clipboard.writeText(fallbackInvite.value.link)
+    toast.add({ title: 'Link kopiert', color: 'primary' })
+  } catch {
+    toast.add({ title: 'Konnte nicht kopieren', color: 'error' })
+  }
+}
+
+function inviteLabel(m: MemberAdminDto): string {
+  return m.invitedAt == null ? 'Einladen' : 'Erneut einladen'
+}
+
 // --- Anlegen --------------------------------------------------------------
 
 type NewMemberForm = {
@@ -277,15 +338,17 @@ function closeCreate() {
   showCreate.value = false
 }
 
-async function submitCreate() {
+async function submitCreate(thenInvite = false) {
   if (!newFormValid.value) return
   creating.value = true
+  const firstName = newForm.value.firstName.trim()
+  const lastName = newForm.value.lastName.trim()
   try {
-    await $fetch('/api/admin/members', {
+    const created = await $fetch<MemberAdminDto>('/api/admin/members', {
       method: 'POST',
       body: {
-        firstName: newForm.value.firstName.trim(),
-        lastName: newForm.value.lastName.trim(),
+        firstName,
+        lastName,
         birthYear: newForm.value.birthYear,
         gender: newForm.value.gender,
         email: newForm.value.email.trim().toLowerCase(),
@@ -294,11 +357,16 @@ async function submitCreate() {
     })
     await refresh()
     showCreate.value = false
-    toast.add({
-      title: `${newForm.value.firstName} ${newForm.value.lastName} angelegt`,
-      description: 'Einladungs-Mail folgt im nächsten Schritt.',
-      color: 'primary',
-    })
+    if (thenInvite) {
+      // Anlage geglückt — Toast erst nach Einladung, sonst doppelt-toast.
+      await sendInvite(created)
+    } else {
+      toast.add({
+        title: `${firstName} ${lastName} angelegt`,
+        description: 'Einladung kann jederzeit über das Briefumschlag-Icon verschickt werden.',
+        color: 'primary',
+      })
+    }
   } catch (err: unknown) {
     toast.add({
       title: 'Anlegen fehlgeschlagen',
@@ -461,6 +529,17 @@ function roleLabels(m: MemberAdminDto): string {
           </div>
         </div>
 
+        <UButton
+          v-if="m.deactivatedAt == null"
+          variant="ghost"
+          color="neutral"
+          size="sm"
+          icon="i-lucide-mail"
+          :aria-label="inviteLabel(m)"
+          :title="inviteLabel(m)"
+          :loading="invitingId === m.id"
+          @click="sendInvite(m)"
+        />
         <UButton
           variant="ghost"
           color="neutral"
@@ -667,10 +746,42 @@ function roleLabels(m: MemberAdminDto): string {
       </template>
     </UModal>
 
+    <!-- Fallback-Link-Modal bei E-Mail-Versand-Fehler -->
+    <UModal
+      :open="fallbackInvite != null"
+      :ui="{ content: 'max-w-md' }"
+      @update:open="(v: boolean) => !v && (fallbackInvite = null)"
+    >
+      <template #content>
+        <div v-if="fallbackInvite" class="p-6">
+          <h2 class="text-lg font-semibold mb-1">
+            Einladungs-Link für {{ fallbackInvite.name }}
+          </h2>
+          <p class="text-muted text-sm mb-4">
+            Die Einladungs-Mail konnte nicht verschickt werden. Den Link kannst du
+            manuell weitergeben — er ist 30 Tage gültig und nur einmal nutzbar.
+          </p>
+
+          <div class="p-3 bg-elevated rounded-md font-mono text-xs break-all border border-default">
+            {{ fallbackInvite.link }}
+          </div>
+
+          <div class="flex gap-2 mt-6 justify-end">
+            <UButton variant="ghost" color="neutral" @click="fallbackInvite = null">
+              Schließen
+            </UButton>
+            <UButton color="primary" icon="i-lucide-copy" @click="copyFallbackLink">
+              Link kopieren
+            </UButton>
+          </div>
+        </div>
+      </template>
+    </UModal>
+
     <!-- Anlage-Modal -->
     <UModal :open="showCreate" :ui="{ content: 'max-w-xl' }" @update:open="(v: boolean) => !v && closeCreate()">
       <template #content>
-        <form class="flex flex-col max-h-[85vh]" @submit.prevent="submitCreate">
+        <form class="flex flex-col max-h-[85vh]" @submit.prevent="submitCreate(true)">
           <header class="flex items-start justify-between gap-4 p-6 border-b border-default">
             <div class="min-w-0">
               <h2 class="text-lg font-semibold">Neues Mitglied anlegen</h2>
@@ -768,13 +879,25 @@ function roleLabels(m: MemberAdminDto): string {
               Abbrechen
             </UButton>
             <UButton
+              type="button"
+              variant="outline"
+              color="primary"
+              size="sm"
+              :disabled="!newFormValid || creating"
+              :loading="creating"
+              @click="submitCreate(false)"
+            >
+              Nur anlegen
+            </UButton>
+            <UButton
               type="submit"
               color="primary"
               size="sm"
+              icon="i-lucide-mail"
               :disabled="!newFormValid"
               :loading="creating"
             >
-              Anlegen
+              Anlegen & einladen
             </UButton>
           </footer>
         </form>

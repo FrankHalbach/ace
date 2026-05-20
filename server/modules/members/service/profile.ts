@@ -61,4 +61,15 @@ export const profileService = {
       memberRepo.updateById(id, { lastFriendlyAt: at })
     }
   },
+
+  /**
+   * Setzt `firstLoginAt` beim allerersten Magic-Link-Konsum (Admin-Design-Doc).
+   * Idempotent: spätere Aufrufe lassen den ursprünglichen Stempel stehen.
+   */
+  markFirstLoginIfMissing(id: MemberId, at: Date = new Date()): void {
+    const row = memberRepo.findById(id)
+    if (!row) return
+    if (row.firstLoginAt != null) return
+    memberRepo.updateById(id, { firstLoginAt: at })
+  },
 }
