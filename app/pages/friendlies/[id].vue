@@ -72,6 +72,17 @@ const statusLabel: Record<FriendlyStatus, string> = {
   DISPUTED: 'Strittig',
 }
 
+type StatusTone = 'success' | 'warning' | 'danger' | 'neutral' | 'dimmed'
+const statusTone: Record<FriendlyStatus, StatusTone> = {
+  PROPOSED: 'neutral',
+  CONFIRMED: 'success',
+  DECLINED: 'danger',
+  CANCELLED: 'dimmed',
+  PLAYED: 'warning',
+  COMPLETED: 'success',
+  DISPUTED: 'warning',
+}
+
 function formatDate(d: Date | string): string {
   return new Date(d).toLocaleString('de-DE', {
     weekday: 'short',
@@ -81,6 +92,19 @@ function formatDate(d: Date | string): string {
     hour: '2-digit',
     minute: '2-digit',
   })
+}
+
+const dayMonthFmt = new Intl.DateTimeFormat('de-DE', { day: '2-digit', month: '2-digit' })
+const weekdayFmt = new Intl.DateTimeFormat('de-DE', { weekday: 'short' })
+const timeFmt = new Intl.DateTimeFormat('de-DE', { hour: '2-digit', minute: '2-digit' })
+
+function heroDateChip(d: Date | string): { weekday: string; dm: string; time: string } {
+  const date = new Date(d)
+  return {
+    weekday: weekdayFmt.format(date),
+    dm: dayMonthFmt.format(date),
+    time: timeFmt.format(date),
+  }
 }
 
 const submitting = ref(false)
@@ -236,60 +260,121 @@ async function markPlayed() {
 </script>
 
 <template>
-  <UContainer v-if="friendly" class="py-6 max-w-2xl">
-    <header class="mb-6">
-      <NuxtLink to="/friendlies" class="text-sm text-muted hover:text-default">
-        ← Alle Freundschaftsspiele
+  <UContainer v-if="friendly" class="py-10 max-w-2xl md:max-w-3xl md:py-14">
+    <!-- HERO -->
+    <header class="anim anim-1 mb-10 md:mb-12">
+      <NuxtLink
+        to="/friendlies"
+        class="text-xs text-muted hover:text-primary transition-colors inline-flex items-center gap-1"
+      >
+        <UIcon name="i-lucide-arrow-left" class="size-3.5" />
+        Freundschaftsspiele
       </NuxtLink>
-      <h1 class="text-2xl font-semibold mt-2">
-        {{ friendly.format === 'singles' ? 'Einzel' : 'Doppel' }}-Freundschaftsspiel
-      </h1>
-      <div class="text-sm text-muted mt-1">
-        Status: <strong>{{ statusLabel[friendly.status] }}</strong> ·
-        {{ formatDate(friendly.scheduledAt) }}
-        <span v-if="friendly.courtInfo"> · {{ friendly.courtInfo }}</span>
+      <div class="flex items-start justify-between gap-4 mt-2 flex-wrap">
+        <div class="min-w-0">
+          <h1 class="text-3xl md:text-4xl font-semibold tracking-[-0.02em] leading-tight">
+            {{ friendly.format === 'singles' ? 'Einzel' : 'Doppel' }}-Freundschaftsspiel
+          </h1>
+          <p class="text-sm text-muted mt-2 inline-flex items-center gap-1.5 flex-wrap">
+            <span
+              class="mono text-[10px] font-semibold tracking-[0.14em] uppercase"
+              :class="{
+                'text-[color:var(--success)]': statusTone[friendly.status] === 'success',
+                'text-[color:var(--warning)]': statusTone[friendly.status] === 'warning',
+                'text-[color:var(--danger)]': statusTone[friendly.status] === 'danger',
+                'text-muted': statusTone[friendly.status] === 'neutral',
+                'text-dimmed': statusTone[friendly.status] === 'dimmed',
+              }"
+            >
+              {{ statusLabel[friendly.status] }}
+            </span>
+            <template v-if="friendly.courtInfo">
+              <span class="dot-sep" aria-hidden="true" />
+              <span>{{ friendly.courtInfo }}</span>
+            </template>
+          </p>
+        </div>
+        <span class="date-chip font-mono shrink-0" style="min-width: 72px; padding: 10px 12px">
+          <span class="mono text-[10px] font-semibold tracking-[0.14em] uppercase text-muted leading-none">
+            {{ heroDateChip(friendly.scheduledAt).weekday }}
+          </span>
+          <span class="text-base font-semibold tabular-nums leading-none mt-1.5">
+            {{ heroDateChip(friendly.scheduledAt).dm }}
+          </span>
+          <span class="text-xs text-dimmed tabular-nums leading-none mt-1">
+            {{ heroDateChip(friendly.scheduledAt).time }}
+          </span>
+        </span>
       </div>
     </header>
 
-    <UCard class="mb-6">
-      <div class="grid grid-cols-2 gap-4 text-sm">
-        <div>
-          <div class="text-xs uppercase text-muted tracking-wider mb-1">
+    <!-- SPIELER -->
+    <section class="anim anim-2 mb-12">
+      <div class="section-head__wrap mb-3">
+        <h2 class="section-head">Spieler</h2>
+      </div>
+      <div class="grid grid-cols-2 gap-0 border-y border-default">
+        <div class="py-4 md:px-6 md:first:pl-0 border-r border-default pr-4">
+          <p class="mono text-[10px] font-semibold tracking-[0.18em] uppercase text-muted mb-2">
             {{ friendly.format === 'doubles' ? 'Initiator-Team' : 'Initiator' }}
-          </div>
-          <div v-for="mid in initiatorTeam" :key="mid" class="font-medium">
-            {{ memberName(mid) }}
-            <span v-if="mid === me" class="text-xs text-primary">(du)</span>
-          </div>
+          </p>
+          <ul class="space-y-1">
+            <li v-for="mid in initiatorTeam" :key="mid" class="text-[15px] font-medium tracking-[-0.005em]">
+              {{ memberName(mid) }}
+              <span v-if="mid === me" class="text-xs text-primary ml-1">(du)</span>
+            </li>
+          </ul>
         </div>
-        <div>
-          <div class="text-xs uppercase text-muted tracking-wider mb-1">
+        <div class="py-4 pl-4 md:px-6">
+          <p class="mono text-[10px] font-semibold tracking-[0.18em] uppercase text-muted mb-2">
             {{ friendly.format === 'doubles' ? 'Gegner-Team' : 'Gegner' }}
-          </div>
-          <div v-for="mid in opponentTeam" :key="mid" class="font-medium">
-            {{ memberName(mid) }}
-            <span v-if="mid === me" class="text-xs text-primary">(du)</span>
-          </div>
+          </p>
+          <ul class="space-y-1">
+            <li v-for="mid in opponentTeam" :key="mid" class="text-[15px] font-medium tracking-[-0.005em]">
+              {{ memberName(mid) }}
+              <span v-if="mid === me" class="text-xs text-primary ml-1">(du)</span>
+            </li>
+          </ul>
         </div>
       </div>
-      <div v-if="friendly.invitees.length > 0" class="mt-4 text-xs text-muted">
-        <div v-for="i in friendly.invitees" :key="i.id">
-          {{ memberName(i.memberId) }} ·
-          <span v-if="i.status === 'pending'">offen</span>
-          <span v-else-if="i.status === 'accepted'" class="text-emerald-700 dark:text-emerald-400">angenommen</span>
-          <span v-else class="text-red-700 dark:text-red-400">abgelehnt</span>
-        </div>
-      </div>
-      <div v-if="friendly.note" class="mt-3 text-sm text-muted">
-        Notiz: <em>{{ friendly.note }}</em>
-      </div>
-    </UCard>
 
-    <!-- PROPOSED: Eingeladener kann an-/ablehnen -->
-    <UCard v-if="friendly.status === 'PROPOSED' && myInvitee && myInvitee.status === 'pending'" class="mb-6">
-      <h2 class="font-semibold mb-3">Was willst du tun?</h2>
-      <div class="flex gap-2">
-        <UButton color="primary" :loading="submitting" @click="accept">Annehmen</UButton>
+      <ul v-if="friendly.invitees.length > 0" class="mt-3 text-xs space-y-1">
+        <li
+          v-for="i in friendly.invitees"
+          :key="i.id"
+          class="inline-flex items-center gap-1.5 mr-3"
+        >
+          <span class="text-muted">{{ memberName(i.memberId) }}</span>
+          <span
+            class="mono text-[10px] font-semibold tracking-[0.14em] uppercase"
+            :class="{
+              'text-muted': i.status === 'pending',
+              'text-[color:var(--success)]': i.status === 'accepted',
+              'text-[color:var(--danger)]': i.status === 'declined',
+            }"
+          >
+            {{ i.status === 'pending' ? 'offen' : i.status === 'accepted' ? 'angenommen' : 'abgelehnt' }}
+          </span>
+        </li>
+      </ul>
+
+      <p v-if="friendly.note" class="mt-4 text-sm text-muted italic border-l-2 border-[color:var(--accent)] pl-3">
+        {{ friendly.note }}
+      </p>
+    </section>
+
+    <!-- AKTION: Eingeladener (PROPOSED + pending) -->
+    <section
+      v-if="friendly.status === 'PROPOSED' && myInvitee && myInvitee.status === 'pending'"
+      class="anim anim-3 mb-12"
+    >
+      <div class="section-head__wrap mb-3">
+        <h2 class="section-head">Was willst du tun?</h2>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <UButton color="primary" icon="i-lucide-check" :loading="submitting" @click="accept">
+          Annehmen
+        </UButton>
         <UTooltip v-if="isLateCancellation" :text="lateCancelTooltip">
           <UButton variant="soft" color="neutral" disabled>Ablehnen</UButton>
         </UTooltip>
@@ -306,19 +391,16 @@ async function markPlayed() {
       <p v-if="isLateCancellation" class="text-xs text-muted mt-2">
         {{ lateCancelTooltip }}
       </p>
-    </UCard>
+    </section>
 
-    <!-- Initiator: Absagen, solange nicht COMPLETED/DISPUTED/CANCELLED/DECLINED
-         und solange noch kein Result gemeldet wurde (Domain lehnt Cancel auf
-         ReportedFriendly ab — Button wäre tote UI; siehe #48).
-         N-05: Disable + Tooltip innerhalb des Late-Cancel-Fensters. PLAYED ist
-         „Recovery", für das das Fenster nicht greift — daher Disable nur für
-         PROPOSED/CONFIRMED. -->
-    <UCard
+    <!-- AKTION: Initiator absagen (state-conditional, siehe Original) -->
+    <section
       v-if="isInitiator && !result && !['COMPLETED', 'DISPUTED', 'CANCELLED', 'DECLINED'].includes(friendly.status)"
-      class="mb-6"
+      class="anim anim-3 mb-12"
     >
-      <h2 class="font-semibold mb-3">Aktionen</h2>
+      <div class="section-head__wrap mb-3">
+        <h2 class="section-head">Aktionen</h2>
+      </div>
       <div class="flex flex-wrap gap-2">
         <UTooltip
           v-if="isLateCancellation && (friendly.status === 'PROPOSED' || friendly.status === 'CONFIRMED')"
@@ -330,6 +412,7 @@ async function markPlayed() {
           v-else
           variant="soft"
           color="error"
+          icon="i-lucide-x-circle"
           :loading="submitting"
           @click="cancel"
         >
@@ -342,17 +425,24 @@ async function markPlayed() {
       >
         {{ lateCancelTooltip }}
       </p>
-    </UCard>
+    </section>
 
-    <!-- CONFIRMED: Ergebnis melden oder „nur gespielt" -->
-    <UCard v-if="(friendly.status === 'CONFIRMED' || friendly.status === 'PLAYED') && !result" class="mb-6">
-      <h2 class="font-semibold mb-3">Nach dem Match</h2>
+    <!-- ERGEBNIS MELDEN: CONFIRMED/PLAYED ohne Result -->
+    <section
+      v-if="(friendly.status === 'CONFIRMED' || friendly.status === 'PLAYED') && !result"
+      class="anim anim-4 mb-12"
+    >
+      <div class="section-head__wrap mb-3">
+        <h2 class="section-head">Nach dem Match</h2>
+      </div>
       <p v-if="isInFuture" class="text-sm text-muted italic">
         Match liegt in der Zukunft — Result-Eintrag erst nach dem Termin
         ({{ formatDate(friendly.scheduledAt) }}).
       </p>
       <div v-else-if="!showReport" class="flex flex-wrap gap-2">
-        <UButton color="primary" @click="showReport = true">Ergebnis eintragen</UButton>
+        <UButton color="primary" icon="i-lucide-trophy" @click="showReport = true">
+          Ergebnis eintragen
+        </UButton>
         <UButton
           v-if="friendly.status === 'CONFIRMED'"
           variant="soft"
@@ -363,7 +453,7 @@ async function markPlayed() {
           Nur gespielt, kein Ergebnis
         </UButton>
       </div>
-      <form v-else class="space-y-4" @submit.prevent="reportResult">
+      <form v-else class="space-y-5" @submit.prevent="reportResult">
         <UFormField label="Match-Ausgang">
           <URadioGroup
             v-model="outcome"
@@ -393,11 +483,11 @@ async function markPlayed() {
         <template v-if="outcome !== 'walkover'">
           <div v-for="(set, i) in sets" :key="i">
             <div class="flex items-center gap-2">
-              <span class="text-sm text-muted w-28">
+              <span class="mono text-[10px] font-semibold tracking-[0.18em] uppercase text-muted w-28">
                 {{ isMatchTiebreakSet(i) ? 'Match-TB' : `Satz ${i + 1}` }}
               </span>
               <UInputNumber v-model="set.a" :min="0" :max="isMatchTiebreakSet(i) ? 30 : 7" class="w-24" />
-              <span class="text-dimmed">:</span>
+              <span class="text-dimmed font-mono">:</span>
               <UInputNumber v-model="set.b" :min="0" :max="isMatchTiebreakSet(i) ? 30 : 7" class="w-24" />
               <UButton
                 v-if="sets.length > 1"
@@ -407,14 +497,16 @@ async function markPlayed() {
                 @click="removeSet(i)"
               />
             </div>
-            <p v-if="setErrors[i]" class="text-xs text-red-600 dark:text-red-400 pl-28 mt-1">
+            <p v-if="setErrors[i]" class="text-xs text-[color:var(--danger)] pl-28 mt-1">
               {{ setErrors[i] }}
             </p>
             <p v-else-if="isMatchTiebreakSet(i)" class="text-xs text-muted pl-28 mt-1">
               bis 10 Punkte, mindestens 2 Vorsprung (z. B. 10:8, 12:10)
             </p>
           </div>
-          <UButton v-if="sets.length < 3" variant="soft" size="sm" @click="addSet">+ Satz hinzufügen</UButton>
+          <UButton v-if="sets.length < 3" variant="soft" size="sm" icon="i-lucide-plus" @click="addSet">
+            Satz hinzufügen
+          </UButton>
         </template>
         <p v-else class="text-sm text-muted italic">
           Kein Score erfasst — Walk-Over wird ohne Satz-Eingabe gemeldet.
@@ -438,37 +530,48 @@ async function markPlayed() {
           <UButton variant="ghost" color="neutral" @click="showReport = false">Abbrechen</UButton>
         </div>
       </form>
-    </UCard>
+    </section>
 
-    <!-- pending Result: Verlierer-Team bestätigt oder widerspricht -->
-    <UCard v-if="result && result.confirmationStatus === 'pending'" class="mb-6">
-      <h2 class="font-semibold mb-3">Gemeldetes Ergebnis</h2>
-      <div class="text-sm mb-3">
-        Sieger:
-        <strong v-for="(mid, i) in result.winnerMemberIds" :key="mid">
-          {{ memberName(mid) }}<span v-if="i < result.winnerMemberIds.length - 1">, </span>
-        </strong>
-        <span v-if="result.outcome === 'walkover'" class="ml-1 font-mono text-muted">w.o.</span>
-        <br>
-        <template v-if="result.outcome === 'walkover'">
-          <span class="text-muted italic">kein Score</span>
-        </template>
-        <template v-else>
-          Sätze:
-          <span v-for="(s, i) in result.sets" :key="i" class="font-mono ml-1">
-            {{ s.a }}:{{ s.b }}<span v-if="i < result.sets.length - 1">,</span>
+    <!-- ERGEBNIS PENDING -->
+    <section v-if="result && result.confirmationStatus === 'pending'" class="anim anim-4 mb-12">
+      <div class="section-head__wrap mb-3">
+        <h2 class="section-head">
+          Gemeldetes Ergebnis · <span class="text-[color:var(--warning)] normal-case tracking-normal">wartet auf Bestätigung</span>
+        </h2>
+      </div>
+      <div class="border-y border-default py-5">
+        <p class="text-xs text-muted mb-2 inline-flex items-center gap-1.5">
+          <span class="mono text-[10px] font-semibold tracking-[0.18em] uppercase">Sieger</span>
+          <span v-if="result.outcome === 'walkover'" class="mono text-[10px] font-semibold tracking-[0.14em] uppercase text-[color:var(--warning)]">w.o.</span>
+          <span v-else-if="result.outcome === 'retirement'" class="mono text-[10px] font-semibold tracking-[0.14em] uppercase text-[color:var(--warning)]">ret.</span>
+        </p>
+        <p class="text-base font-semibold mb-3">
+          <template v-for="(mid, i) in result.winnerMemberIds" :key="mid">
+            {{ memberName(mid) }}<span v-if="i < result.winnerMemberIds.length - 1">, </span>
+          </template>
+        </p>
+        <p v-if="result.outcome === 'walkover'" class="text-sm text-muted italic">
+          Kein Score erfasst.
+        </p>
+        <div v-else class="inline-flex items-center gap-3 font-mono tabular-nums">
+          <span v-for="(s, i) in result.sets" :key="i" class="text-lg font-semibold">
+            {{ s.a }}<span class="text-dimmed">:</span>{{ s.b }}
           </span>
-          <span v-if="result.outcome === 'retirement'" class="ml-1 font-mono text-muted">ret.</span>
-        </template>
-        <p v-if="result.outcomeNote" class="text-xs text-muted mt-1">
+        </div>
+        <p v-if="result.outcomeNote" class="text-xs text-muted mt-2 italic">
           {{ result.outcomeNote }}
         </p>
       </div>
-      <div v-if="isInLoserTeam && !showDispute" class="flex gap-2">
-        <UButton color="primary" :loading="submitting" @click="confirmResult">Bestätigen</UButton>
-        <UButton variant="soft" color="error" @click="showDispute = true">Widersprechen</UButton>
+
+      <div v-if="isInLoserTeam && !showDispute" class="flex flex-wrap gap-2 mt-4">
+        <UButton color="primary" icon="i-lucide-check" :loading="submitting" @click="confirmResult">
+          Bestätigen
+        </UButton>
+        <UButton variant="soft" color="error" icon="i-lucide-flag" @click="showDispute = true">
+          Widersprechen
+        </UButton>
       </div>
-      <form v-else-if="showDispute" class="space-y-3" @submit.prevent="disputeResult">
+      <form v-else-if="showDispute" class="space-y-3 mt-4" @submit.prevent="disputeResult">
         <UFormField label="Begründung">
           <UTextarea v-model="disputeNote" :rows="3" class="w-full" required />
         </UFormField>
@@ -477,45 +580,56 @@ async function markPlayed() {
           <UButton variant="ghost" color="neutral" @click="showDispute = false">Zurück</UButton>
         </div>
       </form>
-      <p v-else class="text-sm text-muted italic">
+      <p v-else class="text-sm text-muted italic mt-4">
         Warte auf Bestätigung durch
         {{ friendly.format === 'doubles' ? 'das Verlierer-Team' : 'den Verlierer' }}.
       </p>
-    </UCard>
+    </section>
 
-    <!-- Confirmed Result -->
-    <UCard v-if="result && result.confirmationStatus === 'confirmed'">
-      <h2 class="font-semibold mb-3">Bestätigtes Ergebnis</h2>
-      <div class="text-sm">
-        Sieger:
-        <strong v-for="(mid, i) in result.winnerMemberIds" :key="mid">
-          {{ memberName(mid) }}<span v-if="i < result.winnerMemberIds.length - 1">, </span>
-        </strong>
-        <span v-if="result.outcome === 'walkover'" class="ml-1 font-mono text-muted">w.o.</span>
-        <br>
-        <template v-if="result.outcome === 'walkover'">
-          <span class="text-muted italic">kein Score</span>
-        </template>
-        <template v-else>
-          Sätze:
-          <span v-for="(s, i) in result.sets" :key="i" class="font-mono ml-1">
-            {{ s.a }}:{{ s.b }}<span v-if="i < result.sets.length - 1">,</span>
+    <!-- ERGEBNIS BESTÄTIGT -->
+    <section v-if="result && result.confirmationStatus === 'confirmed'" class="anim anim-4 mb-12">
+      <div class="section-head__wrap mb-3">
+        <h2 class="section-head">
+          Endergebnis · <span class="text-[color:var(--success)] normal-case tracking-normal">bestätigt</span>
+        </h2>
+      </div>
+      <div class="border-y border-default py-5">
+        <p class="text-xs text-muted mb-2 inline-flex items-center gap-1.5">
+          <span class="mono text-[10px] font-semibold tracking-[0.18em] uppercase">Sieger</span>
+          <span v-if="result.outcome === 'walkover'" class="mono text-[10px] font-semibold tracking-[0.14em] uppercase text-[color:var(--warning)]">w.o.</span>
+          <span v-else-if="result.outcome === 'retirement'" class="mono text-[10px] font-semibold tracking-[0.14em] uppercase text-[color:var(--warning)]">ret.</span>
+        </p>
+        <p class="text-base font-semibold mb-3">
+          <template v-for="(mid, i) in result.winnerMemberIds" :key="mid">
+            {{ memberName(mid) }}<span v-if="i < result.winnerMemberIds.length - 1">, </span>
+          </template>
+        </p>
+        <p v-if="result.outcome === 'walkover'" class="text-sm text-muted italic">
+          Kein Score erfasst.
+        </p>
+        <div v-else class="inline-flex items-center gap-3 font-mono tabular-nums">
+          <span v-for="(s, i) in result.sets" :key="i" class="text-lg font-semibold">
+            {{ s.a }}<span class="text-dimmed">:</span>{{ s.b }}
           </span>
-          <span v-if="result.outcome === 'retirement'" class="ml-1 font-mono text-muted">ret.</span>
-        </template>
-        <p v-if="result.outcomeNote" class="text-xs text-muted mt-1">
+        </div>
+        <p v-if="result.outcomeNote" class="text-xs text-muted mt-2 italic">
           {{ result.outcomeNote }}
         </p>
       </div>
-    </UCard>
+    </section>
 
-    <!-- Disputed Result -->
-    <UCard v-if="result && result.confirmationStatus === 'disputed'">
-      <h2 class="font-semibold mb-3 text-amber-700 dark:text-amber-400">Streitfall</h2>
-      <div class="text-sm">
-        Begründung: <em>{{ result.disputeNote ?? '—' }}</em>
-        <p class="text-muted mt-2">Ein Trainer entscheidet den Streitfall.</p>
+    <!-- ERGEBNIS STREITFALL -->
+    <section v-if="result && result.confirmationStatus === 'disputed'" class="anim anim-4 mb-12">
+      <div class="section-head__wrap mb-3">
+        <h2 class="section-head">
+          Streitfall · <span class="text-[color:var(--warning)] normal-case tracking-normal">Trainer-Entscheidung ausstehend</span>
+        </h2>
       </div>
-    </UCard>
+      <div class="border-y border-default py-5 text-sm">
+        <p><span class="mono text-[10px] font-semibold tracking-[0.18em] uppercase text-muted">Begründung</span></p>
+        <p class="mt-1 italic">{{ result.disputeNote ?? '—' }}</p>
+        <p class="text-muted mt-3">Ein Trainer entscheidet den Streitfall.</p>
+      </div>
+    </section>
   </UContainer>
 </template>
