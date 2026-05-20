@@ -136,6 +136,17 @@ export class MemberDeactivatedError extends Error {
   }
 }
 
+/**
+ * Schlanke Sicht aufs Mitglied für die Session-Refresh-Middleware (#90).
+ * Trennt Self-Pause (`status='pausiert'`, darf einloggen) von Admin-
+ * Deaktivierung (`deactivatedAt != null`, raus).
+ */
+export type SessionView = {
+  id: MemberId
+  roles: Role[]
+  adminDeactivated: boolean
+}
+
 export type InviteResult = {
   member: MemberAdminDto
   emailSent: boolean

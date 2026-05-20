@@ -45,6 +45,7 @@ export type {
   MemberId,
   PlayerProfileDto,
   Role,
+  SessionView,
   SetLkInput,
   SetRolesInput,
   UpdateOwnProfileInput,
