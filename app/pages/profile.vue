@@ -160,12 +160,27 @@ async function save() {
 </script>
 
 <template>
-  <UContainer class="py-8 max-w-xl">
-    <h1 class="text-2xl font-semibold mb-6">Mein Profil</h1>
+  <UContainer v-if="profile" class="py-10 max-w-2xl md:max-w-3xl md:py-14">
+    <!-- HERO -->
+    <header class="anim anim-1 mb-10 md:mb-12">
+      <h1 class="text-3xl md:text-4xl font-semibold tracking-[-0.02em] leading-tight">
+        Mein Profil
+      </h1>
+      <p class="text-sm text-muted mt-2 inline-flex items-center gap-1.5 flex-wrap">
+        <span class="font-mono tabular-nums">{{ profile.email }}</span>
+        <span class="dot-sep" aria-hidden="true" />
+        <span class="font-mono tabular-nums">LK {{ profile.dtbLk.toFixed(1) }}</span>
+      </p>
+    </header>
 
-    <UCard v-if="profile">
-      <form class="space-y-6" @submit.prevent="save">
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <form class="space-y-12" @submit.prevent="save">
+      <!-- STAMMDATEN -->
+      <section class="anim anim-2">
+        <div class="section-head__wrap mb-4">
+          <h2 class="section-head">Stammdaten</h2>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
           <UFormField label="Vorname" :error="errors.firstName">
             <UInput
               v-model="form.firstName"
@@ -184,7 +199,7 @@ async function save() {
           </UFormField>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
           <UFormField label="Geburtsjahr" :error="errors.birthYear">
             <UInput
               v-model.number="form.birthYear"
@@ -219,33 +234,54 @@ async function save() {
             ]"
           />
         </UFormField>
+      </section>
 
-        <UFormField label="Status">
+      <!-- STATUS -->
+      <section class="anim anim-3">
+        <div class="section-head__wrap mb-4">
+          <h2 class="section-head">Status</h2>
+        </div>
+        <UFormField label="Forderbar?">
           <URadioGroup
             v-model="form.status"
             :items="[
-              { label: 'Aktiv — forderbar', value: 'aktiv' },
+              { label: 'Aktiv — andere können dich fordern', value: 'aktiv' },
               { label: 'Pausiert — keine neuen Forderungen', value: 'pausiert' },
             ]"
           />
         </UFormField>
+      </section>
 
-        <fieldset class="space-y-2">
-          <legend class="text-sm font-medium text-default mb-2">Spielarten</legend>
+      <!-- SPIELARTEN -->
+      <section class="anim anim-4">
+        <div class="section-head__wrap mb-4">
+          <h2 class="section-head">Spielarten</h2>
+        </div>
+        <p class="text-sm text-muted mb-4">
+          Steuert, für welche Vorschläge du in Frage kommst.
+        </p>
+        <div class="space-y-2.5">
           <UCheckbox v-model="form.preferences.singlesChallenges" label="Einzel-Forderungen" />
           <UCheckbox v-model="form.preferences.singlesFriendly" label="Einzel-Freundschaftsspiele" />
           <UCheckbox v-model="form.preferences.doublesFriendly" label="Doppel-Freundschaftsspiele" />
           <UCheckbox v-model="form.preferences.mixedFriendly" label="Mixed-Freundschaftsspiele" />
           <UCheckbox v-model="form.preferences.ageGroupFriendly" label="Altersklassen-Freundschaftsspiele" />
-        </fieldset>
+        </div>
+      </section>
 
-        <fieldset class="space-y-4">
-          <legend class="text-sm font-medium text-default mb-1">Email-Benachrichtigungen</legend>
-          <p class="text-xs text-dimmed mb-2">
-            Steuere pro Ereignis, wann du eine Mail bekommst. Standard: alles an.
-          </p>
-          <div v-for="group in NOTIFICATION_GROUPS" :key="group.title" class="space-y-2">
-            <h3 class="text-xs uppercase tracking-wider text-dimmed mt-2">{{ group.title }}</h3>
+      <!-- BENACHRICHTIGUNGEN -->
+      <section class="anim anim-5">
+        <div class="section-head__wrap mb-4">
+          <h2 class="section-head">Benachrichtigungen</h2>
+        </div>
+        <p class="text-sm text-muted mb-5">
+          Pro Ereignis steuerbar, wann du eine E-Mail bekommst. Standard: alles an.
+        </p>
+        <div v-for="(group, gi) in NOTIFICATION_GROUPS" :key="group.title" :class="gi > 0 ? 'mt-6' : ''">
+          <h3 class="mono text-[10px] font-semibold tracking-[0.18em] uppercase text-muted mb-3">
+            {{ group.title }}
+          </h3>
+          <div class="space-y-2.5">
             <UCheckbox
               v-for="item in group.items"
               :key="item.key"
@@ -253,16 +289,22 @@ async function save() {
               :label="item.label"
             />
           </div>
-        </fieldset>
+        </div>
+      </section>
 
-        <UButton type="submit" color="primary" size="lg" block :loading="saving">
+      <!-- SUBMIT -->
+      <div class="anim anim-5 border-t border-default pt-6">
+        <UButton
+          type="submit"
+          color="primary"
+          size="lg"
+          block
+          icon="i-lucide-save"
+          :loading="saving"
+        >
           Speichern
         </UButton>
-      </form>
-    </UCard>
-
-    <p v-if="profile" class="text-xs text-dimmed mt-6 font-mono">
-      {{ profile.email }} · LK {{ profile.dtbLk.toFixed(1) }}
-    </p>
+      </div>
+    </form>
   </UContainer>
 </template>
