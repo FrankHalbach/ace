@@ -31,6 +31,24 @@ const statusLabel: Record<ChallengeStatus, string> = {
   CANCELLED: 'Storniert',
 }
 
+type StatusTone = 'success' | 'warning' | 'danger' | 'neutral' | 'dimmed'
+const statusTone: Record<ChallengeStatus, StatusTone> = {
+  PROPOSED: 'neutral',
+  ACCEPTED: 'warning',
+  DECLINED: 'danger',
+  EXPIRED: 'dimmed',
+  COMPLETED: 'success',
+  DISPUTED: 'warning',
+  CANCELLED: 'dimmed',
+}
+
+const declineReasonLabel: Record<DeclineReason, string> = {
+  injury: 'Verletzung',
+  vacation: 'Urlaub',
+  work: 'Beruflich',
+  other: 'Sonstiges',
+}
+
 const isChallenger = computed(() => challenge.value?.challengerId === user.value?.memberId)
 const isChallenged = computed(() => challenge.value?.challengedId === user.value?.memberId)
 
@@ -202,45 +220,93 @@ const isLoser = computed(() => {
 </script>
 
 <template>
-  <UContainer v-if="challenge" class="py-6 max-w-2xl">
-    <header class="mb-6">
-      <NuxtLink to="/challenges" class="text-sm text-muted hover:text-default">
-        ← Alle Forderungen
+  <UContainer v-if="challenge" class="py-10 max-w-2xl md:max-w-3xl md:py-14">
+    <!-- HERO -->
+    <header class="anim anim-1 mb-10 md:mb-12">
+      <NuxtLink
+        to="/challenges"
+        class="text-xs text-muted hover:text-primary transition-colors inline-flex items-center gap-1"
+      >
+        <UIcon name="i-lucide-arrow-left" class="size-3.5" />
+        Forderungen
       </NuxtLink>
-      <h1 class="text-2xl font-semibold mt-2">Forderung</h1>
-      <div class="text-sm text-muted mt-1">
-        Status: <strong>{{ statusLabel[challenge.status] }}</strong> ·
-        Rangliste: {{ challenge.rankingName }}
-      </div>
+      <h1 class="text-3xl md:text-4xl font-semibold tracking-[-0.02em] leading-tight mt-2">
+        Forderung
+      </h1>
+      <p class="text-sm text-muted mt-2 inline-flex items-center gap-1.5 flex-wrap">
+        <span
+          class="mono text-[10px] font-semibold tracking-[0.14em] uppercase"
+          :class="{
+            'text-[color:var(--success)]': statusTone[challenge.status] === 'success',
+            'text-[color:var(--warning)]': statusTone[challenge.status] === 'warning',
+            'text-[color:var(--danger)]': statusTone[challenge.status] === 'danger',
+            'text-muted': statusTone[challenge.status] === 'neutral',
+            'text-dimmed': statusTone[challenge.status] === 'dimmed',
+          }"
+        >
+          {{ statusLabel[challenge.status] }}
+        </span>
+        <span class="dot-sep" aria-hidden="true" />
+        <span>{{ challenge.rankingName }}</span>
+      </p>
     </header>
 
-    <UCard class="mb-6">
-      <div class="grid grid-cols-2 gap-4 text-sm">
-        <div>
-          <div class="text-xs uppercase text-muted tracking-wider mb-1">Herausforderer</div>
-          <div class="font-medium">{{ memberName(challenge.challengerId) }}</div>
-          <div v-if="isChallenger" class="text-xs text-primary">(du)</div>
+    <!-- SPIELER -->
+    <section class="anim anim-2 mb-12">
+      <div class="section-head__wrap mb-3">
+        <h2 class="section-head">Spieler</h2>
+      </div>
+      <div class="grid grid-cols-2 gap-0 border-y border-default">
+        <div class="py-4 md:px-6 md:first:pl-0 border-r border-default pr-4">
+          <p class="mono text-[10px] font-semibold tracking-[0.18em] uppercase text-muted mb-2">
+            Herausforderer
+          </p>
+          <p class="text-[15px] font-medium tracking-[-0.005em]">
+            {{ memberName(challenge.challengerId) }}
+            <span v-if="isChallenger" class="text-xs text-primary ml-1">(du)</span>
+          </p>
         </div>
-        <div>
-          <div class="text-xs uppercase text-muted tracking-wider mb-1">Herausgeforderter</div>
-          <div class="font-medium">{{ memberName(challenge.challengedId) }}</div>
-          <div v-if="isChallenged" class="text-xs text-primary">(du)</div>
+        <div class="py-4 pl-4 md:px-6">
+          <p class="mono text-[10px] font-semibold tracking-[0.18em] uppercase text-muted mb-2">
+            Herausgeforderter
+          </p>
+          <p class="text-[15px] font-medium tracking-[-0.005em]">
+            {{ memberName(challenge.challengedId) }}
+            <span v-if="isChallenged" class="text-xs text-primary ml-1">(du)</span>
+          </p>
         </div>
       </div>
-      <div v-if="challenge.declineReason" class="mt-3 text-sm text-muted">
-        Abgelehnt — Grund: <strong>{{ challenge.declineReason }}</strong>
-        <span v-if="challenge.declineNote"> · {{ challenge.declineNote }}</span>
-      </div>
-    </UCard>
 
-    <!-- PROPOSED: Annehmen/Ablehnen für Challenged -->
-    <UCard v-if="challenge.status === 'PROPOSED' && isChallenged" class="mb-6">
-      <h2 class="font-semibold mb-3">Was willst du tun?</h2>
-      <div v-if="!showDecline" class="flex gap-2">
-        <UButton color="primary" :loading="submitting" @click="accept">Annehmen</UButton>
-        <UButton variant="soft" color="neutral" @click="showDecline = true">Ablehnen</UButton>
+      <div
+        v-if="challenge.declineReason"
+        class="mt-4 border-l-2 border-[color:var(--danger)] pl-3"
+      >
+        <p class="mono text-[10px] font-semibold tracking-[0.18em] uppercase text-muted">
+          Abgelehnt · {{ declineReasonLabel[challenge.declineReason] }}
+        </p>
+        <p v-if="challenge.declineNote" class="text-sm text-muted italic mt-1">
+          {{ challenge.declineNote }}
+        </p>
       </div>
-      <form v-else class="space-y-3" @submit.prevent="decline">
+    </section>
+
+    <!-- AKTION: Annehmen/Ablehnen -->
+    <section
+      v-if="challenge.status === 'PROPOSED' && isChallenged"
+      class="anim anim-3 mb-12"
+    >
+      <div class="section-head__wrap mb-3">
+        <h2 class="section-head">Was willst du tun?</h2>
+      </div>
+      <div v-if="!showDecline" class="flex flex-wrap gap-2">
+        <UButton color="primary" icon="i-lucide-check" :loading="submitting" @click="accept">
+          Annehmen
+        </UButton>
+        <UButton variant="soft" color="neutral" @click="showDecline = true">
+          Ablehnen
+        </UButton>
+      </div>
+      <form v-else class="space-y-4" @submit.prevent="decline">
         <UFormField label="Grund">
           <USelect
             v-model="declineReason"
@@ -255,20 +321,28 @@ const isLoser = computed(() => {
         <UFormField label="Notiz (optional)">
           <UTextarea v-model="declineNote" :rows="2" class="w-full" />
         </UFormField>
-        <div class="flex gap-2">
-          <UButton type="submit" color="error" :loading="submitting">Ablehnen bestätigen</UButton>
-          <UButton variant="ghost" color="neutral" @click="showDecline = false">Zurück</UButton>
+        <div class="flex flex-wrap gap-2">
+          <UButton type="submit" color="error" :loading="submitting">
+            Ablehnen bestätigen
+          </UButton>
+          <UButton variant="ghost" color="neutral" @click="showDecline = false">
+            Zurück
+          </UButton>
         </div>
       </form>
-    </UCard>
+    </section>
 
-    <!-- ACCEPTED ohne Ergebnis: Ergebnis melden -->
-    <UCard v-if="challenge.status === 'ACCEPTED' && !result" class="mb-6">
-      <h2 class="font-semibold mb-3">Ergebnis melden</h2>
-      <div v-if="!showReport">
-        <UButton color="primary" @click="showReport = true">Ergebnis eintragen</UButton>
+    <!-- ERGEBNIS MELDEN -->
+    <section v-if="challenge.status === 'ACCEPTED' && !result" class="anim anim-4 mb-12">
+      <div class="section-head__wrap mb-3">
+        <h2 class="section-head">Ergebnis melden</h2>
       </div>
-      <form v-else class="space-y-4" @submit.prevent="reportResult">
+      <div v-if="!showReport">
+        <UButton color="primary" icon="i-lucide-trophy" @click="showReport = true">
+          Ergebnis eintragen
+        </UButton>
+      </div>
+      <form v-else class="space-y-5" @submit.prevent="reportResult">
         <UFormField label="Match-Ausgang">
           <URadioGroup
             v-model="outcome"
@@ -291,11 +365,11 @@ const isLoser = computed(() => {
         <template v-if="outcome !== 'walkover'">
           <div v-for="(set, i) in sets" :key="i">
             <div class="flex items-center gap-2">
-              <span class="text-sm text-muted w-28">
+              <span class="mono text-[10px] font-semibold tracking-[0.18em] uppercase text-muted w-28">
                 {{ isMatchTiebreakSet(i) ? 'Match-TB' : `Satz ${i + 1}` }}
               </span>
               <UInputNumber v-model="set.a" :min="0" :max="isMatchTiebreakSet(i) ? 30 : 7" class="w-24" />
-              <span class="text-dimmed">:</span>
+              <span class="text-dimmed font-mono">:</span>
               <UInputNumber v-model="set.b" :min="0" :max="isMatchTiebreakSet(i) ? 30 : 7" class="w-24" />
               <UButton
                 v-if="sets.length > 1"
@@ -305,14 +379,16 @@ const isLoser = computed(() => {
                 @click="removeSet(i)"
               />
             </div>
-            <p v-if="setErrors[i]" class="text-xs text-red-600 dark:text-red-400 pl-28 mt-1">
+            <p v-if="setErrors[i]" class="text-xs text-[color:var(--danger)] pl-28 mt-1">
               {{ setErrors[i] }}
             </p>
             <p v-else-if="isMatchTiebreakSet(i)" class="text-xs text-muted pl-28 mt-1">
               bis 10 Punkte, mindestens 2 Vorsprung (z. B. 10:8, 12:10)
             </p>
           </div>
-          <UButton v-if="sets.length < 3" variant="soft" size="sm" @click="addSet">+ Satz hinzufügen</UButton>
+          <UButton v-if="sets.length < 3" variant="soft" size="sm" icon="i-lucide-plus" @click="addSet">
+            Satz hinzufügen
+          </UButton>
         </template>
         <p v-else class="text-sm text-muted italic">
           Kein Score erfasst — Walk-Over wird ohne Satz-Eingabe gemeldet.
@@ -329,82 +405,110 @@ const isLoser = computed(() => {
           >
             Melden
           </UButton>
-          <UButton variant="ghost" color="neutral" @click="showReport = false">Abbrechen</UButton>
+          <UButton variant="ghost" color="neutral" @click="showReport = false">
+            Abbrechen
+          </UButton>
         </div>
       </form>
-    </UCard>
+    </section>
 
-    <!-- pending Result: Verlierer bestätigt oder widerspricht -->
-    <UCard v-if="result && result.confirmationStatus === 'pending'" class="mb-6">
-      <h2 class="font-semibold mb-3">Gemeldetes Ergebnis</h2>
-      <div class="text-sm mb-3">
-        Sieger: <strong>{{ memberName(result.winnerId) }}</strong>
-        <span v-if="result.outcome === 'walkover'" class="ml-1 font-mono text-muted">w.o.</span>
-        <br>
-        <template v-if="result.outcome === 'walkover'">
-          <span class="text-muted italic">kein Score</span>
-        </template>
-        <template v-else>
-          Sätze:
-          <span v-for="(s, i) in result.sets" :key="i" class="font-mono ml-1">
-            {{ s.a }}:{{ s.b }}<span v-if="i < result.sets.length - 1">,</span>
+    <!-- ERGEBNIS PENDING -->
+    <section v-if="result && result.confirmationStatus === 'pending'" class="anim anim-4 mb-12">
+      <div class="section-head__wrap mb-3">
+        <h2 class="section-head">
+          Gemeldetes Ergebnis · <span class="text-[color:var(--warning)] normal-case tracking-normal">wartet auf Bestätigung</span>
+        </h2>
+      </div>
+      <div class="border-y border-default py-5">
+        <p class="text-xs text-muted mb-2 inline-flex items-center gap-1.5">
+          <span class="mono text-[10px] font-semibold tracking-[0.18em] uppercase">Sieger</span>
+          <span v-if="result.outcome === 'walkover'" class="mono text-[10px] font-semibold tracking-[0.14em] uppercase text-[color:var(--warning)]">w.o.</span>
+          <span v-else-if="result.outcome === 'retirement'" class="mono text-[10px] font-semibold tracking-[0.14em] uppercase text-[color:var(--warning)]">ret.</span>
+        </p>
+        <p class="text-base font-semibold mb-3">
+          {{ memberName(result.winnerId) }}
+        </p>
+        <p v-if="result.outcome === 'walkover'" class="text-sm text-muted italic">
+          Kein Score erfasst.
+        </p>
+        <div v-else class="inline-flex items-center gap-3 font-mono tabular-nums">
+          <span v-for="(s, i) in result.sets" :key="i" class="text-lg font-semibold">
+            {{ s.a }}<span class="text-dimmed">:</span>{{ s.b }}
           </span>
-          <span v-if="result.outcome === 'retirement'" class="ml-1 font-mono text-muted">ret.</span>
-        </template>
-        <p v-if="result.outcomeNote" class="text-xs text-muted mt-1">
+        </div>
+        <p v-if="result.outcomeNote" class="text-xs text-muted mt-2 italic">
           {{ result.outcomeNote }}
         </p>
       </div>
-      <div v-if="isLoser && !showDispute" class="flex gap-2">
-        <UButton color="primary" :loading="submitting" @click="confirmResult">Bestätigen</UButton>
-        <UButton variant="soft" color="error" @click="showDispute = true">Widersprechen</UButton>
+
+      <div v-if="isLoser && !showDispute" class="flex flex-wrap gap-2 mt-4">
+        <UButton color="primary" icon="i-lucide-check" :loading="submitting" @click="confirmResult">
+          Bestätigen
+        </UButton>
+        <UButton variant="soft" color="error" icon="i-lucide-flag" @click="showDispute = true">
+          Widersprechen
+        </UButton>
       </div>
-      <form v-else-if="showDispute" class="space-y-3" @submit.prevent="disputeResult">
+      <form v-else-if="showDispute" class="space-y-3 mt-4" @submit.prevent="disputeResult">
         <UFormField label="Begründung">
           <UTextarea v-model="disputeNote" :rows="3" class="w-full" required />
         </UFormField>
         <div class="flex gap-2">
-          <UButton type="submit" color="error" :loading="submitting">Widerspruch absenden</UButton>
-          <UButton variant="ghost" color="neutral" @click="showDispute = false">Zurück</UButton>
+          <UButton type="submit" color="error" :loading="submitting">
+            Widerspruch absenden
+          </UButton>
+          <UButton variant="ghost" color="neutral" @click="showDispute = false">
+            Zurück
+          </UButton>
         </div>
       </form>
-      <p v-else class="text-sm text-muted italic">
+      <p v-else class="text-sm text-muted italic mt-4">
         Warte auf Bestätigung durch den Verlierer.
       </p>
-    </UCard>
+    </section>
 
-    <!-- Confirmed Result: Read-only Anzeige -->
-    <UCard v-if="result && result.confirmationStatus === 'confirmed'">
-      <h2 class="font-semibold mb-3">Bestätigtes Ergebnis</h2>
-      <div class="text-sm">
-        Sieger: <strong>{{ memberName(result.winnerId) }}</strong>
-        <span v-if="result.outcome === 'walkover'" class="ml-1 font-mono text-muted">w.o.</span>
-        <br>
-        <template v-if="result.outcome === 'walkover'">
-          <span class="text-muted italic">kein Score</span>
-        </template>
-        <template v-else>
-          Sätze:
-          <span v-for="(s, i) in result.sets" :key="i" class="font-mono ml-1">
-            {{ s.a }}:{{ s.b }}<span v-if="i < result.sets.length - 1">,</span>
+    <!-- ERGEBNIS BESTÄTIGT -->
+    <section v-if="result && result.confirmationStatus === 'confirmed'" class="anim anim-4 mb-12">
+      <div class="section-head__wrap mb-3">
+        <h2 class="section-head">
+          Endergebnis · <span class="text-[color:var(--success)] normal-case tracking-normal">bestätigt</span>
+        </h2>
+      </div>
+      <div class="border-y border-default py-5">
+        <p class="text-xs text-muted mb-2 inline-flex items-center gap-1.5">
+          <span class="mono text-[10px] font-semibold tracking-[0.18em] uppercase">Sieger</span>
+          <span v-if="result.outcome === 'walkover'" class="mono text-[10px] font-semibold tracking-[0.14em] uppercase text-[color:var(--warning)]">w.o.</span>
+          <span v-else-if="result.outcome === 'retirement'" class="mono text-[10px] font-semibold tracking-[0.14em] uppercase text-[color:var(--warning)]">ret.</span>
+        </p>
+        <p class="text-base font-semibold mb-3">
+          {{ memberName(result.winnerId) }}
+        </p>
+        <p v-if="result.outcome === 'walkover'" class="text-sm text-muted italic">
+          Kein Score erfasst.
+        </p>
+        <div v-else class="inline-flex items-center gap-3 font-mono tabular-nums">
+          <span v-for="(s, i) in result.sets" :key="i" class="text-lg font-semibold">
+            {{ s.a }}<span class="text-dimmed">:</span>{{ s.b }}
           </span>
-          <span v-if="result.outcome === 'retirement'" class="ml-1 font-mono text-muted">ret.</span>
-        </template>
-        <p v-if="result.outcomeNote" class="text-xs text-muted mt-1">
+        </div>
+        <p v-if="result.outcomeNote" class="text-xs text-muted mt-2 italic">
           {{ result.outcomeNote }}
         </p>
       </div>
-    </UCard>
+    </section>
 
-    <!-- Disputed Result -->
-    <UCard v-if="result && result.confirmationStatus === 'disputed'">
-      <h2 class="font-semibold mb-3 text-amber-700 dark:text-amber-400">Streitfall</h2>
-      <div class="text-sm">
-        Begründung: <em>{{ result.disputeNote ?? '—' }}</em>
-        <p class="text-muted mt-2">
-          Ein Trainer entscheidet den Streitfall.
-        </p>
+    <!-- ERGEBNIS STREITFALL -->
+    <section v-if="result && result.confirmationStatus === 'disputed'" class="anim anim-4 mb-12">
+      <div class="section-head__wrap mb-3">
+        <h2 class="section-head">
+          Streitfall · <span class="text-[color:var(--warning)] normal-case tracking-normal">Trainer-Entscheidung ausstehend</span>
+        </h2>
       </div>
-    </UCard>
+      <div class="border-y border-default py-5 text-sm">
+        <p><span class="mono text-[10px] font-semibold tracking-[0.18em] uppercase text-muted">Begründung</span></p>
+        <p class="mt-1 italic">{{ result.disputeNote ?? '—' }}</p>
+        <p class="text-muted mt-3">Ein Trainer entscheidet den Streitfall.</p>
+      </div>
+    </section>
   </UContainer>
 </template>
