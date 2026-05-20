@@ -1,7 +1,14 @@
 import { z } from 'zod'
-import type { MatchPreferences, MemberId, Role } from '../../db/schema/member'
+import type {
+  MatchPreferences,
+  MemberId,
+  NotificationKey,
+  NotificationPrefs,
+  Role,
+} from '../../db/schema/member'
+import { NOTIFICATION_KEYS } from '../../db/schema/member'
 
-export type { MemberId, Role, MatchPreferences }
+export type { MemberId, Role, MatchPreferences, NotificationKey, NotificationPrefs }
 
 /** Zod-Schema für Update-Eingabe — alle Felder optional (PATCH-Semantik). */
 export const matchPreferencesSchema = z.object({
@@ -12,6 +19,18 @@ export const matchPreferencesSchema = z.object({
   ageGroupFriendly: z.boolean(),
 })
 
+// Eine partielle Notif-Prefs-Map; der Service merged mit den bestehenden Werten,
+// damit Frontend nur die geänderten Keys zu schicken braucht.
+export const notificationPrefsSchema = z
+  .object(
+    Object.fromEntries(NOTIFICATION_KEYS.map((k) => [k, z.boolean()])) as Record<
+      NotificationKey,
+      z.ZodBoolean
+    >,
+  )
+  .partial()
+  .strict()
+
 export const updateOwnProfileInput = z
   .object({
     firstName: z.string().min(1).max(60),
@@ -21,11 +40,26 @@ export const updateOwnProfileInput = z
     dtbLk: z.number().min(1).max(25),
     status: z.enum(['aktiv', 'pausiert']),
     preferences: matchPreferencesSchema,
+    notificationPrefs: notificationPrefsSchema,
   })
   .partial()
   .strict()
 
 export type UpdateOwnProfileInput = z.infer<typeof updateOwnProfileInput>
+
+/**
+ * Schmaler DTO für das notifications-Modul: enthält die Felder, die zum
+ * Dispatchen einer Mail nötig sind, ohne den vollen `MemberDto` aufzuweichen
+ * (Email bleibt dort absichtlich verborgen, siehe Spec § 4 FR-7).
+ */
+export type Recipient = {
+  id: MemberId
+  email: string
+  firstName: string
+  lastName: string
+  isActive: boolean
+  prefs: NotificationPrefs
+}
 
 /** Public DTO — Felder, die das Frontend bekommt. */
 export type MemberDto = {
@@ -39,6 +73,7 @@ export type MemberDto = {
   status: 'aktiv' | 'pausiert'
   roles: Role[]
   preferences: MatchPreferences
+  notificationPrefs: NotificationPrefs
 }
 
 /**

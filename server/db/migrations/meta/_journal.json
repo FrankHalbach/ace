@@ -106,6 +106,13 @@
       "when": 1779212177046,
       "tag": "0014_member_preferences_rename",
       "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "6",
+      "when": 1779307391579,
+      "tag": "0015_notification_prefs",
+      "breakpoints": true
     }
   ]
 }

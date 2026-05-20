@@ -1,5 +1,6 @@
 import { challengesService, type ChallengeId } from '../../challenges'
 import type { MemberId } from '../../members'
+import { notifyService } from '../../notifications'
 import {
   applyMutations,
   getRankingEntries,
@@ -106,6 +107,16 @@ export const resultsService = {
       outcome,
       outcomeNote: input.outcomeNote ?? null,
     })
+    // FR-70: Der Verlierer muss das Ergebnis bestätigen — bekommt also die Mail.
+    const loserId =
+      winnerId === challenge.challengerId ? challenge.challengedId : challenge.challengerId
+    void notifyService.dispatch({
+      key: 'challenge.result_reported',
+      recipientId: loserId,
+      challengeId,
+      resultId: row.id,
+      reporterId,
+    })
     return toDto(row)
   },
 
@@ -163,6 +174,14 @@ export const resultsService = {
     challengesService.markCompleted(challenge.id, now)
 
     const updated = matchResultRepo.findById(id)!
+    // FR-70: Reporter wird über die Bestätigung informiert.
+    void notifyService.dispatch({
+      key: 'challenge.result_confirmed',
+      recipientId: row.reportedBy,
+      challengeId: challenge.id,
+      resultId: id,
+      confirmerId: memberId,
+    })
     return toDto(updated)
   },
 
@@ -191,6 +210,15 @@ export const resultsService = {
     })
     challengesService.markDisputed(challenge.id, now)
 
+    // FR-70: Reporter wird über den Widerspruch informiert.
+    void notifyService.dispatch({
+      key: 'challenge.result_disputed',
+      recipientId: row.reportedBy,
+      challengeId: challenge.id,
+      resultId: id,
+      disputerId: memberId,
+      auto: false,
+    })
     return toDto(matchResultRepo.findById(id)!)
   },
 
@@ -254,6 +282,28 @@ export const resultsService = {
         challengesService.markDisputed(r.challengeId, now)
       } catch {
         // Challenge ist evtl. schon in einem anderen Status — ignorieren
+      }
+      // FR-70: beide Spieler informieren — der Trainer übernimmt jetzt.
+      const challenge = challengesService.findById(r.challengeId)
+      if (challenge) {
+        void notifyService.dispatchMany([
+          {
+            key: 'challenge.result_disputed',
+            recipientId: challenge.challengerId,
+            challengeId: r.challengeId,
+            resultId: r.id,
+            disputerId: null,
+            auto: true,
+          },
+          {
+            key: 'challenge.result_disputed',
+            recipientId: challenge.challengedId,
+            challengeId: r.challengeId,
+            resultId: r.id,
+            disputerId: null,
+            auto: true,
+          },
+        ])
       }
       updated++
     }

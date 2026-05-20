@@ -31,6 +31,7 @@ export type {
 export {
   createMemberInput,
   deactivateMemberInput,
+  notificationPrefsSchema,
   setLkInput,
   setRolesInput,
   updateOwnProfileInput,
@@ -43,7 +44,10 @@ export type {
   MemberAdminDto,
   MemberDto,
   MemberId,
+  NotificationKey,
+  NotificationPrefs,
   PlayerProfileDto,
+  Recipient,
   Role,
   SetLkInput,
   SetRolesInput,
