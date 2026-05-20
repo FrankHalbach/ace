@@ -6,10 +6,14 @@
  * folgen in weiteren PRs — der Skelett-PR baut nur das Fundament.
  */
 export { auditService } from './service/audit'
+export { auditLogQueryInput, InvalidAuditCursorError } from './types'
 export type {
   AuditAction,
   AuditEntryDto,
   AuditEntryId,
+  AuditLogEntryDto,
   AuditLogInput,
+  AuditLogPageDto,
+  AuditLogQueryInput,
   AuditSubjectKind,
 } from './types'
