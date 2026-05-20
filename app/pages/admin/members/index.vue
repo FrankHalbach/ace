@@ -236,6 +236,13 @@ type InviteResponse = {
 const invitingId = ref<string | null>(null)
 const fallbackInvite = ref<{ name: string; link: string } | null>(null)
 
+// IDs, deren Einladung in dieser Session erfolgreich verschickt wurde —
+// blockt versehentliche Doppelklicks. Server ist idempotent (jeder Aufruf
+// erzeugt einen neuen 30-Tage-Token), aber doppelte Mails sind unnötiger
+// Lärm beim Empfänger. Reset per Page-Reload macht Re-Invite jederzeit
+// möglich, ohne dass wir einen Bestätigungs-Dialog brauchen.
+const sentInviteIds = ref<Set<string>>(new Set())
+
 async function sendInvite(m: MemberAdminDto): Promise<InviteResponse | null> {
   invitingId.value = m.id
   try {
@@ -244,10 +251,14 @@ async function sendInvite(m: MemberAdminDto): Promise<InviteResponse | null> {
       { method: 'POST' },
     )
     if (res.emailSent) {
+      sentInviteIds.value = new Set([...sentInviteIds.value, m.id])
       toast.add({
         title: `Einladung an ${m.firstName} ${m.lastName} verschickt`,
         color: 'primary',
       })
+      // Liste aktualisieren, damit invitedAt-getriebene Anzeigen (z. B.
+      // Status-Label "eingeladen") konsistent zum sent-State sind.
+      await refresh()
     } else if (res.fallbackLink) {
       fallbackInvite.value = {
         name: `${m.firstName} ${m.lastName}`,
@@ -283,7 +294,12 @@ async function copyFallbackLink() {
 }
 
 function inviteLabel(m: MemberAdminDto): string {
+  if (sentInviteIds.value.has(m.id)) return 'Verschickt'
   return m.invitedAt == null ? 'Einladen' : 'Erneut einladen'
+}
+
+function inviteIcon(m: MemberAdminDto): string {
+  return sentInviteIds.value.has(m.id) ? 'i-lucide-check' : 'i-lucide-mail'
 }
 
 // --- Anlegen --------------------------------------------------------------
@@ -532,12 +548,13 @@ function roleLabels(m: MemberAdminDto): string {
         <UButton
           v-if="m.deactivatedAt == null"
           variant="ghost"
-          color="neutral"
+          :color="sentInviteIds.has(m.id) ? 'primary' : 'neutral'"
           size="sm"
-          icon="i-lucide-mail"
+          :icon="inviteIcon(m)"
           :aria-label="inviteLabel(m)"
           :title="inviteLabel(m)"
           :loading="invitingId === m.id"
+          :disabled="sentInviteIds.has(m.id)"
           @click="sendInvite(m)"
         />
         <UButton
