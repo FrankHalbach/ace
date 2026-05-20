@@ -113,7 +113,7 @@ describe('memberAdminService.invite', () => {
 
   it('liefert fallbackLink, wenn der E-Mail-Versand fehlschlägt', async () => {
     vi.spyOn(emailModule, 'sendInviteEmail').mockRejectedValue(
-      new Error('Brevo 500'),
+      new Error('SMTP 500'),
     )
     vi.spyOn(console, 'error').mockImplementation(() => undefined)
     const actor = insertMember('Anna', 'Admin', { roles: ['player', 'admin'] })

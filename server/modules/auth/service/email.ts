@@ -1,14 +1,16 @@
 /**
- * Email-Versand für Magic-Links.
+ * Email-Versand für Magic-Links und Invites.
  *
- * Produktiv: Brevo Transactional Email API.
- * Dev (kein `NUXT_BREVO_API_KEY`): Console-Log mit klickbarem Link.
+ * Transport-Auswahl per Env:
+ *   `NUXT_SMTP_HOST` gesetzt → SMTP via nodemailer
+ *                              (Dev: Papercut · Prod: smtp-relay.brevo.com)
+ *   sonst                    → Console-Stub mit klickbarem Link
  *
  * Wenn das `notifications`-Modul existiert, wandert diese Logik dort hin.
  */
+import nodemailer, { type Transporter } from 'nodemailer'
 
-const BREVO_ENDPOINT = 'https://api.brevo.com/v3/smtp/email'
-const SENDER = { name: 'ace · TuS Neureut', email: 'no-reply@tus-neureut.de' }
+const DEFAULT_FROM = 'ace · TuS Neureut <no-reply@tus-neureut.de>'
 
 export type MagicLinkEmail = {
   to: { email: string; firstName: string }
@@ -22,63 +24,77 @@ export type InviteEmail = {
 }
 
 export async function sendMagicLinkEmail(payload: MagicLinkEmail): Promise<void> {
-  const apiKey = process.env.NUXT_BREVO_API_KEY?.trim()
-  if (!apiKey) {
-    logStub('Magic-Link', payload.to.email, payload.link)
-    return
-  }
-
-  const { html, text } = renderTemplate(payload)
-  const response = await fetch(BREVO_ENDPOINT, {
-    method: 'POST',
-    headers: {
-      accept: 'application/json',
-      'api-key': apiKey,
-      'content-type': 'application/json',
-    },
-    body: JSON.stringify({
-      sender: SENDER,
-      to: [{ email: payload.to.email, name: payload.to.firstName }],
-      subject: 'Dein Login-Link für ace',
-      htmlContent: html,
-      textContent: text,
-    }),
+  const { html, text } = renderMagicLinkTemplate(payload)
+  await deliver({
+    kind: 'Magic-Link',
+    to: payload.to,
+    subject: 'Dein Login-Link für ace',
+    html,
+    text,
+    link: payload.link,
   })
-
-  if (!response.ok) {
-    const body = await response.text().catch(() => '')
-    throw new Error(`Brevo email failed: ${response.status} ${body}`)
-  }
 }
 
 export async function sendInviteEmail(payload: InviteEmail): Promise<void> {
-  const apiKey = process.env.NUXT_BREVO_API_KEY?.trim()
-  if (!apiKey) {
-    logStub('Invite', payload.to.email, payload.link)
+  const { html, text } = renderInviteTemplate(payload)
+  await deliver({
+    kind: 'Invite',
+    to: payload.to,
+    subject: 'Willkommen bei ace – deine Einladung',
+    html,
+    text,
+    link: payload.link,
+  })
+}
+
+type DeliverInput = {
+  kind: 'Magic-Link' | 'Invite'
+  to: { email: string; firstName: string }
+  subject: string
+  html: string
+  text: string
+  link: string
+}
+
+async function deliver(input: DeliverInput): Promise<void> {
+  const transport = getTransport()
+  if (!transport) {
+    logStub(input.kind, input.to.email, input.link)
     return
   }
 
-  const { html, text } = renderInviteTemplate(payload)
-  const response = await fetch(BREVO_ENDPOINT, {
-    method: 'POST',
-    headers: {
-      accept: 'application/json',
-      'api-key': apiKey,
-      'content-type': 'application/json',
-    },
-    body: JSON.stringify({
-      sender: SENDER,
-      to: [{ email: payload.to.email, name: payload.to.firstName }],
-      subject: 'Willkommen bei ace – deine Einladung',
-      htmlContent: html,
-      textContent: text,
-    }),
+  await transport.sendMail({
+    from: process.env.NUXT_MAIL_FROM?.trim() || DEFAULT_FROM,
+    to: { name: input.to.firstName, address: input.to.email },
+    subject: input.subject,
+    html: input.html,
+    text: input.text,
   })
+}
 
-  if (!response.ok) {
-    const body = await response.text().catch(() => '')
-    throw new Error(`Brevo invite email failed: ${response.status} ${body}`)
+let cachedTransport: Transporter | null | undefined
+
+function getTransport(): Transporter | null {
+  if (cachedTransport !== undefined) return cachedTransport
+
+  const host = process.env.NUXT_SMTP_HOST?.trim()
+  if (!host) {
+    cachedTransport = null
+    return null
   }
+
+  const port = Number(process.env.NUXT_SMTP_PORT?.trim() || '25')
+  const secure = process.env.NUXT_SMTP_SECURE?.trim() === 'true'
+  const user = process.env.NUXT_SMTP_USER?.trim()
+  const pass = process.env.NUXT_SMTP_PASS?.trim()
+
+  cachedTransport = nodemailer.createTransport({
+    host,
+    port,
+    secure,
+    auth: user && pass ? { user, pass } : undefined,
+  })
+  return cachedTransport
 }
 
 function logStub(kind: 'Magic-Link' | 'Invite', email: string, link: string): void {
@@ -88,7 +104,7 @@ function logStub(kind: 'Magic-Link' | 'Invite', email: string, link: string): vo
   console.log('─'.repeat(72))
 }
 
-function renderTemplate(p: MagicLinkEmail): { html: string; text: string } {
+function renderMagicLinkTemplate(p: MagicLinkEmail): { html: string; text: string } {
   // Design-Tokens aus docs/design-system.md
   const html = `<!doctype html>
 <html lang="de">
