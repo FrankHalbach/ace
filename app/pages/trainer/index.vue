@@ -81,55 +81,77 @@ const filteredActivity = computed<ActivityOverviewRow[]>(() => {
 </script>
 
 <template>
-  <UContainer class="py-6 max-w-3xl">
-    <h1 class="text-2xl font-semibold mb-6">Trainer</h1>
+  <UContainer class="py-10 max-w-2xl md:max-w-3xl md:py-14">
+    <!-- HERO -->
+    <header class="anim anim-1 mb-10 md:mb-12">
+      <h1 class="text-3xl md:text-4xl font-semibold tracking-[-0.02em] leading-tight">
+        Trainer
+      </h1>
+      <p class="text-sm text-muted mt-2">
+        Streitfälle entscheiden und Spieler-Aktivität im Blick behalten.
+      </p>
+    </header>
 
-    <section class="mb-10">
-      <h2 class="text-lg font-semibold mb-3">
-        Streitfälle <span class="text-muted">({{ disputes.length }})</span>
-      </h2>
+    <!-- STREITFÄLLE -->
+    <section class="anim anim-2 mb-14">
+      <div class="section-head__wrap mb-3">
+        <h2 class="section-head">Streitfälle · {{ disputes.length }}</h2>
+      </div>
 
-      <p v-if="disputes.length === 0" class="text-muted italic">
+      <p v-if="disputes.length === 0" class="text-sm text-muted italic py-6">
         Keine offenen Streitfälle.
       </p>
 
-      <div v-else class="space-y-3">
-        <UCard v-for="d in disputes" :key="`${d.kind}-${d.kind === 'challenge' ? d.challengeId : d.friendlyId}`">
-          <div class="text-sm">
-            <div class="font-medium mb-1">
-              <span v-if="d.kind === 'challenge'">
-                Forderung #{{ d.challengeId }} · Rangliste #{{ d.rankingId }}
-              </span>
-              <span v-else>
-                {{ d.format === 'singles' ? 'Einzel' : 'Doppel' }}-Friendly #{{ d.friendlyId }}
-              </span>
-            </div>
-            <div v-if="d.kind === 'challenge'" class="text-muted">
-              {{ memberName(d.challengerId) }} vs {{ memberName(d.challengedId) }}
-              <template v-if="d.reportedWinnerId !== null">
-                · Sieger laut Meldung: {{ memberName(d.reportedWinnerId) }}
-                · {{ formatSets(d.reportedSets) }}
-              </template>
-              <template v-else>
-                · <em>kein Ergebnis gemeldet</em>
-              </template>
-            </div>
-            <div v-else class="text-muted">
-              Teilnehmer:
-              <span v-for="(p, i) in d.participants" :key="p">
-                {{ memberName(p) }}<span v-if="i < d.participants.length - 1">, </span>
-              </span>
-              · Sieger laut Meldung:
-              <span v-for="(w, i) in d.reportedWinnerIds" :key="w">
-                {{ memberName(w) }}<span v-if="i < d.reportedWinnerIds.length - 1">, </span>
-              </span>
-              · {{ formatSets(d.reportedSets) }}
-            </div>
-            <div v-if="d.disputeNote" class="mt-2 text-sm">
-              Begründung: <em>{{ d.disputeNote }}</em>
-            </div>
-            <div class="text-xs text-dimmed mt-1">
-              {{ relativeDays(d.disputedAt) }}
+      <ul v-else class="divide-y divide-default border-y border-default">
+        <li
+          v-for="d in disputes"
+          :key="`${d.kind}-${d.kind === 'challenge' ? d.challengeId : d.friendlyId}`"
+          class="py-5"
+        >
+          <div class="flex items-start justify-between gap-3 flex-wrap">
+            <div class="min-w-0 flex-1">
+              <div class="mono text-[10px] font-semibold tracking-[0.18em] uppercase text-[color:var(--warning,var(--accent))] mb-1.5 inline-flex items-center gap-1.5">
+                <UIcon name="i-lucide-alert-triangle" class="size-3" />
+                {{ d.kind === 'challenge' ? 'Forderung' : (d.format === 'singles' ? 'Einzel-Friendly' : 'Doppel-Friendly') }}
+              </div>
+              <div class="text-[15px] font-semibold tracking-[-0.005em] mb-1">
+                <template v-if="d.kind === 'challenge'">
+                  <span class="italic text-primary">{{ memberName(d.challengerId) }}</span>
+                  <span class="text-muted font-normal mx-1.5">vs</span>
+                  <span class="italic text-primary">{{ memberName(d.challengedId) }}</span>
+                </template>
+                <template v-else>
+                  <span
+                    v-for="(p, i) in d.participants"
+                    :key="p"
+                  >
+                    <span class="italic text-primary">{{ memberName(p) }}</span>
+                    <span v-if="i < d.participants.length - 1" class="text-muted font-normal mx-1.5">·</span>
+                  </span>
+                </template>
+              </div>
+              <div class="text-xs text-muted">
+                <template v-if="d.kind === 'challenge'">
+                  <template v-if="d.reportedWinnerId !== null">
+                    Sieger laut Meldung: {{ memberName(d.reportedWinnerId) }}
+                    <span class="font-mono tabular-nums ml-1">· {{ formatSets(d.reportedSets) }}</span>
+                  </template>
+                  <em v-else>kein Ergebnis gemeldet</em>
+                </template>
+                <template v-else>
+                  Sieger laut Meldung:
+                  <span v-for="(w, i) in d.reportedWinnerIds" :key="w">
+                    {{ memberName(w) }}<span v-if="i < d.reportedWinnerIds.length - 1">, </span>
+                  </span>
+                  <span class="font-mono tabular-nums ml-1">· {{ formatSets(d.reportedSets) }}</span>
+                </template>
+              </div>
+              <div v-if="d.disputeNote" class="text-sm text-muted mt-2 italic">
+                „{{ d.disputeNote }}"
+              </div>
+              <div class="text-xs text-dimmed mt-1.5">
+                {{ relativeDays(d.disputedAt) }}
+              </div>
             </div>
           </div>
 
@@ -138,6 +160,7 @@ const filteredActivity = computed<ActivityOverviewRow[]>(() => {
               v-if="(d.kind === 'challenge' && d.reportedWinnerId !== null) || d.kind === 'friendly'"
               color="primary"
               size="sm"
+              icon="i-lucide-check"
               :loading="submitting === `confirm-${d.kind}-${d.kind === 'challenge' ? d.challengeId : d.friendlyId}`"
               @click="
                 action(
@@ -155,6 +178,7 @@ const filteredActivity = computed<ActivityOverviewRow[]>(() => {
               variant="soft"
               color="error"
               size="sm"
+              icon="i-lucide-x"
               :loading="submitting === `cancel-${d.kind}-${d.kind === 'challenge' ? d.challengeId : d.friendlyId}`"
               @click="
                 action(
@@ -169,13 +193,14 @@ const filteredActivity = computed<ActivityOverviewRow[]>(() => {
               Match abbrechen
             </UButton>
           </div>
-        </UCard>
-      </div>
+        </li>
+      </ul>
     </section>
 
-    <section>
-      <div class="flex items-center justify-between mb-3 flex-wrap gap-3">
-        <h2 class="text-lg font-semibold">Aktivitäts-Übersicht</h2>
+    <!-- AKTIVITÄT -->
+    <section class="anim anim-3">
+      <div class="section-head__wrap mb-3">
+        <h2 class="section-head">Aktivität · 4 Wochen</h2>
         <div class="flex gap-1">
           <UButton
             size="xs"
@@ -195,6 +220,7 @@ const filteredActivity = computed<ActivityOverviewRow[]>(() => {
           </UButton>
         </div>
       </div>
+
       <UInput
         v-model="activitySearch"
         icon="i-lucide-search"
@@ -213,30 +239,31 @@ const filteredActivity = computed<ActivityOverviewRow[]>(() => {
         Kein Treffer für „{{ activitySearch }}".
       </p>
 
-      <div v-else class="divide-y divide-default border border-default rounded-lg overflow-hidden">
-        <NuxtLink
-          v-for="row in filteredActivity"
-          :key="row.memberId"
-          :to="`/spieler/${row.memberId}`"
-          class="block px-4 py-3 flex items-center justify-between gap-3 hover:bg-elevated transition"
-        >
-          <div>
-            <div class="font-medium">
-              {{ row.firstName }} {{ row.lastName }}
-              <span v-if="row.status === 'pausiert'" class="ml-1 text-xs text-dimmed">
-                · pausiert
-              </span>
+      <ul v-else class="divide-y divide-default border-y border-default">
+        <li v-for="row in filteredActivity" :key="row.memberId">
+          <NuxtLink :to="`/spieler/${row.memberId}`" class="list-row group">
+            <span
+              class="font-mono tabular-nums text-sm font-semibold min-w-[2.5rem] text-center px-1.5 py-1 rounded ring-1 ring-default text-muted shrink-0"
+              :title="`${row.matchesLast4Weeks} Matches in 4 Wochen`"
+            >
+              {{ row.matchesLast4Weeks }}
+            </span>
+            <div class="flex-1 min-w-0">
+              <div class="text-[15px] font-semibold truncate tracking-[-0.005em] group-hover:text-primary transition-colors">
+                <span class="italic text-primary">{{ row.firstName }}</span>
+                <span class="ml-1">{{ row.lastName }}</span>
+              </div>
+              <div class="text-xs text-muted truncate mt-0.5">
+                {{ relativeDays(row.lastMatchAt) }}
+                <template v-if="row.status === 'pausiert'">
+                  · <span class="text-[color:var(--neutral,var(--ink-soft))]">pausiert</span>
+                </template>
+              </div>
             </div>
-            <div class="text-xs text-muted">
-              Letzte Aktivität: {{ relativeDays(row.lastMatchAt) }}
-            </div>
-          </div>
-          <div class="text-right">
-            <div class="font-mono text-sm">{{ row.matchesLast4Weeks }}</div>
-            <div class="text-xs text-dimmed">4 Wochen</div>
-          </div>
-        </NuxtLink>
-      </div>
+            <UIcon name="i-lucide-chevron-right" class="text-dimmed shrink-0 group-hover:text-primary transition-colors" />
+          </NuxtLink>
+        </li>
+      </ul>
     </section>
   </UContainer>
 </template>

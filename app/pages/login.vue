@@ -50,43 +50,55 @@ async function submit() {
 </script>
 
 <template>
-  <UContainer class="py-16 max-w-md">
-    <h1 class="text-3xl font-semibold mb-2">Anmelden bei ace</h1>
-    <p class="text-muted mb-8">
-      Wir schicken dir einen einmaligen Anmelde-Link per E-Mail. Kein Passwort, keine Apps.
+  <UContainer class="py-16 md:py-24 max-w-md">
+    <!-- BRAND -->
+    <p class="anim anim-1 mono text-[10px] font-semibold tracking-[0.22em] uppercase text-muted mb-6 inline-flex items-center gap-2">
+      <span class="inline-block w-5 h-[2px] bg-[color:var(--accent)]" aria-hidden="true" />
+      TuS Neureut · Tennis
     </p>
 
-    <UCard>
-      <form class="space-y-4" @submit.prevent="submit">
-        <UFormField label="E-Mail-Adresse" :error="errorMessage ?? undefined">
-          <UInput
-            v-model="email"
-            type="email"
-            autocomplete="email"
-            inputmode="email"
-            placeholder="max@neureut.de"
-            size="lg"
-            class="w-full"
-            required
-          />
-        </UFormField>
+    <!-- HERO -->
+    <header class="anim anim-2 mb-10">
+      <h1 class="text-3xl md:text-4xl font-semibold tracking-[-0.02em] leading-tight">
+        Anmelden bei <span class="italic text-primary">ace</span>
+      </h1>
+      <p class="text-sm text-muted mt-3">
+        Einmaliger Anmelde-Link per E-Mail. Kein Passwort, keine App.
+      </p>
+    </header>
 
-        <UButton
-          type="submit"
-          color="primary"
+    <!-- FORM -->
+    <form class="anim anim-3 space-y-5" @submit.prevent="submit">
+      <UFormField label="E-Mail-Adresse" :error="errorMessage ?? undefined">
+        <UInput
+          v-model="email"
+          type="email"
+          autocomplete="email"
+          inputmode="email"
+          placeholder="max@neureut.de"
           size="lg"
-          block
-          :loading="submitting"
-          :disabled="!email"
-        >
-          Anmelde-Link senden
-        </UButton>
-      </form>
-    </UCard>
+          class="w-full"
+          required
+        />
+      </UFormField>
 
-    <p class="text-xs text-muted mt-6">
+      <UButton
+        type="submit"
+        color="primary"
+        size="lg"
+        block
+        icon="i-lucide-mail"
+        :loading="submitting"
+        :disabled="!email"
+      >
+        Anmelde-Link senden
+      </UButton>
+    </form>
+
+    <!-- FINE PRINT -->
+    <p class="anim anim-4 text-xs text-muted mt-10 pt-6 border-t border-default leading-relaxed">
       Der Link ist 15 Minuten gültig und nur einmal nutzbar. Falls du noch nicht im Verein
-      angemeldet bist, wende dich an den Sportwart.
+      registriert bist, wende dich an den Sportwart.
     </p>
   </UContainer>
 </template>
