@@ -3,23 +3,19 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
 
-  modules: ['@nuxt/ui', '@nuxt/eslint', 'nuxt-auth-utils'],
+  modules: ['@nuxt/fonts', '@nuxt/ui', '@nuxt/eslint', 'nuxt-auth-utils'],
 
   css: ['~/assets/css/main.css'],
 
-  app: {
-    head: {
-      link: [
-        // Brand fonts per docs/design-system.md §4.1.
-        // Source Sans 3: body + headings · JetBrains Mono: IDs, LK, scores.
-        // Fraunces deliberately not loaded (reserved for marketing).
-        { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
-        { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
-        {
-          rel: 'stylesheet',
-          href: 'https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=JetBrains+Mono:wght@400;500;600&display=swap',
-        },
-      ],
+  // @nuxt/fonts scant CSS nach font-family-Verwendung, lädt Source Sans 3 und
+  // JetBrains Mono beim Build von Google Fonts herunter, hostet sie lokal aus
+  // public/_fonts/ und generiert @font-face-Regeln. Keine Runtime-Connection zu
+  // fonts.googleapis.com mehr — DSGVO-konform ohne separate Einwilligung.
+  fonts: {
+    defaults: {
+      weights: [400, 500, 600, 700],
+      styles: ['normal', 'italic'],
+      subsets: ['latin', 'latin-ext'],
     },
   },
 

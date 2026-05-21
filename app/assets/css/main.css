@@ -3,11 +3,9 @@
 @import "./tokens.css";
 @import "./editorial.css";
 
-/* Fonts are loaded via <link> tags injected from nuxt.config.ts app.head.
-   CSS @import url() doesn't work cleanly here because Vite/PostCSS inlines
-   the tailwindcss + nuxt-ui imports first, pushing any font @import below
-   other rules and violating the CSS spec. For production-grade offline
-   delivery, drop .woff2 files into app/assets/fonts/ and swap to @font-face. */
+/* Fonts werden von @nuxt/fonts beim Build lokal vendoriert (siehe
+   nuxt.config.ts → fonts). Keine Runtime-Connection zu Google Fonts —
+   .woff2 wird aus public/_fonts/ ausgeliefert. */
 
 /* =========================================================================
    Tailwind 4 @theme — custom brand palettes anchored on tokens.css.
