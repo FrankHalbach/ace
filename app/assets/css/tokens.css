@@ -6,8 +6,8 @@
    doc — see CLAUDE.md § Design.
    ========================================================================= */
 
-/* Fonts are loaded in main.css (must precede all other @imports per CSS spec).
-   See main.css for the Google-Fonts CDN substitution + production-handover note. */
+/* Fonts werden von @nuxt/fonts lokal vendoriert (siehe nuxt.config.ts).
+   font-family-Verwendung unten triggert das Modul beim CSS-Scan. */
 
 :root {
   /* -- Brand ----------------------------------------------------------- */

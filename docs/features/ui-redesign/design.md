@@ -54,8 +54,11 @@ Migrationen folgen als eigene, kleine PRs gegen diese Foundation.
 - **`SeasonStatusBadge` → generische `StatusPill`-Migration** — kommt mit
   dem ersten Screen-Pass, der eine neue Pill-Variante braucht
 
-- **Vendoring der Font-Dateien** (`.woff2` lokal statt Google-Fonts-CDN) —
-  vor Mitglieder-Launch entscheiden; aktuell CDN-Substitution
+- ~~**Vendoring der Font-Dateien**~~ — **erledigt 2026-05-21**: `@nuxt/fonts`
+  aktiviert in `nuxt.config.ts`, Source Sans 3 + JetBrains Mono werden beim
+  Build automatisch von Google heruntergeladen, lokal in `public/_fonts/`
+  abgelegt und per `@font-face` ausgeliefert. Kein Runtime-Connect zu
+  fonts.googleapis.com mehr — DSGVO-konform ohne separaten Consent-Schritt.
 
 - **Custom-Paletten für Status-Farben** (`court-cyan` für info,
   `clay-ochre` für warning, `terracotta` für danger) — erst, wenn
