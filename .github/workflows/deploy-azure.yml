@@ -1,0 +1,76 @@
+name: deploy-azure
+
+# Build des Docker-Images im GitHub-Runner und Push ins Azure Container
+# Registry, danach Update der Container App. Auth gegen Azure läuft per OIDC
+# (Federated Identity), keine langlebigen Service-Principal-Secrets im Repo.
+#
+# Setup-Schritte siehe docs/operations/azure-container-apps.md §11.
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'Dockerfile'
+      - '.dockerignore'
+      - 'app/**'
+      - 'server/**'
+      - 'shared/**'
+      - 'public/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'nuxt.config.ts'
+      - 'drizzle.config.ts'
+      - 'tsconfig.json'
+      - '.github/workflows/deploy-azure.yml'
+  workflow_dispatch: {}
+
+permissions:
+  id-token: write   # für OIDC-Token-Request an Microsoft Entra
+  contents: read
+
+env:
+  ACR_NAME: acedemoregistry5928
+  ACR_LOGIN_SERVER: acedemoregistry5928.azurecr.io
+  IMAGE_NAME: ace
+  RG: ace-demo-rg
+  APP_NAME: ace
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Azure login via OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: ACR login (Docker)
+        run: az acr login --name "$ACR_NAME"
+
+      - name: Build and push image
+        id: build
+        run: |
+          TAG="ci-$(date -u +%Y%m%d-%H%M)-${GITHUB_SHA::7}"
+          IMAGE="$ACR_LOGIN_SERVER/$IMAGE_NAME:$TAG"
+          docker build --file Dockerfile --tag "$IMAGE" --tag "$ACR_LOGIN_SERVER/$IMAGE_NAME:latest" .
+          docker push "$IMAGE"
+          docker push "$ACR_LOGIN_SERVER/$IMAGE_NAME:latest"
+          echo "image=$IMAGE" >> "$GITHUB_OUTPUT"
+
+      - name: Update Container App (skip if not created yet)
+        run: |
+          if az containerapp show --name "$APP_NAME" --resource-group "$RG" >/dev/null 2>&1; then
+            az containerapp update \
+              --name "$APP_NAME" \
+              --resource-group "$RG" \
+              --image "${{ steps.build.outputs.image }}"
+            echo "Container App auf neues Image aktualisiert: ${{ steps.build.outputs.image }}"
+          else
+            echo "Container App '$APP_NAME' existiert noch nicht — manuell anlegen via az containerapp create (siehe docs/operations/azure-container-apps.md §4.4) mit Image ${{ steps.build.outputs.image }}."
+          fi

@@ -119,40 +119,28 @@ az acr create `
 az acr login --name $ACR
 ```
 
-## 3. Image bauen und pushen — direkt in Azure
+## 3. Image bauen und pushen — über GitHub Actions
 
-Statt lokaler Docker-Installation nutzen wir **ACR Tasks**: der Build läuft in
-einem Azure-Container im selben Datacenter wie das Registry, das Image landet
-direkt im ACR, ohne lokalen Push-Schritt.
+ACR Tasks (`az acr build`) sind für viele Free-Trial-Subscriptions standardmäßig
+**deaktiviert** (Anti-Abuse-Maßnahme gegen Krypto-Mining). Bei diesem Setup
+trifft das zu — daher bauen wir das Image im GitHub-Actions-Runner und pushen
+ins ACR. Vorteile: dein Laptop muss kein Docker installiert haben, der Build
+läuft auf Linux (kein Windows-MAX_PATH-Problem), und nach dem Setup ist jedes
+zukünftige `git push origin master` automatisch ein Deploy.
 
-Aus dem Repo-Root:
+Workflow-Definition liegt unter
+[`.github/workflows/deploy-azure.yml`](../../.github/workflows/deploy-azure.yml).
+Setup-Schritte für das einmalige Azure-↔-GitHub-Auth-Pairing in §11.
 
-```powershell
-$IMAGE_TAG = "demo-$(Get-Date -Format yyyyMMdd-HHmm)"
-$IMAGE = "$ACR.azurecr.io/ace:$IMAGE_TAG"
+Nach erfolgreichem Setup wird der erste Build automatisch durch den
+Workflow-Trigger beim Push ausgelöst. Du kannst ihn auch manuell starten:
+GitHub → Actions → "deploy-azure" → "Run workflow" → Branch `master`.
 
-az acr build `
-  --registry $ACR `
-  --image "ace:$IMAGE_TAG" `
-  --file Dockerfile `
-  .
-```
-
-Der `.` am Ende ist der Build-Context. Die `.dockerignore` wird respektiert,
-große Verzeichnisse (`.git`, `node_modules`, `data/`, `docs/`) bleiben außen
-vor — der Upload zum Registry braucht typisch 5-15 Sekunden.
-
-Build-Dauer beim ersten Lauf 3-5 Minuten (Native-Compile für
-`better-sqlite3`). Bei späteren Re-Builds greift der Layer-Cache in ACR,
-dann 20-40 Sekunden.
-
-Größe des resultierenden Images: ~150 MB.
-
-**Alternativ — falls ACR Tasks aus irgendeinem Grund nicht zur Verfügung
-stehen**: GitHub Actions mit `docker/build-push-action` baut das Image im
-Actions-Runner und pusht zu ACR. Setup-Aufwand ~30 min für den ersten Workflow,
-zahlt sich aus, sobald Re-Deploys häufiger werden. Außerhalb der Demo-Phase
-sowieso der reguläre Pfad.
+Beim ersten Lauf existiert die Container App noch nicht — der Workflow baut
+das Image, pusht ins ACR und überspringt den Update-Step mit einer Hinweis-
+Meldung. Danach in §4.4 die Container App mit dem gerade gepushten Image
+anlegen. Ab dem zweiten Push macht der Workflow Build + Push + Update
+automatisch in einem Rutsch.
 
 ## 4. Container Apps Environment + App
 
@@ -502,3 +490,139 @@ mit denselben Test-Daten weitermachen möchte.
 - **Logs sind verzögert**: Container Apps loggt asynchron, die Anzeige in
   `az containerapp logs show` kann 5-30 s nachlaufen. Für die Vorstandsdemo
   ein zweites Terminal-Fenster mit Live-Log offen halten.
+
+## 11. GitHub-Actions-Setup für Image-Build und Auto-Deploy
+
+Einmalige Verkabelung GitHub ↔ Azure über OIDC-Federated-Credentials — keine
+langlebigen Service-Principal-Secrets im Repo, GitHub holt sich pro Workflow-
+Run einen kurzlebigen Token direkt bei Microsoft Entra. Nach diesem Setup
+löst jeder Push auf `master` der relevante Dateien (Dockerfile, app/,
+server/, …) automatisch einen Build + Deploy aus.
+
+### 11.1 Variablen aus der Session
+
+```powershell
+$SUB_ID = az account show --query id -o tsv
+$TENANT_ID = az account show --query tenantId -o tsv
+$APP_REG_NAME = "ace-github-deploy"
+$GITHUB_REPO = "FrankHalbach/ace"   # owner/repo, nicht die volle URL
+```
+
+### 11.2 Service Principal und Federated Credential anlegen
+
+```powershell
+# 1. App Registration in Entra ID
+az ad app create --display-name $APP_REG_NAME
+
+# App-ID einsammeln (kann ein paar Sekunden dauern, bis die App propagiert ist)
+$APP_ID = az ad app list --display-name $APP_REG_NAME --query "[0].appId" -o tsv
+Write-Host "App-ID: $APP_ID"
+
+# 2. Service Principal zur App erstellen
+az ad sp create --id $APP_ID
+
+# 3. Federated Credential für GitHub master-Branch
+# Wichtig: PowerShell-Single-Quote-String, damit die geschweiften JSON-
+# Klammern nicht interpretiert werden.
+$fedCred = '{"name":"github-master","issuer":"https://token.actions.githubusercontent.com","subject":"repo:' + $GITHUB_REPO + ':ref:refs/heads/master","audiences":["api://AzureADTokenExchange"]}'
+az ad app federated-credential create --id $APP_ID --parameters $fedCred
+
+# 4. Zusätzlich für workflow_dispatch (manueller Lauf aus dem GitHub-UI)
+$fedCredDispatch = '{"name":"github-workflow-dispatch","issuer":"https://token.actions.githubusercontent.com","subject":"repo:' + $GITHUB_REPO + ':ref:refs/heads/master","audiences":["api://AzureADTokenExchange"]}'
+# (Identisch zum master-Branch — workflow_dispatch nutzt den Branch-Subject auch)
+```
+
+### 11.3 Role Assignments
+
+```powershell
+# Contributor auf die Resource Group — erlaubt containerapp update
+az role assignment create `
+  --role "Contributor" `
+  --assignee $APP_ID `
+  --scope "/subscriptions/$SUB_ID/resourceGroups/$RG"
+
+# AcrPush auf das Registry — erlaubt Image-Push
+az role assignment create `
+  --role "AcrPush" `
+  --assignee $APP_ID `
+  --scope "/subscriptions/$SUB_ID/resourceGroups/$RG/providers/Microsoft.ContainerRegistry/registries/$ACR"
+```
+
+### 11.4 GitHub Repository Secrets setzen
+
+Drei Werte als Repository-Secrets eintragen — entweder im Browser unter
+`https://github.com/FrankHalbach/ace/settings/secrets/actions` → "New
+repository secret", oder per `gh` CLI:
+
+```powershell
+# Werte ausgeben
+Write-Host "AZURE_CLIENT_ID = $APP_ID"
+Write-Host "AZURE_TENANT_ID = $TENANT_ID"
+Write-Host "AZURE_SUBSCRIPTION_ID = $SUB_ID"
+```
+
+Im GitHub-UI als drei separate Secrets anlegen mit exakt diesen Namen:
+
+| Secret-Name | Wert |
+|---|---|
+| `AZURE_CLIENT_ID` | App-ID aus §11.2 |
+| `AZURE_TENANT_ID` | aus `az account show --query tenantId` |
+| `AZURE_SUBSCRIPTION_ID` | aus `az account show --query id` |
+
+Per `gh` CLI (falls installiert):
+
+```powershell
+gh secret set AZURE_CLIENT_ID --body $APP_ID
+gh secret set AZURE_TENANT_ID --body $TENANT_ID
+gh secret set AZURE_SUBSCRIPTION_ID --body $SUB_ID
+```
+
+### 11.5 Ersten Workflow-Lauf auslösen
+
+Der Workflow triggert automatisch bei Push, wir können ihn aber auch manuell
+auslösen:
+
+- Browser: `https://github.com/FrankHalbach/ace/actions/workflows/deploy-azure.yml` →
+  "Run workflow" → Branch `master` → "Run workflow"
+- Oder `gh` CLI:
+  ```powershell
+  gh workflow run deploy-azure.yml
+  ```
+
+Live-Verfolgung des Runs:
+
+```powershell
+gh run watch
+```
+
+oder im Browser auf der Actions-Seite. Build dauert ~3-5 min beim ersten Lauf
+(Native-Compile für `better-sqlite3`, Nuxt-Build, alle Layers neu). Bei
+späteren Pushes greift Docker-Layer-Caching nur teilweise (GitHub-Runner ist
+ephemeral), aber pnpm-Install-Layer + Node-Image-Layer werden vom ACR
+gecached, daher 1-2 min realistisch.
+
+### 11.6 Was der Workflow tut
+
+Pro Run:
+
+1. `actions/checkout` zieht das Repo
+2. `azure/login@v2` macht OIDC-Token-Exchange gegen Entra ID
+3. `az acr login` mit dem OIDC-Token holt Docker-Auth-Credentials für ACR
+4. `docker build` + `docker push` mit Tags `ci-YYYYMMDD-HHMM-<shortsha>` und
+   `latest`
+5. Falls die Container App `ace` schon existiert: `az containerapp update`
+   mit dem neuen Image-Tag — sonst Skip mit Hinweis, dass §4.4 noch zu laufen
+   ist
+
+### 11.7 Was beim ersten Workflow-Lauf passiert
+
+Der Workflow baut + pusht das Image, kann aber die Container App noch nicht
+updaten, weil sie ja noch gar nicht existiert. Schritt-Output:
+
+```
+Container App 'ace' existiert noch nicht — manuell anlegen via az containerapp create (siehe docs/operations/azure-container-apps.md §4.4) mit Image acedemoregistry5928.azurecr.io/ace:ci-...
+```
+
+Den Image-Tag aus der Workflow-Log-Zeile kopieren und im PowerShell als
+`$IMAGE` setzen, dann §4.4 weiter ausführen. Nach erfolgreicher Container-App-
+Anlage löst der nächste Push einen vollständigen End-to-End-Deploy aus.
