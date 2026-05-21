@@ -1,0 +1,45 @@
+# Schlanker Build-Context — kopiert nur was Nuxt/Nitro für den Build braucht.
+
+# Build-Artefakte und Caches
+.output
+.nuxt
+.nitro
+.cache
+dist
+
+# Local development
+node_modules
+data
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+
+# Test- und Lint-Output
+coverage
+.eslintcache
+
+# Editor / OS
+.vscode
+.idea
+.DS_Store
+Thumbs.db
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Docs sind groß und werden im Image nicht gebraucht
+docs
+
+# Env- und Secret-Files niemals ins Image
+.env
+.env.*
+!.env.example
+
+# CI / Tooling
+.github
+.claude
+.claude/
+.claude/**
